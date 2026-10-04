@@ -261,7 +261,74 @@ body { background: #fff; }
 }
 .cms-notification.unread { border-left: 4px solid var(--cms-primary); }
 .cms-notification.read { opacity: .72; }
-.cms-footer-mini { font-size: .85rem; color: rgba(255,255,255,.65); }
+.cms-site-footer {
+    background: var(--cms-dark);
+    color: rgba(255,255,255,.72);
+}
+.cms-site-footer p { line-height: 1.7; }
+.cms-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: .9rem;
+    color: #fff;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+.cms-footer-brand:hover { color: #fff; text-decoration: none; }
+.cms-footer-brand i { color: var(--cms-primary); margin-right: .55rem; }
+.cms-footer-description { max-width: 390px; margin-bottom: 0; }
+.cms-footer-heading {
+    margin-bottom: 1rem;
+    color: #fff;
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.cms-footer-links a {
+    display: block;
+    margin-bottom: .55rem;
+    color: rgba(255,255,255,.72);
+    transition: color .15s ease, padding-left .15s ease;
+}
+.cms-footer-links a:hover {
+    padding-left: .2rem;
+    color: #fff;
+    text-decoration: none;
+}
+.cms-footer-links i {
+    width: 1.1rem;
+    color: var(--cms-primary);
+}
+.cms-footer-cta {
+    display: inline-flex;
+    align-items: center;
+    padding: .65rem 1rem;
+    border-radius: 50rem;
+    background: var(--cms-primary);
+    color: #fff;
+    font-weight: 600;
+    transition: background-color .15s ease, transform .15s ease;
+}
+.cms-footer-cta:hover {
+    transform: translateY(-1px);
+    background: #e94000;
+    color: #fff;
+    text-decoration: none;
+}
+.cms-footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: .5rem 1rem;
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255,255,255,.12);
+    font-size: .82rem;
+}
+.cms-footer-bottom p { margin: 0; }
+.cms-footer-bottom a { color: rgba(255,255,255,.72); }
+.cms-footer-bottom a:hover { color: #fff; }
 
 .cms-owner {
     display: inline-flex;
