@@ -20,13 +20,13 @@ function cmsDemoTrack() {
     const input = document.getElementById('trackingId');
     const result = document.getElementById('trackingResult');
     if (!input || !result) return;
-    const value = input.value.trim();
+    const value = input.value.trim().replace(/[^a-zA-Z0-9-]/g, '');
     if (!value) {
-        result.textContent = 'Enter an Order ID to track.';
+        result.textContent = 'Enter an order reference to see a tracking preview.';
         return;
     }
-    result.innerHTML = '<strong>Order #' + value.replace(/[^a-zA-Z0-9-]/g, '') +
-        '</strong> · In Progress · Route #R-88 · Courier active';
+    result.textContent = 'Sample tracking result for order #' + value +
+        ': In progress. Live tracking is not available in this preview.';
 }
 
 function cmsCreateMap(id, points, options = {}) {
@@ -68,29 +68,29 @@ function cmsAddProductRow() {
     row.className = 'cms-product-row';
     row.innerHTML = `
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <strong>Product ${index}</strong>
+        <strong>Item ${index}</strong>
         <button type="button" class="btn btn-sm btn-outline-danger cms-remove-product">Remove</button>
       </div>
       <div class="form-row">
         <div class="form-group col-md-5">
           <label>Description</label>
           <input class="form-control product-description" required placeholder="e.g. Laptop">
-          <div class="invalid-feedback">Description is required.</div>
+          <div class="invalid-feedback">Enter an item description.</div>
         </div>
         <div class="form-group col-md-3">
           <label>Category</label>
           <input class="form-control product-category" required placeholder="Electronics">
-          <div class="invalid-feedback">Category is required.</div>
+          <div class="invalid-feedback">Enter an item category.</div>
         </div>
         <div class="form-group col-md-2">
           <label>Weight (kg)</label>
           <input class="form-control product-weight" required type="number" min="0.01" step="0.01" value="1">
-          <div class="invalid-feedback">Enter a positive weight.</div>
+          <div class="invalid-feedback">Enter a weight greater than zero.</div>
         </div>
         <div class="form-group col-md-2">
           <label>Volume (m³)</label>
           <input class="form-control product-volume" required type="number" min="0.001" step="0.001" value="0.01">
-          <div class="invalid-feedback">Enter a positive volume.</div>
+          <div class="invalid-feedback">Enter a volume greater than zero.</div>
         </div>
       </div>`;
     list.appendChild(row);
@@ -297,7 +297,7 @@ function cmsInitRoleAccess() {
         if (hero) {
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
-            notice.textContent = 'Demo mode: changes and sample data are not saved.';
+            notice.textContent = 'Preview mode: this page uses sample data, and your changes are not saved.';
             hero.appendChild(notice);
         }
     }
@@ -376,11 +376,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const dlng = cmsReadCoordinate(orderForm,'destLng',-180,180);
 
             if ([olat,olng,dlat,dlng].some(v => v === null)) {
-                cmsToast('Invalid GPS coordinates. Latitude must be -90..90 and longitude -180..180.');
+                cmsToast('Check the pickup and delivery coordinates. Latitude must be between -90 and 90; longitude between -180 and 180.');
                 return;
             }
             drawRoute([olat,olng],[dlat,dlng]);
-            cmsToast('Demo order created with status Initiated.');
+            cmsToast('Delivery order created in this preview. No data has been saved.');
         });
 
         document.getElementById('previewRoute')?.addEventListener('click', () => {
@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             status.className = 'cms-badge cms-badge-danger';
         }
         if (advance) advance.disabled = true;
-        cmsToast('Delivery cancelled. The order returns to the available order list.');
+        cmsToast('Delivery cancelled in this preview. No data has been saved.');
     });
 
     cmsInitSignature();
@@ -458,9 +458,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const photo = document.getElementById('deliveryPhoto');
         const hasPhoto = photo?.files?.length > 0;
         if (!hasPhoto) {
-            cmsToast('Demo e-POD submitted using the digital signature canvas.');
+            cmsToast('Delivery confirmation submitted in this preview. No data has been saved.');
         } else {
-            cmsToast('Demo e-POD submitted using the delivery photo.');
+            cmsToast('Delivery photo submitted in this preview. No data has been saved.');
         }
     });
 
@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
     vehicleForm?.addEventListener('submit', e => {
         e.preventDefault();
         if (!cmsValidate(vehicleForm)) return;
-        cmsToast('Vehicle submitted with approval status Pending.');
+        cmsToast('Vehicle details submitted for review in this preview. No data has been saved.');
     });
 
     // Admin profile
@@ -507,6 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
     profileForm?.addEventListener('submit', e => {
         e.preventDefault();
         if (!cmsValidate(profileForm)) return;
-        cmsToast('Personal information updated in the demo.');
+        cmsToast('Account details updated in this preview. No data has been saved.');
     });
 });

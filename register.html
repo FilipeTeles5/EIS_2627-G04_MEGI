@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Register | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Create a Movio account to manage and follow your deliveries." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="Create a Movio client or courier account to access the delivery tools for your role." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
       <span class="navbar-toggler-icon"></span>
@@ -41,7 +41,7 @@
 </div>
 
 <section class="cms-page-hero text-center">
-  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Create an account to manage and follow your deliveries in one place.</p></div>
+  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Choose your account role to access the tools you need for your part of the delivery journey.</p></div>
 </section>
 <section class="container-fluid py-5">
   <div class="container">
@@ -57,13 +57,13 @@
           <div class="form-group col-md-6"><label>Phone</label><input required class="form-control p-4" name="phone"><div class="invalid-feedback">Phone is required.</div></div>
         </div>
         <div class="form-row">
-          <div class="form-group col-md-6"><label>NIF</label><input required pattern="[0-9]{9}" class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a 9-digit NIF.</div></div>
-          <div class="form-group col-md-6"><label for="registerRole">Account type</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option></select></div>
+          <div class="form-group col-md-6"><label>Tax ID (NIF)</label><input required pattern="[0-9]{9}" class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a 9-digit tax ID.</div></div>
+          <div class="form-group col-md-6"><label for="registerRole">Account role</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option></select></div>
         </div>
         <div class="form-group"><label>Password</label><input required minlength="6" type="password" class="form-control p-4" name="password"><div class="invalid-feedback">Use at least 6 characters.</div></div>
         <button class="btn btn-primary btn-block py-3" type="submit">Create Account</button>
       </form>
-        <p class="small text-muted mt-3 mb-0">Demo mode: registration starts a temporary profile session; account details are not saved. Courier approval is not enforced in this frontend demo.</p>
+        <p class="small text-muted mt-3 mb-0">Demo mode: registration creates a temporary session only; account details are not saved and courier approval is not checked.</p>
       <p class="text-center mt-4 mb-0">Already have an account? <a href="login.html">Sign in</a>.</p>
     </div>
   </div>
@@ -74,7 +74,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

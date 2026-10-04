@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Home | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery orders, routes and fleet activity with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="Coordinate parcel orders, routes and delivery updates with Movio." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
       <span class="navbar-toggler-icon"></span>
@@ -42,19 +42,20 @@
 
 <div class="jumbotron jumbotron-fluid mb-5">
   <div class="container text-center py-5">
-    <h1 class="text-primary mb-3">SMART & RELIABLE</h1>
-    <h1 class="text-white display-3 mb-4">Courier Management</h1>
-    <p class="text-white cms-hero-copy">A single interface for clients, couriers, staff and administrators — from order creation to electronic proof of delivery.</p>
+    <h1 class="text-primary mb-3">A CLEARER DELIVERY JOURNEY</h1>
+    <h1 class="text-white display-3 mb-4">Parcel delivery, made simpler</h1>
+    <p class="text-white cms-hero-copy">Manage every delivery in one place — from booking and route planning to delivery confirmation.</p>
     <div class="cms-hero-actions mb-4">
       <a href="register.html" class="btn btn-primary py-3 px-4">Create Account</a>
       <a href="login.html" class="btn btn-light py-3 px-4">Login</a>
     </div>
     <div class="mx-auto" style="width:100%;max-width:620px;">
       <div class="input-group">
-        <input id="trackingId" type="text" class="form-control border-light" style="padding:30px;" placeholder="Track an Order ID, e.g. 1042">
-        <div class="input-group-append"><button id="trackButton" class="btn btn-primary px-3">Track & Trace</button></div>
+        <input id="trackingId" type="text" class="form-control border-light" style="padding:30px;" placeholder="Enter an order reference, e.g. 1042" aria-label="Order reference">
+        <div class="input-group-append"><button id="trackButton" class="btn btn-primary px-3">Track an order</button></div>
       </div>
       <div id="trackingResult" class="text-white mt-3"></div>
+      <small class="d-block text-white-50 mt-2">Tracking results are sample data in this preview.</small>
     </div>
   </div>
 </div>
@@ -63,13 +64,13 @@
   <div class="container">
     <div class="text-center pb-2">
       <h6 class="text-primary text-uppercase font-weight-bold">Movio at a glance</h6>
-      <h1 class="mb-4">Four roles, one delivery lifecycle</h1>
+      <h1 class="mb-4">Tools for every part of a delivery</h1>
     </div>
     <div class="row">
-      <div class="col-lg-3 col-md-6 mb-4" data-role-content="client"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-box"></i></div><h5>Client</h5><p>Register products, place orders, define GPS coordinates and follow order status.</p><a href="login.html?role=client">Open client workspace</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4" data-role-content="courier"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-route"></i></div><h5>Courier</h5><p>Select vehicles, execute routes, transition order status and submit e-POD.</p><a href="login.html?role=courier">Open courier workspace</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4" data-role-content="staff"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-clipboard-check"></i></div><h5>Staff</h5><p>Validate couriers and vehicles, inspect documents and receive compliance alerts.</p><a href="login.html?role=staff">Open staff workspace</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4" data-role-content="admin"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-chart-line"></i></div><h5>Admin</h5><p>Approve staff, edit personal information and monitor operational KPIs.</p><a href="login.html?role=admin">Open admin workspace</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="client"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-box"></i></div><h5>Client</h5><p>Create delivery orders, add parcel details and follow each order's progress.</p><a href="login.html?role=client">Open client dashboard</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="courier"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-route"></i></div><h5>Courier</h5><p>View assigned routes, update delivery progress and record proof of delivery.</p><a href="login.html?role=courier">Open courier dashboard</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="staff"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-clipboard-check"></i></div><h5>Staff</h5><p>Review courier and vehicle applications and follow up on document alerts.</p><a href="login.html?role=staff">Open staff dashboard</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="admin"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-chart-line"></i></div><h5>Admin</h5><p>Manage user access, update account details and review delivery activity.</p><a href="login.html?role=admin">Open admin dashboard</a></div></div>
     </div>
   </div>
 </section>
@@ -81,11 +82,11 @@
       <div class="col-lg-7 pl-lg-5">
         <h6 class="text-primary text-uppercase font-weight-bold">One connected delivery service</h6>
         <h1 class="mb-4">Every delivery, connected</h1>
-        <p>From booking to proof of delivery, Movio brings every step of the delivery journey together.</p>
+        <p>Bring order details, routes, vehicles and delivery updates together to make each hand-off easier to manage.</p>
         <ul class="list-inline">
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Create orders and manage shipment details</h6></li>
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Plan efficient routes and vehicle capacity</h6></li>
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Stay informed with delivery updates and service alerts</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Keep order and parcel details together</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Coordinate delivery routes and vehicle capacity</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Review delivery progress and service alerts</h6></li>
         </ul>
       </div>
     </div>
@@ -94,7 +95,7 @@
 
 <section class="container-fluid py-5">
   <div class="container">
-    <div class="text-center pb-2"><h6 class="text-primary text-uppercase font-weight-bold">Illustrative metrics</h6><h1 class="mb-4">Operational snapshot</h1></div>
+    <div class="text-center pb-2"><h6 class="text-primary text-uppercase font-weight-bold">Example service metrics</h6><h1 class="mb-4">Delivery overview</h1></div>
     <div class="row">
       <div class="col-lg-3 col-sm-6 mb-4"><div class="cms-panel cms-kpi p-4"><div class="value">1,284</div><div class="label">Completed Orders</div></div></div>
       <div class="col-lg-3 col-sm-6 mb-4"><div class="cms-panel cms-kpi p-4"><div class="value">86</div><div class="label">Approved Couriers</div></div></div>
@@ -109,7 +110,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

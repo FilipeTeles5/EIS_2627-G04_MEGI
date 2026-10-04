@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Approvals & Audits | Movio</title>
+    <title>Courier and vehicle reviews | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery operations with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="Review courier applications, vehicle documents and previous decisions in Movio." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <div class="ml-auto d-flex align-items-center">
       <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Staff</span>
@@ -27,20 +27,20 @@
   </nav>
 </div>
 <div class="cms-role-nav">
-  <div class="container"><a href="staff.html" class="">Dashboard</a><a href="staff-approvals.html" class="active">Approvals & Audits</a><a href="staff-notifications.html" class="">Notifications</a></div>
+  <div class="container"><a href="staff.html" class="">Dashboard</a><a href="staff-approvals.html" class="active">Courier and vehicle reviews</a><a href="staff-notifications.html" class="">Notifications</a></div>
 </div>
 
 <section class="cms-page-hero">
   <div class="container">
-    <h1>Approvals & Vehicle Audits</h1>
-    <p class="mb-0">Validate Courier accounts and approve vehicles only after insurance and inspection verification.</p>
+    <h1>Courier and vehicle reviews</h1>
+    <p class="mb-0">Review courier applications and vehicle documents before approving access or vehicle use.</p>
     
   </div>
 </section>
 <section class="container-fluid py-5">
   <div class="container">
     <div class="cms-panel p-4 mb-4">
-      <div class="cms-panel-title"><div><h4>Pending courier accounts</h4><small>Review new courier registrations</small></div></div>
+      <div class="cms-panel-title"><div><h4>Courier applications</h4><small>Applications awaiting review</small></div></div>
       <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>NIF</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody>
         <tr><td>Rui Alves</td><td>rui@example.com</td><td>245***321</td><td>03 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
         <tr><td>Sofia Lima</td><td>sofia@example.com</td><td>233***810</td><td>02 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
@@ -48,18 +48,18 @@
     </div>
 
     <div class="cms-panel p-4 mb-4">
-      <div class="cms-panel-title"><div><h4>Pending Vehicle approvals</h4><small>Insurance and inspection must be checked before allocation</small></div></div>
+      <div class="cms-panel-title"><div><h4>Vehicles awaiting review</h4><small>Check insurance and inspection documents before approval</small></div></div>
       <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Insurance</th><th>Inspection</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>72-ZP-11 · Renault Master</td><td>Van</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approved and audit created.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected and audit created.">Reject</button></td></tr>
-        <tr><td>19-CC-04 · Yamaha NMAX</td><td>Moto</td><td><span class="cms-badge cms-badge-danger">Expired</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approval recorded.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected because documentation is invalid.">Reject</button></td></tr>
+        <tr><td>72-ZP-11 · Renault Master</td><td>Van</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected.">Reject</button></td></tr>
+        <tr><td>19-CC-04 · Yamaha NMAX</td><td>Motorcycle</td><td><span class="cms-badge cms-badge-danger">Expired</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approval recorded.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected because documentation is invalid.">Reject</button></td></tr>
       </tbody></table></div>
     </div>
 
     <div class="cms-panel p-4">
-      <div class="cms-panel-title"><div><h4>Vehicle Audit History</h4><small>Every Staff decision is traceable</small></div></div>
-      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Audit</th><th>Vehicle</th><th>Staff</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody>
-        <tr><td>#A-410</td><td>48-AB-22</td><td>Staff #12</td><td>01 Oct</td><td><span class="cms-badge cms-badge-success">Approved</span></td><td>Insurance and inspection valid.</td></tr>
-        <tr><td>#A-405</td><td>34-KL-27</td><td>Staff #08</td><td>29 Sep</td><td><span class="cms-badge cms-badge-danger">Rejected</span></td><td>Insurance certificate missing.</td></tr>
+      <div class="cms-panel-title"><div><h4>Previous vehicle decisions</h4><small>Review the outcome of earlier applications</small></div></div>
+      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Reference</th><th>Vehicle</th><th>Reviewed by</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody>
+        <tr><td>#A-410</td><td>48-AB-22</td><td>Staff #12</td><td>01 Oct</td><td><span class="cms-badge cms-badge-success">Approved</span></td><td>Insurance and inspection documents are valid.</td></tr>
+        <tr><td>#A-405</td><td>34-KL-27</td><td>Staff #08</td><td>29 Sep</td><td><span class="cms-badge cms-badge-danger">Rejected</span></td><td>Insurance certificate was missing.</td></tr>
       </tbody></table></div>
     </div>
   </div>
@@ -70,7 +70,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

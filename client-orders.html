@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>My Orders | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery operations with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="View current and past delivery orders and their progress in Movio." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <div class="ml-auto d-flex align-items-center">
       <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Client</span>
@@ -33,21 +33,21 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>My Orders</h1>
-    <p class="mb-0">Active and historic orders with route assignment, delivery proof and status history.</p>
+    <p class="mb-0">View current and past delivery orders, their progress and delivery confirmation.</p>
     
   </div>
 </section>
 <section class="container-fluid py-5">
   <div class="container">
     <div class="cms-panel p-4 mb-4">
-      <div class="cms-panel-title"><div><h4>Order list</h4><small>Current and historic data</small></div></div>
+      <div class="cms-panel-title"><div><h4>Your delivery orders</h4><small>Current and past orders</small></div></div>
       <div class="table-responsive">
         <table class="table cms-table">
-          <thead class="thead-light"><tr><th>Order</th><th>Products</th><th>Route</th><th>Status</th><th>Attempt</th><th>e-POD</th><th></th></tr></thead>
+          <thead class="thead-light"><tr><th>Order</th><th>Items</th><th>Route</th><th>Status</th><th>Delivery attempts</th><th>Delivery proof</th><th></th></tr></thead>
           <tbody>
             <tr><td>#1042</td><td>2</td><td>#R-88</td><td><span class="cms-badge cms-badge-info">In Progress</span></td><td>1</td><td>—</td><td><a href="#order1042" class="btn btn-sm btn-outline-primary">Details</a></td></tr>
             <tr><td>#1031</td><td>1</td><td>#R-81</td><td><span class="cms-badge cms-badge-success">Completed</span></td><td>1</td><td>Photo</td><td><a href="#order1031" class="btn btn-sm btn-outline-primary">Details</a></td></tr>
-            <tr><td>#1028</td><td>1</td><td>Not assigned</td><td><span class="cms-badge cms-badge-warning">Initiated</span></td><td>0</td><td>—</td><td><button class="btn btn-sm btn-outline-danger" type="button" onclick="cmsToast('Demo order cancelled.')">Cancel</button></td></tr>
+            <tr><td>#1028</td><td>1</td><td>Not assigned</td><td><span class="cms-badge cms-badge-warning">Initiated</span></td><td>0</td><td>—</td><td><button class="btn btn-sm btn-outline-danger" type="button" onclick="cmsToast('Order cancellation is a preview only. No data has been saved.')">Cancel</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -56,33 +56,33 @@
     <div id="order1042" class="row">
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Order #1042</h4><small>Detailed record</small></div><span class="cms-badge cms-badge-info">In Progress</span></div>
+          <div class="cms-panel-title"><div><h4>Order #1042</h4><small>Delivery details</small></div><span class="cms-badge cms-badge-info">In progress</span></div>
           <div class="cms-meta-grid">
-            <div><span class="cms-meta-label">Origin</span><span class="cms-meta-value">41.1779, -8.5980</span></div>
-            <div><span class="cms-meta-label">Destination</span><span class="cms-meta-value">41.1579, -8.6291</span></div>
+            <div><span class="cms-meta-label">Pickup location</span><span class="cms-meta-value">41.1779, -8.5980</span></div>
+            <div><span class="cms-meta-label">Delivery location</span><span class="cms-meta-value">41.1579, -8.6291</span></div>
             <div><span class="cms-meta-label">Route</span><span class="cms-meta-value">#R-88</span></div>
-            <div><span class="cms-meta-label">Attempt</span><span class="cms-meta-value">1</span></div>
+            <div><span class="cms-meta-label">Delivery attempt</span><span class="cms-meta-value">1</span></div>
           </div>
           <hr>
-          <h6>Products</h6>
+          <h6>Items in this delivery</h6>
           <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Description</th><th>Category</th><th>Weight</th><th>Volume</th></tr></thead><tbody><tr><td>Laptop</td><td>Electronics</td><td>2.40 kg</td><td>0.030 m³</td></tr><tr><td>Documents</td><td>Documents</td><td>0.60 kg</td><td>0.004 m³</td></tr></tbody></table></div>
         </div>
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Status history</h4><small>Updates from order creation to delivery</small></div></div>
+          <div class="cms-panel-title"><div><h4>Delivery progress</h4><small>Updates from order placement to completion</small></div></div>
           <ul class="cms-timeline">
-            <li class="done"><strong>Initiated</strong><small>03 Oct · 14:20 · Courier #14</small></li>
-            <li class="current"><strong>In Progress</strong><small>03 Oct · 14:42 · Courier #14</small></li>
-            <li><strong>Completed / Cancelled</strong><small>Pending</small></li>
+            <li class="done"><strong>Order placed</strong><small>03 Oct · 14:20 · Courier #14</small></li>
+            <li class="current"><strong>In progress</strong><small>03 Oct · 14:42 · Courier #14</small></li>
+            <li><strong>Completed or cancelled</strong><small>Awaiting update</small></li>
           </ul>
         </div>
       </div>
     </div>
 
     <div id="order1031" class="cms-panel p-4">
-      <div class="cms-panel-title"><div><h4>Completed order #1031</h4><small>Electronic Proof of Delivery</small></div><span class="cms-badge cms-badge-success">Completed</span></div>
-      <div class="row"><div class="col-md-6"><span class="cms-meta-label">e-POD type</span><span class="cms-meta-value">Photo</span></div><div class="col-md-6"><span class="cms-meta-label">e-POD file</span><span class="cms-meta-value">/proofs/order-1031.jpg</span></div></div>
+      <div class="cms-panel-title"><div><h4>Completed order #1031</h4><small>Delivery confirmation</small></div><span class="cms-badge cms-badge-success">Completed</span></div>
+      <div class="row"><div class="col-md-6"><span class="cms-meta-label">Confirmation type</span><span class="cms-meta-value">Photo</span></div><div class="col-md-6"><span class="cms-meta-label">Confirmation file</span><span class="cms-meta-value">order-1031.jpg</span></div></div>
     </div>
   </div>
 </section>
@@ -92,7 +92,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

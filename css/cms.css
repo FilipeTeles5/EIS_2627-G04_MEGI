@@ -275,7 +275,17 @@ body { background: #fff; }
     font-weight: 700;
 }
 .cms-footer-brand:hover { color: #fff; text-decoration: none; }
-.cms-footer-brand i { color: var(--cms-primary); margin-right: .55rem; }
+.cms-brand-logo {
+    display: block;
+    width: 150px;
+    height: 64px;
+    object-fit: contain;
+}
+.cms-footer-logo {
+    width: 150px;
+    height: 75px;
+    object-fit: contain;
+}
 .cms-footer-description { max-width: 390px; margin-bottom: 0; }
 .cms-footer-heading {
     margin-bottom: 1rem;

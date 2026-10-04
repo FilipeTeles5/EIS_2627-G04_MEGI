@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Create Order | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery operations with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="Add parcel details and pickup and delivery locations to create a Movio delivery order." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -21,7 +21,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <div class="ml-auto d-flex align-items-center">
       <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Client</span>
@@ -36,7 +36,7 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>Create Order</h1>
-    <p class="mb-0">Register one or more products, define GPS origin/destination and create an Initiated order.</p>
+    <p class="mb-0">Add parcel details and pickup and delivery locations to create a new order.</p>
     
   </div>
 </section>
@@ -45,12 +45,12 @@
     <div class="row">
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Order & items</h4><small>Add one or more items to your shipment</small></div></div>
+          <div class="cms-panel-title"><div><h4>Parcel details</h4><small>Add one or more items to this delivery</small></div></div>
           <form id="createOrderForm" novalidate>
-            <h6 class="mb-3">Products</h6>
+            <h6 class="mb-3">Items in this delivery</h6>
             <div id="productRows">
               <div class="cms-product-row">
-                <div class="d-flex justify-content-between align-items-center mb-2"><strong>Product 1</strong></div>
+                <div class="d-flex justify-content-between align-items-center mb-2"><strong>Item 1</strong></div>
                 <div class="form-row">
                   <div class="form-group col-md-5"><label>Description</label><input class="form-control product-description" required value="Laptop"><div class="invalid-feedback">Description is required.</div></div>
                   <div class="form-group col-md-3"><label>Category</label><input class="form-control product-category" required value="Electronics"><div class="invalid-feedback">Category is required.</div></div>
@@ -59,33 +59,33 @@
                 </div>
               </div>
             </div>
-            <button id="addProduct" type="button" class="btn btn-outline-primary btn-sm mb-4"><i class="fa fa-plus mr-1"></i>Add another product</button>
+            <button id="addProduct" type="button" class="btn btn-outline-primary btn-sm mb-4"><i class="fa fa-plus mr-1"></i>Add another item</button>
             <div class="row mb-4">
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total weight</span><strong id="totalWeight">2.40 kg</strong></div></div>
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total volume</span><strong id="totalVolume">0.030 m³</strong></div></div>
             </div>
 
-            <h6 class="mb-3">Origin GPS coordinates</h6>
+            <h6 class="mb-3">Pickup location</h6>
             <div class="form-row">
               <div class="form-group col-md-6"><label>Latitude</label><input required name="originLat" type="number" step="any" value="41.1779" class="form-control"><div class="invalid-feedback">Latitude is required.</div></div>
               <div class="form-group col-md-6"><label>Longitude</label><input required name="originLng" type="number" step="any" value="-8.5980" class="form-control"><div class="invalid-feedback">Longitude is required.</div></div>
             </div>
 
-            <h6 class="mb-3 mt-2">Destination GPS coordinates</h6>
+            <h6 class="mb-3 mt-2">Delivery location</h6>
             <div class="form-row">
               <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" step="any" value="41.1579" class="form-control"><div class="invalid-feedback">Latitude is required.</div></div>
               <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" step="any" value="-8.6291" class="form-control"><div class="invalid-feedback">Longitude is required.</div></div>
             </div>
             <div class="d-flex flex-wrap">
-              <button class="btn btn-primary py-3 px-4 mr-2 mb-2" type="submit">Create Order</button>
-              <button id="previewRoute" class="btn btn-outline-dark py-3 px-4 mb-2" type="button">Preview Map</button>
+              <button class="btn btn-primary py-3 px-4 mr-2 mb-2" type="submit">Create delivery order</button>
+              <button id="previewRoute" class="btn btn-outline-dark py-3 px-4 mb-2" type="button">Preview locations</button>
             </div>
           </form>
         </div>
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Order map</h4><small>GPS input visualization</small></div></div>
+          <div class="cms-panel-title"><div><h4>Pickup and delivery map</h4><small>Check the selected locations</small></div></div>
           <div id="clientOrderMap" class="cms-map"></div>
         </div>
       </div>
@@ -98,7 +98,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

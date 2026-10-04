@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Admin Dashboard | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery operations with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="Manage staff access, account details and delivery activity from the Movio admin dashboard." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <div class="ml-auto d-flex align-items-center">
       <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Admin</span>
@@ -27,13 +27,13 @@
   </nav>
 </div>
 <div class="cms-role-nav">
-  <div class="container"><a href="admin.html" class="active">Dashboard</a><a href="admin-users.html" class="">Users & Staff</a></div>
+  <div class="container"><a href="admin.html" class="active">Dashboard</a><a href="admin-users.html" class="">Users and staff</a></div>
 </div>
 
 <section class="cms-page-hero">
   <div class="container">
     <h1>Admin Dashboard</h1>
-    <p class="mb-0">Approve Staff members, edit personal information and monitor operational KPI statistics.</p>
+    <p class="mb-0">Manage staff access, update your account details and review delivery activity.</p>
     
   </div>
 </section>
@@ -49,7 +49,7 @@
     <div class="row mt-3">
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Operational KPIs</h4><small>Delivery service overview</small></div></div>
+          <div class="cms-panel-title"><div><h4>Delivery overview</h4><small>Example order status breakdown</small></div></div>
           <div class="mb-4"><div class="d-flex justify-content-between"><span>Completed orders</span><strong>72%</strong></div><div class="cms-capacity"><span style="width:72%"></span></div></div>
           <div class="mb-4"><div class="d-flex justify-content-between"><span>In Progress</span><strong>18%</strong></div><div class="cms-capacity"><span style="width:18%"></span></div></div>
           <div class="mb-4"><div class="d-flex justify-content-between"><span>Initiated</span><strong>7%</strong></div><div class="cms-capacity"><span style="width:7%"></span></div></div>
@@ -58,10 +58,10 @@
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Admin actions</h4><small>User governance</small></div></div>
-          <a href="admin-users.html" class="btn btn-primary btn-block py-3 mb-3">Staff Approvals & Users</a>
-          <p class="mb-1"><strong>2</strong> pending Staff accounts</p>
-          <p class="mb-0"><strong>1,260</strong> total users</p>
+          <div class="cms-panel-title"><div><h4>Manage accounts</h4><small>Staff access and user directory</small></div></div>
+          <a href="admin-users.html" class="btn btn-primary btn-block py-3 mb-3">Review staff applications and users</a>
+          <p class="mb-1"><strong>2</strong> staff applications awaiting review</p>
+          <p class="mb-0"><strong>1,260</strong> user accounts</p>
         </div>
       </div>
     </div>
@@ -70,11 +70,11 @@
       <div class="cms-panel-title"><div><h4>Edit personal information</h4><small>Administrator account details</small></div></div>
       <form id="adminProfileForm" novalidate>
         <div class="form-row">
-          <div class="form-group col-md-4"><label>Name</label><input required class="form-control" value="Admin Demo"><div class="invalid-feedback">Required.</div></div>
-          <div class="form-group col-md-4"><label>Email</label><input required type="email" class="form-control" value="admin@example.com"><div class="invalid-feedback">Valid email required.</div></div>
-          <div class="form-group col-md-4"><label>Phone</label><input required class="form-control" value="+351 910 000 000"><div class="invalid-feedback">Required.</div></div>
+          <div class="form-group col-md-4"><label>Name</label><input required class="form-control" value="Admin Demo"><div class="invalid-feedback">Enter a name.</div></div>
+            <div class="form-group col-md-4"><label>Email</label><input required type="email" class="form-control" value="admin@example.com"><div class="invalid-feedback">Enter a valid email address.</div></div>
+            <div class="form-group col-md-4"><label>Phone</label><input required class="form-control" value="+351 910 000 000"><div class="invalid-feedback">Enter a phone number.</div></div>
         </div>
-        <button class="btn btn-primary px-4" type="submit">Save Changes</button>
+        <button class="btn btn-primary px-4" type="submit">Save account details</button>
       </form>
     </div>
   </div>
@@ -85,7 +85,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">

@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <title>Active Route | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Manage delivery operations with Movio." name="description">
+    <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
+    <meta content="View your delivery route, update order progress and record delivery confirmation." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -21,7 +21,7 @@
 <div class="container-fluid p-0">
   <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
     <a href="index.html" class="navbar-brand ml-lg-3">
-      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
     <div class="ml-auto d-flex align-items-center">
       <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Courier</span>
@@ -36,7 +36,7 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>Active Route #R-88</h1>
-    <p class="mb-0">A route can consolidate multiple active orders and links the Courier to one selected Vehicle.</p>
+    <p class="mb-0">Follow your delivery stops, check the assigned vehicle and update each order as it progresses.</p>
     
   </div>
 </section>
@@ -51,11 +51,11 @@
       </div>
       <div class="col-lg-4 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Selected vehicle</h4><small>Vehicle #17</small></div><span class="cms-badge cms-badge-success">Approved</span></div>
+          <div class="cms-panel-title"><div><h4>Assigned vehicle</h4><small>Registration 48-AB-22</small></div><span class="cms-badge cms-badge-success">Approved</span></div>
           <div class="form-group"><label>Active vehicle</label><select class="form-control"><option>48-AB-22 · Mercedes Sprinter</option><option>91-XZ-04 · Renault Kangoo</option></select></div>
           <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small>86 kg</small><small>1,250 kg max</small></div><div class="cms-capacity mb-3"><span style="width:7%"></span></div>
           <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small>1.4 m³</small><small>10.5 m³ max</small></div><div class="cms-capacity mb-3"><span style="width:13%"></span></div>
-          <div class="cms-alert-success cms-alert mb-0"><strong>Vehicle compatible</strong><br><small>Combined products fit within weight and volume limits.</small></div>
+          <div class="cms-alert-success cms-alert mb-0"><strong>Vehicle capacity is suitable</strong><br><small>The parcels on this route fit within the vehicle's weight and volume limits.</small></div>
         </div>
       </div>
     </div>
@@ -63,20 +63,20 @@
     <div class="row">
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Current order #1042</h4><small>Sequential status transition</small></div><span id="orderStatus" data-status="Initiated" class="cms-badge cms-badge-warning">Initiated</span></div>
+          <div class="cms-panel-title"><div><h4>Current order #1042</h4><small>Update delivery progress</small></div><span id="orderStatus" data-status="Initiated" class="cms-badge cms-badge-warning">Initiated</span></div>
           <div class="cms-meta-grid mb-4">
-            <div><span class="cms-meta-label">Origin</span><span class="cms-meta-value">FEUP</span></div>
-            <div><span class="cms-meta-label">Destination</span><span class="cms-meta-value">Boavista</span></div>
-            <div><span class="cms-meta-label">Attempt</span><span class="cms-meta-value">1</span></div>
-            <div><span class="cms-meta-label">Products</span><span class="cms-meta-value">2 items</span></div>
+            <div><span class="cms-meta-label">Pickup</span><span class="cms-meta-value">FEUP</span></div>
+            <div><span class="cms-meta-label">Delivery</span><span class="cms-meta-value">Boavista</span></div>
+            <div><span class="cms-meta-label">Delivery attempt</span><span class="cms-meta-value">1</span></div>
+            <div><span class="cms-meta-label">Items</span><span class="cms-meta-value">2</span></div>
           </div>
-          <button id="advanceStatus" class="btn btn-primary py-3 px-4 mr-2 mb-2">Advance Status</button>
-          <button id="cancelDelivery" class="btn btn-outline-danger py-3 px-4 mb-2">Cancel Delivery</button>
+          <button id="advanceStatus" class="btn btn-primary py-3 px-4 mr-2 mb-2">Update order status</button>
+          <button id="cancelDelivery" class="btn btn-outline-danger py-3 px-4 mb-2">Cancel this delivery</button>
           <hr>
           <ul class="cms-timeline">
-            <li class="current"><strong>Initiated</strong><small>Order selected for execution</small></li>
-            <li><strong>In Progress</strong><small>Delivery started</small></li>
-            <li><strong>Completed / Cancelled</strong><small>Final state</small></li>
+            <li class="current"><strong>Order placed</strong><small>Ready for delivery</small></li>
+            <li><strong>In progress</strong><small>Delivery underway</small></li>
+            <li><strong>Completed or cancelled</strong><small>Final delivery status</small></li>
           </ul>
         </div>
       </div>
@@ -90,19 +90,19 @@
     </div>
 
     <div id="proofPanel" class="cms-panel p-4 d-none">
-      <div class="cms-panel-title"><div><h4>Electronic Proof of Delivery</h4><small>Mandatory when the order is Completed</small></div></div>
+      <div class="cms-panel-title"><div><h4>Confirm the delivery</h4><small>Add a delivery photo or recipient signature</small></div></div>
       <div class="row">
         <div class="col-lg-6 mb-4 mb-lg-0">
           <label>Delivery photo</label>
           <div class="cms-file-box"><input id="deliveryPhoto" type="file" accept="image/*" class="form-control-file"></div>
         </div>
         <div class="col-lg-6">
-          <label>Digital Canvas signature</label>
+          <label>Recipient signature</label>
           <canvas id="signaturePad" class="cms-signature"></canvas>
           <div class="mt-2"><button id="clearSignature" type="button" class="btn btn-outline-dark btn-sm">Clear signature</button></div>
         </div>
       </div>
-      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Submit e-POD</button>
+      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Save delivery confirmation</button>
     </div>
   </div>
 </section>
@@ -112,7 +112,7 @@
   <div class="container py-5 px-sm-3 px-md-5">
     <div class="row">
       <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
-        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
         <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
       </div>
       <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
