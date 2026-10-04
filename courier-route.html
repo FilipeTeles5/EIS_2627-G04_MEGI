@@ -39,7 +39,7 @@
 <!-- Page introduction identifying the current view and its purpose. -->
 <section class="cms-page-hero">
   <div class="container">
-    <h1>Active Route #R-88</h1>
+    <h1 id="courierActiveRouteTitle">Active Route #R-88</h1>
     <p class="mb-0">Follow your delivery stops, check the assigned vehicle and update each order as it progresses.</p>
     
   </div>
@@ -50,59 +50,76 @@
     <div class="row">
       <div class="col-lg-8 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Route map</h4><small>FEUP → Order #1042 → Order #1043</small></div><span class="cms-badge cms-badge-info">Active</span></div>
+          <div class="cms-panel-title"><div><h4>Route map</h4><small id="courierRouteStops">FEUP → Order #1042 → Order #1043</small></div><span id="courierActiveRouteStatus" class="cms-badge cms-badge-info">Active</span></div>
           <!-- Map showing the active route and its delivery stops. -->
           <div id="courierRouteMap" class="cms-map"></div>
         </div>
       </div>
       <div class="col-lg-4 mb-4">
         <div class="cms-panel p-4 h-100">
+          <!-- Route vehicle logic:
+               - The vehicle is assigned to the route and remains fixed during route execution.
+               - This page displays the assigned vehicle as read-only information, not as a selector.
+               - Vehicle management remains available through the separate My Vehicles page. -->
           <div class="cms-panel-title"><div><h4>Assigned vehicle</h4><small>Registration 48-AB-22</small></div><span class="cms-badge cms-badge-success">Approved</span></div>
-          <div class="form-group"><label>Active vehicle</label><select class="form-control"><option>48-AB-22 · Mercedes Sprinter</option><option>91-XZ-04 · Renault Kangoo</option></select></div>
+          <div class="form-group mb-4"><span class="cms-meta-label">Vehicle assigned to this route</span><strong class="d-block">48-AB-22 · Mercedes Sprinter</strong></div>
           <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small>86 kg</small><small>1,250 kg max</small></div><div class="cms-capacity mb-3"><span style="width:7%"></span></div>
           <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small>1.4 m³</small><small>10.5 m³ max</small></div><div class="cms-capacity mb-3"><span style="width:13%"></span></div>
           <div class="cms-alert-success cms-alert mb-0"><strong>Vehicle capacity is suitable</strong><br><small>The parcels on this route fit within the vehicle's weight and volume limits.</small></div>
+          <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block mt-3"><i class="fa fa-truck mr-2"></i>Manage vehicles</a>
         </div>
       </div>
     </div>
 
     <div class="row">
       <div class="col-lg-7 mb-4">
-        <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Current order #1042</h4><small>Update delivery progress</small></div><span id="orderStatus" data-status="Initiated" class="cms-badge cms-badge-warning">Initiated</span></div>
+        <!-- Route availability logic:
+             - Order controls appear only while a route is active.
+             - A route in preparation must be started from the Courier Dashboard before its orders can progress. -->
+        <p id="courierRouteUnavailable" class="cms-alert cms-alert-warning d-none"></p>
+        <div id="activeOrderPanel" class="cms-panel p-4">
+          <!-- Active-order logic:
+               - The first non-final order on the active route is the one the courier can interact with.
+               - Status changes and cancellation apply to that order and are saved in this browser.
+               - A completed order requires file submission before the next route order becomes active. -->
+          <div class="cms-panel-title"><div><h4 id="currentOrderTitle">Current order #1042</h4><small>Update delivery progress</small></div><span id="orderStatus" data-status="Initiated" class="cms-badge cms-badge-warning">Initiated</span></div>
           <div class="cms-meta-grid mb-4">
-            <div><span class="cms-meta-label">Pickup</span><span class="cms-meta-value">FEUP</span></div>
-            <div><span class="cms-meta-label">Delivery</span><span class="cms-meta-value">Boavista</span></div>
-            <div><span class="cms-meta-label">Delivery attempt</span><span class="cms-meta-value">1</span></div>
-            <div><span class="cms-meta-label">Items</span><span class="cms-meta-value">2</span></div>
+            <div><span class="cms-meta-label">Pickup</span><span id="currentOrderPickup" class="cms-meta-value">FEUP</span></div>
+            <div><span class="cms-meta-label">Delivery</span><span id="currentOrderDestination" class="cms-meta-value">Boavista</span></div>
+            <div><span class="cms-meta-label">Delivery attempt</span><span id="currentOrderAttempt" class="cms-meta-value">1</span></div>
+            <div><span class="cms-meta-label">Items</span><span id="currentOrderItems" class="cms-meta-value">2</span></div>
           </div>
-          <button id="advanceStatus" class="btn btn-primary py-3 px-4 mr-2 mb-2">Update order status</button>
+          <button id="advanceStatus" type="button" class="btn btn-primary py-3 px-4 mr-2 mb-2">Start delivery</button>
           <button id="cancelDelivery" class="btn btn-outline-danger py-3 px-4 mb-2">Cancel this delivery</button>
           <hr>
-          <!-- Progress timeline for the courier active deliveries. -->
-          <ul class="cms-timeline">
+          <!-- Order timeline logic: reflect the selected order's persisted status and proof requirement. -->
+          <ul id="courierOrderTimeline" class="cms-timeline">
             <li class="current"><strong>Order placed</strong><small>Ready for delivery</small></li>
             <li><strong>In progress</strong><small>Delivery underway</small></li>
-            <li><strong>Completed or cancelled</strong><small>Final delivery status</small></li>
+            <li><strong>Completed</strong><small>Submit a file to finish this delivery</small></li>
           </ul>
         </div>
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4">
           <div class="cms-panel-title"><div><h4>Orders on this route</h4><small>Delivery stops assigned to this route</small></div></div>
-          <div class="cms-order-card mb-3"><div class="d-flex justify-content-between"><strong>#1042</strong><span class="cms-badge cms-badge-warning">Initiated</span></div><small>3.0 kg · 0.034 m³</small></div>
-          <div class="cms-order-card"><div class="d-flex justify-content-between"><strong>#1043</strong><span class="cms-badge cms-badge-warning">Initiated</span></div><small>83.0 kg · 1.366 m³</small></div>
+          <!-- Route-order list logic: show every order on the active route and its current status. -->
+          <div id="courierRouteOrderList" aria-live="polite"></div>
         </div>
       </div>
     </div>
 
-    <!-- Delivery confirmation controls and evidence for the selected stop. -->
+    <!-- e-POD simulation logic:
+         - The active order must have a selected file before it can become Completed.
+         - Any file type is accepted in this frontend demo; file contents are not uploaded to a server.
+         - Submitting the file completes this order and activates the next non-final order on the route. -->
     <div id="proofPanel" class="cms-panel p-4 d-none">
-      <div class="cms-panel-title"><div><h4>Confirm the delivery</h4><small>Add a delivery photo or recipient signature</small></div></div>
+      <div class="cms-panel-title"><div><h4>Confirm the delivery</h4><small>Attach a proof file; a recipient signature is optional</small></div></div>
       <div class="row">
         <div class="col-lg-6 mb-4 mb-lg-0">
-          <label>Delivery photo</label>
-          <div class="cms-file-box"><input id="deliveryPhoto" type="file" accept="image/*" class="form-control-file"></div>
+          <label for="deliveryPhoto">Proof file</label>
+          <div class="cms-file-box"><input id="deliveryPhoto" type="file" class="form-control-file" aria-describedby="deliveryFileHelp"></div>
+          <small id="deliveryFileHelp" class="form-text text-muted">Any file can be used for this demo.</small>
         </div>
         <div class="col-lg-6">
           <label>Recipient signature</label>
@@ -110,7 +127,7 @@
           <div class="mt-2"><button id="clearSignature" type="button" class="btn btn-outline-dark btn-sm">Clear signature</button></div>
         </div>
       </div>
-      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Save delivery confirmation</button>
+      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Submit file and continue</button>
     </div>
   </div>
 </section>

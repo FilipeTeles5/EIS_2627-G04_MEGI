@@ -631,7 +631,7 @@ function cmsInitRoleAccess() {
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
             // Courier route and order changes persist only in this browser and remain demo data.
-            notice.textContent = page === 'courier.html'
+            notice.textContent = ['courier.html','courier-route.html'].includes(page)
                 ? 'Preview mode: sample courier orders are used, and route changes are saved in this browser only.'
                 : 'Preview mode: this page uses sample data, and your changes are not saved.';
             hero.appendChild(notice);
@@ -974,6 +974,198 @@ function cmsInitCourierDashboard() {
     });
 }
 
+/*
+ * Active route interaction logic:
+ * - The first non-final order in the active route is the order available for interaction.
+ * - Order transitions and cancellation are stored in the same courier-scoped browser data as the dashboard.
+ * - The order remains In Progress until a file is submitted as its simulated proof of delivery.
+ * - Submitting any selected file completes that order and immediately selects the next non-final order.
+ * - When every route order is Completed or Cancelled, the route closes and the dashboard can create another.
+ */
+function cmsCurrentCourierRouteOrder(operations, route) {
+    if (!route) return null;
+    return route.orderIds
+        .map(id => operations.orders.find(order => order.id === id))
+        .find(order => order && !['completed','cancelled'].includes(order.status)) || null;
+}
+
+// Render the current route, its order list, and controls for its first unfinished order.
+function cmsRenderCourierRoute(operations) {
+    const activeRoute = cmsCurrentCourierRoute(operations);
+    const displayRoute = activeRoute || operations.routes[operations.routes.length - 1] || null;
+    const routeOrders = displayRoute
+        ? displayRoute.orderIds.map(id => operations.orders.find(order => order.id === id)).filter(Boolean)
+        : [];
+    const currentOrder = activeRoute?.status === 'active'
+        ? cmsCurrentCourierRouteOrder(operations, activeRoute)
+        : null;
+
+    const title = document.getElementById('courierActiveRouteTitle');
+    const stops = document.getElementById('courierRouteStops');
+    const routeStatus = document.getElementById('courierActiveRouteStatus');
+    const orderPanel = document.getElementById('activeOrderPanel');
+    const unavailable = document.getElementById('courierRouteUnavailable');
+    const proofPanel = document.getElementById('proofPanel');
+    const advance = document.getElementById('advanceStatus');
+    const cancel = document.getElementById('cancelDelivery');
+
+    title.textContent = activeRoute ? 'Active Route #' + activeRoute.id : 'No active route';
+    stops.textContent = displayRoute
+        ? ['FEUP', ...routeOrders.map(order => 'Order #' + order.id)].join(' → ')
+        : 'No route selected';
+    if (activeRoute) {
+        routeStatus.textContent = activeRoute.status === 'active' ? 'Active' : 'In preparation';
+        routeStatus.className = 'cms-badge ' + (activeRoute.status === 'active' ? 'cms-badge-info' : 'cms-badge-warning');
+        routeStatus.classList.remove('d-none');
+    } else {
+        routeStatus.classList.add('d-none');
+    }
+
+    const routeOrderList = document.getElementById('courierRouteOrderList');
+    routeOrderList.replaceChildren();
+    if (!routeOrders.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = 'There are no orders on this route.';
+        routeOrderList.appendChild(empty);
+    }
+    routeOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'cms-order-card mb-3';
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between align-items-center';
+        const reference = document.createElement('strong');
+        reference.textContent = '#' + order.id;
+        header.append(reference, cmsCourierOrderBadge(order.status));
+        const detail = document.createElement('small');
+        detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
+        card.append(header, detail);
+        if (order.proofFile) {
+            const proof = document.createElement('small');
+            proof.className = 'd-block text-muted';
+            proof.textContent = 'Proof file: ' + order.proofFile;
+            card.appendChild(proof);
+        }
+        routeOrderList.appendChild(card);
+    });
+
+    if (!currentOrder) {
+        orderPanel.classList.add('d-none');
+        proofPanel.classList.add('d-none');
+        unavailable.classList.remove('d-none');
+        unavailable.textContent = activeRoute
+            ? 'Start this route from the Courier Dashboard before updating its orders.'
+            : 'There is no active route. Prepare and start a route from the Courier Dashboard.';
+        return;
+    }
+
+    orderPanel.classList.remove('d-none');
+    unavailable.classList.add('d-none');
+    document.getElementById('currentOrderTitle').textContent = 'Current order #' + currentOrder.id;
+    document.getElementById('currentOrderPickup').textContent = 'FEUP';
+    document.getElementById('currentOrderDestination').textContent = currentOrder.destination;
+    document.getElementById('currentOrderAttempt').textContent = String(currentOrder.attempt || 1);
+    document.getElementById('currentOrderItems').textContent = String(currentOrder.parcels);
+
+    const status = document.getElementById('orderStatus');
+    const badge = cmsCourierOrderBadge(currentOrder.status);
+    status.textContent = badge.textContent;
+    status.className = badge.className;
+    status.dataset.status = currentOrder.status;
+
+    const proofRequired = Boolean(currentOrder.proofRequired);
+    proofPanel.classList.toggle('d-none', !proofRequired);
+    advance.disabled = proofRequired;
+    advance.textContent = currentOrder.status === 'initiated'
+        ? 'Start delivery'
+        : proofRequired ? 'Proof required' : 'Request delivery proof';
+    cancel.disabled = false;
+
+    const currentStep = currentOrder.status === 'initiated' ? 0 : proofRequired ? 2 : 1;
+    const timeline = document.getElementById('courierOrderTimeline');
+    [...timeline.children].forEach((item, index) => {
+        item.classList.toggle('current', index === currentStep);
+        item.classList.toggle('upcoming', index > currentStep);
+        item.classList.toggle('done', index < currentStep);
+    });
+}
+
+// Attach persistent order controls and simulated proof submission on the Active Route page.
+function cmsInitCourierRoute() {
+    const advance = document.getElementById('advanceStatus');
+    if (!advance) return;
+    const operations = cmsLoadCourierOperations();
+    if (!operations) return;
+    cmsCloseFinishedCourierRoutes(operations);
+    cmsRenderCourierRoute(operations);
+
+    advance.addEventListener('click', () => {
+        const currentOperations = cmsLoadCourierOperations();
+        const route = currentOperations && cmsCurrentCourierRoute(currentOperations);
+        const order = route && cmsCurrentCourierRouteOrder(currentOperations, route);
+        if (!currentOperations || !route || route.status !== 'active' || !order) return;
+        if (order.status === 'initiated') {
+            order.status = 'in-progress';
+            if (!cmsSaveCourierOperations(currentOperations)) return;
+            cmsRenderCourierRoute(currentOperations);
+            cmsToast('Order #' + order.id + ' is now In Progress.');
+            return;
+        }
+        if (order.status === 'in-progress') {
+            order.proofRequired = true;
+            if (!cmsSaveCourierOperations(currentOperations)) return;
+            cmsRenderCourierRoute(currentOperations);
+            cmsToast('Select a file to complete order #' + order.id + '.');
+        }
+    });
+
+    document.getElementById('cancelDelivery')?.addEventListener('click', () => {
+        const currentOperations = cmsLoadCourierOperations();
+        const route = currentOperations && cmsCurrentCourierRoute(currentOperations);
+        const order = route && cmsCurrentCourierRouteOrder(currentOperations, route);
+        if (!currentOperations || !route || route.status !== 'active' || !order) return;
+        order.status = 'cancelled';
+        delete order.proofRequired;
+        if (!cmsSaveCourierOperations(currentOperations)) return;
+        cmsCloseFinishedCourierRoutes(currentOperations);
+        cmsRenderCourierRoute(currentOperations);
+        cmsToast('Order #' + order.id + ' was cancelled.');
+    });
+
+    document.getElementById('submitProof')?.addEventListener('click', () => {
+        const fileInput = document.getElementById('deliveryPhoto');
+        const file = fileInput?.files?.[0];
+        if (!file) {
+            cmsToast('Choose a file before completing this order.');
+            return;
+        }
+        const currentOperations = cmsLoadCourierOperations();
+        const route = currentOperations && cmsCurrentCourierRoute(currentOperations);
+        const order = route && cmsCurrentCourierRouteOrder(currentOperations, route);
+        if (!currentOperations || !route || route.status !== 'active' || !order || !order.proofRequired) {
+            cmsToast('The active order is not ready for proof submission.');
+            return;
+        }
+        order.status = 'completed';
+        order.proofFile = file.name;
+        order.completedOn = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
+        delete order.proofRequired;
+        if (!cmsSaveCourierOperations(currentOperations)) return;
+        cmsCloseFinishedCourierRoutes(currentOperations);
+        fileInput.value = '';
+        cmsRenderCourierRoute(currentOperations);
+        cmsToast('Order #' + order.id + ' completed. The next route order is now active.');
+    });
+
+    // Synchronize route details if another browser tab updates the courier's demo orders.
+    const storageKey = cmsCourierOperationsStorageKey();
+    window.addEventListener('storage', event => {
+        if (event.key !== storageKey) return;
+        const updatedOperations = cmsLoadCourierOperations();
+        if (updatedOperations) cmsRenderCourierRoute(updatedOperations);
+    });
+}
+
 // Initialize access control, account flows, counters, and page-specific preview controls.
 document.addEventListener('DOMContentLoaded', () => {
     if (!cmsInitRoleAccess()) return;
@@ -1185,54 +1377,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ]);
     }
 
-    // Courier status transitions
-    const advance = document.getElementById('advanceStatus');
-    const cancel = document.getElementById('cancelDelivery');
-    const status = document.getElementById('orderStatus');
-    const proof = document.getElementById('proofPanel');
-
-    if (advance && status) {
-        const statuses = ['Initiated','In Progress','Completed'];
-        let index = statuses.indexOf(status.dataset.status || 'Initiated');
-        if (index < 0) index = 0;
-
-        // Advance the sample delivery to its next state and reveal proof controls at completion.
-        advance.addEventListener('click', () => {
-            if (index >= statuses.length - 1) return;
-            index++;
-            status.textContent = statuses[index];
-            status.dataset.status = statuses[index];
-            status.className = 'cms-badge ' + (index === 2 ? 'cms-badge-success' : 'cms-badge-info');
-            cmsToast('Order status changed to ' + statuses[index] + '.');
-
-            if (index === 2) {
-                proof?.classList.remove('d-none');
-                advance.disabled = true;
-            }
-        });
-    }
-    // Mark the sample delivery cancelled and disable further status advancement.
-    cancel?.addEventListener('click', () => {
-        if (status) {
-            status.textContent = 'Cancelled';
-            status.className = 'cms-badge cms-badge-danger';
-        }
-        if (advance) advance.disabled = true;
-        cmsToast('Delivery cancelled in this preview. No data has been saved.');
-    });
-
+    // Courier active-route order handling and file-based proof simulation.
+    cmsInitCourierRoute();
     cmsInitSignature();
-
-    // Report the preview result for proof submission, with or without an attached photo.
-    document.getElementById('submitProof')?.addEventListener('click', () => {
-        const photo = document.getElementById('deliveryPhoto');
-        const hasPhoto = photo?.files?.length > 0;
-        if (!hasPhoto) {
-            cmsToast('Delivery confirmation submitted in this preview. No data has been saved.');
-        } else {
-            cmsToast('Delivery photo submitted in this preview. No data has been saved.');
-        }
-    });
 
     // Generic approvals / rejections
     // Update the selected row to show an approval and acknowledge the action.
