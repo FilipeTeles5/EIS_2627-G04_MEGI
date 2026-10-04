@@ -4,6 +4,7 @@
    Bootstrap base styles are provided by css/style.css.
    ============================================================ */
 
+/* Shared palette for CMS surfaces, text, borders, and status states. */
 :root {
     --cms-primary: #FF4800;
     --cms-dark: #1F1F2E;
@@ -16,6 +17,7 @@
     --cms-info: #17a2b8;
 }
 
+/* Base page background, top-bar note, and landing-hero copy and surfaces. */
 body { background: #fff; }
 .cms-topbar-note { font-size: .86rem; }
 .cms-hero-copy {
@@ -40,6 +42,7 @@ body { background: #fff; }
 .cms-page-hero h1 { color: #fff; font-weight: 700; }
 .cms-page-hero p { color: rgba(255,255,255,.78); max-width: 720px; }
 
+/* Navigation strip for switching between CMS role areas. */
 .cms-role-nav {
     background: var(--cms-dark);
     border-top: 1px solid rgba(255,255,255,.06);
@@ -66,6 +69,7 @@ body { background: #fff; }
     text-decoration: none;
 }
 
+/* Shared surfaces for dashboard cards and content panels. */
 .cms-card,
 .cms-panel {
     background: #fff;
@@ -85,6 +89,7 @@ body { background: #fff; }
 .cms-panel-title h4, .cms-panel-title h5 { margin-bottom: .1rem; }
 .cms-panel-title small { color: #8a8b91; }
 
+/* Compact icon tiles and KPI value treatments. */
 .cms-icon {
     height: 58px;
     width: 58px;
@@ -105,6 +110,7 @@ body { background: #fff; }
 }
 .cms-kpi small, .cms-kpi .label { color: #86878d; }
 
+/* Section labels and map viewports used in operational pages. */
 .cms-section-title {
     font-size: .78rem;
     letter-spacing: .09em;
@@ -120,6 +126,7 @@ body { background: #fff; }
 }
 .cms-map-sm { min-height: 260px; }
 
+/* Table headings, cell alignment, and status badge variants. */
 .cms-table thead th {
     border-top: 0;
     color: var(--cms-dark);
@@ -144,6 +151,7 @@ body { background: #fff; }
 .cms-badge-dark { background: var(--cms-dark); }
 .cms-badge-muted { background: #8c8d93; }
 
+/* Inline notice panels and their semantic status colors. */
 .cms-alert {
     padding: 1rem 1.15rem;
     border-left: 4px solid var(--cms-warning);
@@ -154,6 +162,7 @@ body { background: #fff; }
 .cms-alert-success { border-color: var(--cms-success); background: #effaf2; }
 .cms-alert-info { border-color: var(--cms-info); background: #eefafd; }
 
+/* Label/value metadata layout for record summaries. */
 .cms-meta-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -169,6 +178,7 @@ body { background: #fff; }
 }
 .cms-meta-value { color: var(--cms-dark); font-weight: 600; }
 
+/* Vertical progress timeline with markers for completed and current steps. */
 .cms-timeline { position: relative; margin: 0; padding: 0; list-style: none; }
 .cms-timeline::before {
     content: "";
@@ -202,6 +212,7 @@ body { background: #fff; }
 .cms-timeline strong { color: var(--cms-dark); display: block; }
 .cms-timeline small { color: #8d8e93; }
 
+/* Capacity bars and compact order summary cards. */
 .cms-capacity {
     height: 10px;
     background: #e8e8ed;
@@ -219,6 +230,7 @@ body { background: #fff; }
 }
 .cms-order-card h5 { margin-bottom: .3rem; }
 
+/* Form panels, product rows, signature canvases, and file-drop boxes. */
 .cms-form-card {
     background: var(--cms-secondary);
     padding: 1.6rem;
@@ -241,6 +253,7 @@ body { background: #fff; }
     border: 1px dashed #b9bac0;
     background: #fff;
 }
+/* Empty-state copy and entity-specific notes. */
 .cms-empty {
     text-align: center;
     padding: 3rem 1rem;
@@ -253,6 +266,7 @@ body { background: #fff; }
     font-size: .78rem;
     display: inline-block;
 }
+/* Notification rows distinguish unread items from read history. */
 .cms-notification {
     border: 1px solid var(--cms-border);
     padding: 1rem 1.1rem;
@@ -261,6 +275,7 @@ body { background: #fff; }
 }
 .cms-notification.unread { border-left: 4px solid var(--cms-primary); }
 .cms-notification.read { opacity: .72; }
+/* Site footer surface, brand treatment, links, and call-to-action. */
 .cms-site-footer {
     background: var(--cms-dark);
     color: rgba(255,255,255,.72);
@@ -326,6 +341,7 @@ body { background: #fff; }
     color: #fff;
     text-decoration: none;
 }
+/* Footer legal/meta row and demo-mode ownership notices. */
 .cms-footer-bottom {
     display: flex;
     flex-wrap: wrap;
@@ -358,6 +374,7 @@ body { background: #fff; }
     font-size: .76rem;
     border: 1px solid #e9e9ed;
 }
+/* Public tracking search and shipment summary header. */
 .cms-tracking-search {
     max-width: 650px;
     margin-left: auto;
@@ -374,6 +391,7 @@ body { background: #fff; }
 }
 .cms-tracking-header h2 { color: var(--cms-dark); }
 .cms-tracking-header .cms-meta-label { margin-bottom: .4rem; }
+/* Tracking-specific timeline spacing and location details. */
 .cms-tracking-timeline { padding-top: .3rem; }
 .cms-tracking-timeline li { min-height: 3.2rem; }
 .cms-tracking-timeline li.upcoming strong { color: #92939a; }
@@ -405,6 +423,7 @@ body { background: #fff; }
     padding-top: 1.1rem;
     border-top: 1px solid var(--cms-border);
 }
+/* Centered login form and team member avatar. */
 .cms-login-card { max-width: 620px; margin: 0 auto; }
 .cms-team-avatar {
     width: 72px; height: 72px;
@@ -414,6 +433,7 @@ body { background: #fff; }
     border-radius: 50%; margin-bottom: 1rem;
 }
 
+/* Fixed-position transient feedback toast and its display/error states. */
 #cmsToast {
     display: none;
     position: fixed;
@@ -429,6 +449,7 @@ body { background: #fff; }
 #cmsToast.cms-demo-message { display: block; }
 #cmsToast.is-error { background: #8f2119; }
 
+/* Narrow-screen adjustments for metadata, panels, navigation, and hero. */
 @media (max-width: 767.98px) {
     .cms-meta-grid { grid-template-columns: 1fr; }
     .cms-panel-title { flex-direction: column; }

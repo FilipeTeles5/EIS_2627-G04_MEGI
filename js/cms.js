@@ -1,3 +1,4 @@
+// Display a temporary message in the shared preview notification area.
 function cmsToast(message) {
     let t = document.getElementById('cmsToast');
     if (!t) {
@@ -11,11 +12,13 @@ function cmsToast(message) {
     window.cmsToastTimer = setTimeout(() => t.style.display = 'none', 2600);
 }
 
+// Apply browser-native form validation styling and report whether the form passes.
 function cmsValidate(form) {
     form.classList.add('was-validated');
     return form.checkValidity();
 }
 
+// Sample delivery records used to populate the tracking preview by reference.
 const cmsTrackingOrders = {
     '1042': {
         status: 'In progress',
@@ -74,6 +77,7 @@ const cmsTrackingOrders = {
     }
 };
 
+// Read the requested sample order and render its status, route details, and timeline.
 function cmsInitTrackingPage() {
     const content = document.getElementById('trackingDetails');
     if (!content) return;
@@ -143,6 +147,7 @@ function cmsInitTrackingPage() {
     }
 }
 
+// Create a Leaflet map with valid markers and fit its view to the supplied points.
 function cmsCreateMap(id, points, options = {}) {
     const node = document.getElementById(id);
     if (!node || !window.L) return null;
@@ -168,12 +173,14 @@ function cmsCreateMap(id, points, options = {}) {
     return map;
 }
 
+// Parse a named form field only when its numeric value is within the given bounds.
 function cmsReadCoordinate(form, name, min, max) {
     const el = form.elements[name];
     const n = Number(el?.value);
     return Number.isFinite(n) && n >= min && n <= max ? n : null;
 }
 
+// Add a product-entry row and connect its controls to removal and total updates.
 function cmsAddProductRow() {
     const list = document.getElementById('productRows');
     if (!list) return;
@@ -208,14 +215,17 @@ function cmsAddProductRow() {
         </div>
       </div>`;
     list.appendChild(row);
+    // Remove this row and recalculate the totals when its remove control is used.
     row.querySelector('.cms-remove-product').addEventListener('click', () => {
         row.remove();
         cmsUpdateProductTotals();
     });
+    // Refresh totals as the user edits any field in the newly added row.
     row.querySelectorAll('input').forEach(i => i.addEventListener('input', cmsUpdateProductTotals));
     cmsUpdateProductTotals();
 }
 
+// Recalculate and display combined product weight and volume values.
 function cmsUpdateProductTotals() {
     const weights = [...document.querySelectorAll('.product-weight')]
         .map(i => Number(i.value) || 0);
@@ -227,6 +237,7 @@ function cmsUpdateProductTotals() {
     if (tv) tv.textContent = volumes.reduce((a,b) => a+b, 0).toFixed(3) + ' m³';
 }
 
+// Configure the signature canvas for pointer and touch drawing.
 function cmsInitSignature() {
     const canvas = document.getElementById('signaturePad');
     if (!canvas) return;
@@ -234,6 +245,7 @@ function cmsInitSignature() {
     const ctx = canvas.getContext('2d');
     let drawing = false;
 
+    // Match the canvas backing resolution to its displayed size and device scale.
     function resize() {
         const r = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
@@ -245,17 +257,20 @@ function cmsInitSignature() {
     }
     resize();
 
+    // Convert a mouse or touch position from viewport coordinates to canvas space.
     function pos(e) {
         const r = canvas.getBoundingClientRect();
         const p = e.touches ? e.touches[0] : e;
         return {x: p.clientX - r.left, y: p.clientY - r.top};
     }
+    // Begin a new signature stroke at the pointer's current position.
     function start(e) {
         drawing = true;
         const p = pos(e);
         ctx.beginPath();
         ctx.moveTo(p.x, p.y);
     }
+    // Extend and render the active stroke while the pointer moves.
     function move(e) {
         if (!drawing) return;
         e.preventDefault();
@@ -263,20 +278,29 @@ function cmsInitSignature() {
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
     }
+    // End the active stroke when the pointer is released.
     function stop() { drawing = false; }
 
+    // Begin a signature stroke when the mouse button is pressed on the canvas.
     canvas.addEventListener('mousedown', start);
+    // Extend the current signature stroke as the mouse moves over the canvas.
     canvas.addEventListener('mousemove', move);
+    // Stop drawing when the mouse button is released anywhere in the window.
     window.addEventListener('mouseup', stop);
+    // Begin a signature stroke when a finger touches the canvas.
     canvas.addEventListener('touchstart', start, {passive:false});
+    // Extend the current signature stroke as a finger moves across the canvas.
     canvas.addEventListener('touchmove', move, {passive:false});
+    // Stop drawing when the finger is lifted from the canvas.
     canvas.addEventListener('touchend', stop);
 
+    // Clear the signature canvas when the user selects its clear control.
     document.getElementById('clearSignature')?.addEventListener('click', () => {
         ctx.clearRect(0,0,canvas.width,canvas.height);
     });
 }
 
+// Map each demo role to its landing page and the pages protected by that role.
 const cmsRoles = {
     client: {
         label: 'Client',
@@ -299,15 +323,19 @@ const cmsRoles = {
         pages: ['admin.html', 'admin-users.html']
     }
 };
+// Session-storage keys keep the active demo identity scoped to this browser tab.
 const cmsRoleKey = 'movioDemoRole';
 const cmsEmailKey = 'movioDemoEmail';
+// Local-storage key and initial sample records for the Staff application workflow.
 const cmsStaffApplicationsKey = 'movioDemoStaffApplications';
+// Default applications used when this browser has no saved demo decisions yet.
 const cmsDefaultStaffApplications = [
     {name:'Inês Martins', username:'ines.martins', email:'ines@example.com', phone:'+351 912 *** ***', created:'02 Oct', status:'pending'},
     {name:'Pedro Reis', username:'pedro.reis', email:'pedro@example.com', phone:'+351 914 *** ***', created:'01 Oct', status:'pending'},
     {name:'Carla Sousa', username:'csousa', email:'carla@example.com', phone:'+351 913 *** ***', created:'10 Sep', status:'approved'}
 ];
 
+// Load and validate saved applications, seeding browser storage on first use.
 function cmsLoadStaffApplications() {
     try {
         const stored = localStorage.getItem(cmsStaffApplicationsKey);
@@ -331,6 +359,7 @@ function cmsLoadStaffApplications() {
     }
 }
 
+// Persist the current application list and surface storage failures to the user.
 function cmsSaveStaffApplications(applications) {
     try {
         localStorage.setItem(cmsStaffApplicationsKey, JSON.stringify(applications));
@@ -342,6 +371,7 @@ function cmsSaveStaffApplications(applications) {
     }
 }
 
+// Find an applicant by email and return the current status or not-applied state.
 function cmsStaffApplicationStatus(email) {
     const applications = cmsLoadStaffApplications();
     if (!applications) return null;
@@ -351,6 +381,7 @@ function cmsStaffApplicationStatus(email) {
     return application ? application.status : 'not-applied';
 }
 
+// Build a status badge whose text and style reflect an application's decision.
 function cmsStaffStatusBadge(status) {
     const badge = document.createElement('span');
     badge.className = 'cms-badge ' + (
@@ -362,6 +393,7 @@ function cmsStaffStatusBadge(status) {
     return badge;
 }
 
+// Render application decisions and mirror eligible demo accounts in the admin table.
 function cmsRenderStaffApplications() {
     const table = document.getElementById('staffApplicationsTable');
     const applications = cmsLoadStaffApplications();
@@ -435,6 +467,7 @@ function cmsRenderStaffApplications() {
     });
 }
 
+// Record an approval or rejection only while the application is still pending.
 function cmsUpdateStaffApplication(email, status) {
     const applications = cmsLoadStaffApplications();
     if (!applications) return false;
@@ -454,10 +487,12 @@ function cmsUpdateStaffApplication(email, status) {
     return true;
 }
 
+// Normalize the current URL's final path segment for page access checks.
 function cmsPageName() {
     return window.location.pathname.split('/').pop().toLowerCase();
 }
 
+// Read a recognized demo role and discard stale or unsupported session values.
 function cmsGetRole() {
     const role = sessionStorage.getItem(cmsRoleKey);
     if (!Object.prototype.hasOwnProperty.call(cmsRoles, role)) {
@@ -468,6 +503,7 @@ function cmsGetRole() {
     return role;
 }
 
+// Validate a role, enforce Staff approval, and store the temporary demo identity.
 function cmsSetRole(role, email) {
     if (!Object.prototype.hasOwnProperty.call(cmsRoles, role)) {
         cmsToast('Choose a valid account type.');
@@ -482,10 +518,12 @@ function cmsSetRole(role, email) {
     return true;
 }
 
+// Return the landing page configured for a recognized demo role.
 function cmsRoleHome(role) {
     return cmsRoles[role].home;
 }
 
+// Reveal the post-registration notice with a link back to sign-in.
 function cmsShowRegisterMessage(message) {
     const notice = document.getElementById('registerMessage');
     if (!notice) return;
@@ -497,6 +535,7 @@ function cmsShowRegisterMessage(message) {
     notice.classList.remove('d-none');
 }
 
+// Enforce role-based page access and update navigation for the current session.
 function cmsInitRoleAccess() {
     let role = cmsGetRole();
     const page = cmsPageName();
@@ -533,6 +572,7 @@ function cmsInitRoleAccess() {
     }
 
     document.querySelectorAll('[data-demo-logout]').forEach(button => {
+        // Clear the temporary session and return to the public home page on logout.
         button.addEventListener('click', () => {
             sessionStorage.removeItem(cmsRoleKey);
             sessionStorage.removeItem(cmsEmailKey);
@@ -598,6 +638,7 @@ function cmsInitRoleAccess() {
     return true;
 }
 
+// Initialize access control, account flows, counters, and page-specific preview controls.
 document.addEventListener('DOMContentLoaded', () => {
     if (!cmsInitRoleAccess()) return;
 
@@ -609,6 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (roleSelect && Object.prototype.hasOwnProperty.call(cmsRoles, requestedRole)) {
             roleSelect.value = requestedRole;
         }
+        // Validate credentials and require an approved application for Staff sign-in.
         loginForm.addEventListener('submit', e => {
             e.preventDefault();
             if (!cmsValidate(loginForm)) return;
@@ -635,6 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const roleSelect = document.getElementById('registerRole');
         const roleHint = document.getElementById('registerRoleHint');
         const submitButton = registerForm.querySelector('button[type="submit"]');
+        // Keep the registration guidance and submit label aligned with the chosen role.
         const updateRoleHint = () => {
             if (roleHint && roleSelect) {
                 const applyingForStaff = roleSelect.value === 'staff';
@@ -646,8 +689,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         };
+        // Update the registration guidance immediately when the role selection changes.
         roleSelect?.addEventListener('change', updateRoleHint);
         updateRoleHint();
+        // Validate new accounts, submit Staff applications, or start client/courier sessions.
         registerForm.addEventListener('submit', e => {
             e.preventDefault();
             if (!cmsValidate(registerForm)) return;
@@ -687,6 +732,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const staffApplicationsTable = document.getElementById('staffApplicationsTable');
     if (staffApplicationsTable) {
         cmsRenderStaffApplications();
+        // Delegate decision-button clicks from the rendered applications table.
         staffApplicationsTable.addEventListener('click', event => {
             const button = event.target.closest('[data-staff-action]');
             if (!button) return;
@@ -695,23 +741,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.dataset.staffAction === 'approve' ? 'approved' : 'rejected'
             );
         });
+        // Refresh the application table when another tab changes its saved records.
         window.addEventListener('storage', event => {
             if (event.key === cmsStaffApplicationsKey) cmsRenderStaffApplications();
         });
     } else if (document.getElementById('pendingStaffApplicationCount')) {
         const count = document.getElementById('pendingStaffApplicationCount');
+        // Recompute the dashboard's pending count from the saved application list.
         const updatePendingCount = () => {
             const applications = cmsLoadStaffApplications();
             if (!applications || !count) return;
             count.textContent = applications.filter(application => application.status === 'pending').length;
         };
         updatePendingCount();
+        // Keep the dashboard count synchronized with changes made in another tab.
         window.addEventListener('storage', event => {
             if (event.key === cmsStaffApplicationsKey) updatePendingCount();
         });
     }
 
     // Client dashboard preview map (required Client area map)
+    // Add the sample FEUP marker when the Client dashboard contains its map element.
     if (document.getElementById('clientDashboardMap')) {
         cmsCreateMap('clientDashboardMap', [
             {coords:[41.1779,-8.5980], label:'FEUP marker'}
@@ -719,6 +769,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Client order creation
+    // Set up the pickup/delivery map and route preview only on the order form page.
     if (document.getElementById('clientOrderMap')) {
         const orderMap = L.map('clientOrderMap').setView([41.1779,-8.5980], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -726,6 +777,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).addTo(orderMap);
 
         let overlays = [];
+        // Replace the map's current route with markers and a line between two coordinates.
         function drawRoute(a,b) {
             overlays.forEach(x => orderMap.removeLayer(x));
             overlays = [
@@ -738,6 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawRoute([41.1779,-8.5980], [41.1579,-8.6291]);
 
         const orderForm = document.getElementById('createOrderForm');
+        // Validate order details and coordinates before previewing the requested route.
         orderForm?.addEventListener('submit', e => {
             e.preventDefault();
             if (!cmsValidate(orderForm)) return;
@@ -755,6 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cmsToast('Delivery order created in this preview. No data has been saved.');
         });
 
+        // Preview a route from the current coordinate fields without submitting the form.
         document.getElementById('previewRoute')?.addEventListener('click', () => {
             const olat = Number(orderForm.elements['originLat'].value);
             const olng = Number(orderForm.elements['originLng'].value);
@@ -765,23 +819,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Dynamic products
+    // Add a product row when the user requests another order item.
     document.getElementById('addProduct')?.addEventListener('click', cmsAddProductRow);
+    // Remove existing rows and recalculate totals after each removal.
     document.querySelectorAll('.cms-remove-product').forEach(btn => {
         btn.addEventListener('click', () => {
             btn.closest('.cms-product-row')?.remove();
             cmsUpdateProductTotals();
         });
     });
+    // Keep displayed totals current as existing product weights or volumes change.
     document.querySelectorAll('.product-weight,.product-volume').forEach(i => i.addEventListener('input', cmsUpdateProductTotals));
     cmsUpdateProductTotals();
 
     // Courier maps
+    // Show a sample origin-to-destination route on the courier dashboard.
     if (document.getElementById('courierDashboardMap')) {
         cmsCreateMap('courierDashboardMap', [
             {coords:[41.1779,-8.5980], label:'Origin · FEUP'},
             {coords:[41.1579,-8.6291], label:'Destination · Matosinhos'}
         ]);
     }
+    // Show the sample stops assigned to the courier's route page.
     if (document.getElementById('courierRouteMap')) {
         cmsCreateMap('courierRouteMap', [
             {coords:[41.1779,-8.5980], label:'Route origin · FEUP'},
@@ -801,6 +860,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let index = statuses.indexOf(status.dataset.status || 'Initiated');
         if (index < 0) index = 0;
 
+        // Advance the sample delivery to its next state and reveal proof controls at completion.
         advance.addEventListener('click', () => {
             if (index >= statuses.length - 1) return;
             index++;
@@ -815,6 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // Mark the sample delivery cancelled and disable further status advancement.
     cancel?.addEventListener('click', () => {
         if (status) {
             status.textContent = 'Cancelled';
@@ -826,6 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cmsInitSignature();
 
+    // Report the preview result for proof submission, with or without an attached photo.
     document.getElementById('submitProof')?.addEventListener('click', () => {
         const photo = document.getElementById('deliveryPhoto');
         const hasPhoto = photo?.files?.length > 0;
@@ -837,6 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Generic approvals / rejections
+    // Update the selected row to show an approval and acknowledge the action.
     document.querySelectorAll('[data-approve]').forEach(btn => {
         btn.addEventListener('click', () => {
             const row = btn.closest('tr');
@@ -845,6 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cmsToast(btn.dataset.approve || 'Approval recorded.');
         });
     });
+    // Update the selected row to show a rejection and acknowledge the action.
     document.querySelectorAll('[data-reject]').forEach(btn => {
         btn.addEventListener('click', () => {
             const row = btn.closest('tr');
@@ -855,6 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Notifications
+    // Mark the selected notification as read and disable its action control.
     document.querySelectorAll('[data-mark-read]').forEach(btn => {
         btn.addEventListener('click', () => {
             const item = btn.closest('.cms-notification');
@@ -868,6 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Vehicle registration
     const vehicleForm = document.getElementById('vehicleForm');
+    // Validate the vehicle form and show its preview-only review confirmation.
     vehicleForm?.addEventListener('submit', e => {
         e.preventDefault();
         if (!cmsValidate(vehicleForm)) return;
@@ -876,6 +942,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Admin profile
     const profileForm = document.getElementById('adminProfileForm');
+    // Validate profile fields and acknowledge the preview-only update.
     profileForm?.addEventListener('submit', e => {
         e.preventDefault();
         if (!cmsValidate(profileForm)) return;
@@ -883,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Render a requested tracking order after the DOM is available, or immediately if ready.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', cmsInitTrackingPage);
 } else {
