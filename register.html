@@ -5,7 +5,7 @@
     <title>Register | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
-    <meta content="Create a Movio client or courier account to access the delivery tools for your role." name="description">
+    <meta content="Create a Movio client or courier account, or apply to join the Movio staff team." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -41,7 +41,7 @@
 </div>
 
 <section class="cms-page-hero text-center">
-  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Choose your account role to access the tools you need for your part of the delivery journey.</p></div>
+  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Create a Client or Courier demo account, or submit a Staff application for Admin review.</p></div>
 </section>
 <section class="container-fluid py-5">
   <div class="container">
@@ -58,12 +58,14 @@
         </div>
         <div class="form-row">
           <div class="form-group col-md-6"><label>Tax ID (NIF)</label><input required pattern="[0-9]{9}" class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a 9-digit tax ID.</div></div>
-          <div class="form-group col-md-6"><label for="registerRole">Account role</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option></select></div>
+          <div class="form-group col-md-6"><label for="registerRole">Account role</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option><option value="staff">Apply for Staff</option></select></div>
         </div>
         <div class="form-group"><label>Password</label><input required minlength="6" type="password" class="form-control p-4" name="password"><div class="invalid-feedback">Use at least 6 characters.</div></div>
+        <p id="registerRoleHint" class="small text-muted">Client and Courier registrations open a temporary demo session.</p>
         <button class="btn btn-primary btn-block py-3" type="submit">Create Account</button>
       </form>
-        <p class="small text-muted mt-3 mb-0">Demo mode: registration creates a temporary session only; account details are not saved and courier approval is not checked.</p>
+      <div id="registerMessage" class="cms-alert cms-alert-success mt-3 d-none" role="status"></div>
+      <p class="small text-muted mt-3 mb-0">Demo mode: Staff applications and decisions are saved only in this browser for the demonstration. No real account or backend record is created.</p>
       <p class="text-center mt-4 mb-0">Already have an account? <a href="login.html">Sign in</a>.</p>
     </div>
   </div>

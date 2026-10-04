@@ -301,6 +301,158 @@ const cmsRoles = {
 };
 const cmsRoleKey = 'movioDemoRole';
 const cmsEmailKey = 'movioDemoEmail';
+const cmsStaffApplicationsKey = 'movioDemoStaffApplications';
+const cmsDefaultStaffApplications = [
+    {name:'Inês Martins', username:'ines.martins', email:'ines@example.com', phone:'+351 912 *** ***', created:'02 Oct', status:'pending'},
+    {name:'Pedro Reis', username:'pedro.reis', email:'pedro@example.com', phone:'+351 914 *** ***', created:'01 Oct', status:'pending'},
+    {name:'Carla Sousa', username:'csousa', email:'carla@example.com', phone:'+351 913 *** ***', created:'10 Sep', status:'approved'}
+];
+
+function cmsLoadStaffApplications() {
+    try {
+        const stored = localStorage.getItem(cmsStaffApplicationsKey);
+        if (stored === null) {
+            localStorage.setItem(cmsStaffApplicationsKey, JSON.stringify(cmsDefaultStaffApplications));
+            return cmsDefaultStaffApplications.map(application => ({...application}));
+        }
+
+        const applications = JSON.parse(stored);
+        const valid = Array.isArray(applications) && applications.every(application =>
+            application && typeof application.name === 'string' &&
+            typeof application.email === 'string' &&
+            ['pending', 'approved', 'rejected'].includes(application.status)
+        );
+        if (!valid) throw new Error('Stored Staff applications have an invalid format.');
+        return applications;
+    } catch (error) {
+        console.error('Could not load demo Staff applications.', error);
+        cmsToast('Could not load Staff applications from this browser. Check browser storage and try again.');
+        return null;
+    }
+}
+
+function cmsSaveStaffApplications(applications) {
+    try {
+        localStorage.setItem(cmsStaffApplicationsKey, JSON.stringify(applications));
+        return true;
+    } catch (error) {
+        console.error('Could not save demo Staff applications.', error);
+        cmsToast('Could not save the Staff application decision in this browser.');
+        return false;
+    }
+}
+
+function cmsStaffApplicationStatus(email) {
+    const applications = cmsLoadStaffApplications();
+    if (!applications) return null;
+    const application = applications.find(item =>
+        item.email.toLowerCase() === email.trim().toLowerCase()
+    );
+    return application ? application.status : 'not-applied';
+}
+
+function cmsStaffStatusBadge(status) {
+    const badge = document.createElement('span');
+    badge.className = 'cms-badge ' + (
+        status === 'approved' ? 'cms-badge-success' :
+        status === 'rejected' ? 'cms-badge-danger' : 'cms-badge-warning'
+    );
+    badge.textContent = status === 'approved' ? 'Approved' :
+        status === 'rejected' ? 'Rejected' : 'Pending';
+    return badge;
+}
+
+function cmsRenderStaffApplications() {
+    const table = document.getElementById('staffApplicationsTable');
+    const applications = cmsLoadStaffApplications();
+    if (!table || !applications) return;
+
+    table.replaceChildren();
+    const pendingCount = applications.filter(application => application.status === 'pending').length;
+    const countLabel = document.getElementById('staffApplicationsCount');
+    if (countLabel) countLabel.textContent = pendingCount + (pendingCount === 1
+        ? ' application awaiting your decision'
+        : ' applications awaiting your decision');
+    const dashboardCount = document.getElementById('pendingStaffApplicationCount');
+    if (dashboardCount) dashboardCount.textContent = pendingCount;
+
+    const accounts = document.getElementById('adminUserAccounts');
+    if (accounts) accounts.querySelectorAll('[data-demo-staff-account]').forEach(row => row.remove());
+
+    applications.forEach(application => {
+        const row = document.createElement('tr');
+        [application.name, application.email, application.phone || 'Not provided', application.created || 'Today'].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        const statusCell = document.createElement('td');
+        statusCell.className = 'decision-cell';
+        statusCell.appendChild(cmsStaffStatusBadge(application.status));
+        row.appendChild(statusCell);
+
+        const decisionCell = document.createElement('td');
+        if (application.status === 'pending') {
+            ['approve', 'reject'].forEach(action => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = action === 'approve'
+                    ? 'btn btn-sm btn-success mr-1'
+                    : 'btn btn-sm btn-danger';
+                button.dataset.staffAction = action;
+                button.dataset.email = application.email;
+                button.textContent = action === 'approve' ? 'Approve' : 'Reject';
+                decisionCell.appendChild(button);
+            });
+        } else {
+            decisionCell.textContent = '—';
+        }
+        row.appendChild(decisionCell);
+        table.appendChild(row);
+
+        if (accounts && application.email.toLowerCase() !== 'carla@example.com') {
+            const accountRow = document.createElement('tr');
+            accountRow.dataset.demoStaffAccount = 'true';
+            [
+                application.name,
+                application.username || '—',
+                application.status === 'approved' ? 'Staff' : 'Staff applicant',
+                application.email
+            ].forEach(value => {
+                const cell = document.createElement('td');
+                cell.textContent = value;
+                accountRow.appendChild(cell);
+            });
+            const accountStatus = document.createElement('td');
+            accountStatus.appendChild(cmsStaffStatusBadge(application.status));
+            accountRow.appendChild(accountStatus);
+            const createdCell = document.createElement('td');
+            createdCell.textContent = application.created || 'Today';
+            accountRow.appendChild(createdCell);
+            accounts.appendChild(accountRow);
+        }
+    });
+}
+
+function cmsUpdateStaffApplication(email, status) {
+    const applications = cmsLoadStaffApplications();
+    if (!applications) return false;
+    const application = applications.find(item =>
+        item.email.toLowerCase() === email.trim().toLowerCase()
+    );
+    if (!application || application.status !== 'pending') {
+        cmsToast('This Staff application is no longer awaiting a decision.');
+        return false;
+    }
+    application.status = status;
+    if (!cmsSaveStaffApplications(applications)) return false;
+    cmsRenderStaffApplications();
+    cmsToast(status === 'approved'
+        ? 'Staff application approved. The applicant can now sign in as Staff.'
+        : 'Staff application rejected. Staff access has not been granted.');
+    return true;
+}
 
 function cmsPageName() {
     return window.location.pathname.split('/').pop().toLowerCase();
@@ -321,6 +473,10 @@ function cmsSetRole(role, email) {
         cmsToast('Choose a valid account type.');
         return false;
     }
+    if (role === 'staff' && cmsStaffApplicationStatus(email) !== 'approved') {
+        cmsToast('Staff access is available only after an Admin approves your application.');
+        return false;
+    }
     sessionStorage.setItem(cmsRoleKey, role);
     sessionStorage.setItem(cmsEmailKey, email.trim());
     return true;
@@ -330,9 +486,32 @@ function cmsRoleHome(role) {
     return cmsRoles[role].home;
 }
 
+function cmsShowRegisterMessage(message) {
+    const notice = document.getElementById('registerMessage');
+    if (!notice) return;
+    notice.replaceChildren(document.createTextNode(message + ' '));
+    const link = document.createElement('a');
+    link.href = 'login.html';
+    link.textContent = 'Go to sign in';
+    notice.appendChild(link);
+    notice.classList.remove('d-none');
+}
+
 function cmsInitRoleAccess() {
-    const role = cmsGetRole();
+    let role = cmsGetRole();
     const page = cmsPageName();
+    if (role === 'staff') {
+        const email = sessionStorage.getItem(cmsEmailKey) || '';
+        if (cmsStaffApplicationStatus(email) !== 'approved') {
+            sessionStorage.removeItem(cmsRoleKey);
+            sessionStorage.removeItem(cmsEmailKey);
+            role = null;
+            if (cmsRoles.staff.pages.includes(page)) {
+                window.location.replace('login.html?role=staff');
+                return false;
+            }
+        }
+    }
     const protectedRole = Object.keys(cmsRoles).find(key =>
         cmsRoles[key].pages.includes(page)
     );
@@ -434,19 +613,101 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             if (!cmsValidate(loginForm)) return;
             const role = roleSelect.value;
-            const email = loginForm.elements.email.value;
+            const email = loginForm.elements.email.value.trim();
+            if (role === 'staff') {
+                const status = cmsStaffApplicationStatus(email);
+                if (status === null) return;
+                if (status !== 'approved') {
+                    cmsToast(status === 'pending'
+                        ? 'Your Staff application is awaiting Admin approval.'
+                        : status === 'rejected'
+                            ? 'Your Staff application was rejected. Staff access is unavailable.'
+                            : 'No Staff application was found for this email. Apply through Register first.');
+                    return;
+                }
+            }
             if (cmsSetRole(role, email)) window.location.assign(cmsRoleHome(role));
         });
     }
 
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
+        const roleSelect = document.getElementById('registerRole');
+        const roleHint = document.getElementById('registerRoleHint');
+        const submitButton = registerForm.querySelector('button[type="submit"]');
+        const updateRoleHint = () => {
+            if (roleHint && roleSelect) {
+                const applyingForStaff = roleSelect.value === 'staff';
+                roleHint.textContent = applyingForStaff
+                    ? 'Staff registration submits an application. An Admin must approve it before Staff sign-in is available.'
+                    : 'Client and Courier registrations open a temporary demo session.';
+                if (submitButton) {
+                    submitButton.textContent = applyingForStaff ? 'Submit Staff Application' : 'Create Account';
+                }
+            }
+        };
+        roleSelect?.addEventListener('change', updateRoleHint);
+        updateRoleHint();
         registerForm.addEventListener('submit', e => {
             e.preventDefault();
             if (!cmsValidate(registerForm)) return;
             const role = registerForm.elements['role'].value;
-            const email = registerForm.elements.email.value;
+            const email = registerForm.elements.email.value.trim();
+            if (role === 'staff') {
+                const applications = cmsLoadStaffApplications();
+                if (!applications) return;
+                const existing = applications.find(application =>
+                    application.email.toLowerCase() === email.toLowerCase()
+                );
+                if (existing) {
+                    cmsToast(existing.status === 'pending'
+                        ? 'A Staff application for this email is already awaiting review.'
+                        : existing.status === 'approved'
+                            ? 'This email already has approved Staff access.'
+                            : 'A previous application for this email was rejected. Contact an Admin for help.');
+                    return;
+                }
+                applications.push({
+                    name: registerForm.elements.name.value.trim(),
+                    username: registerForm.elements.username.value.trim(),
+                    email: email.toLowerCase(),
+                    phone: registerForm.elements.phone.value.trim(),
+                    created: new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'}),
+                    status: 'pending'
+                });
+                if (!cmsSaveStaffApplications(applications)) return;
+                cmsShowRegisterMessage('Your Staff application has been submitted and is awaiting Admin approval.');
+                registerForm.classList.add('d-none');
+                return;
+            }
             if (cmsSetRole(role, email)) window.location.assign(cmsRoleHome(role));
+        });
+    }
+
+    const staffApplicationsTable = document.getElementById('staffApplicationsTable');
+    if (staffApplicationsTable) {
+        cmsRenderStaffApplications();
+        staffApplicationsTable.addEventListener('click', event => {
+            const button = event.target.closest('[data-staff-action]');
+            if (!button) return;
+            cmsUpdateStaffApplication(
+                button.dataset.email,
+                button.dataset.staffAction === 'approve' ? 'approved' : 'rejected'
+            );
+        });
+        window.addEventListener('storage', event => {
+            if (event.key === cmsStaffApplicationsKey) cmsRenderStaffApplications();
+        });
+    } else if (document.getElementById('pendingStaffApplicationCount')) {
+        const count = document.getElementById('pendingStaffApplicationCount');
+        const updatePendingCount = () => {
+            const applications = cmsLoadStaffApplications();
+            if (!applications || !count) return;
+            count.textContent = applications.filter(application => application.status === 'pending').length;
+        };
+        updatePendingCount();
+        window.addEventListener('storage', event => {
+            if (event.key === cmsStaffApplicationsKey) updatePendingCount();
         });
     }
 

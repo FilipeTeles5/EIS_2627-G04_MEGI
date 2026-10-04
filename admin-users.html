@@ -40,16 +40,13 @@
 <section class="container-fluid py-5">
   <div class="container">
     <div class="cms-panel p-4 mb-4">
-      <div class="cms-panel-title"><div><h4>Staff applications</h4><small>Applications awaiting your decision</small></div></div>
-      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>Inês Martins</td><td>ines@example.com</td><td>+351 912 *** ***</td><td>02 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Staff member approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Staff member rejected.">Reject</button></td></tr>
-        <tr><td>Pedro Reis</td><td>pedro@example.com</td><td>+351 914 *** ***</td><td>01 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Staff member approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Staff member rejected.">Reject</button></td></tr>
-      </tbody></table></div>
+      <div class="cms-panel-title"><div><h4>Staff applications</h4><small id="staffApplicationsCount">Applications awaiting your decision</small></div></div>
+      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody id="staffApplicationsTable"></tbody></table></div>
     </div>
 
     <div class="cms-panel p-4">
       <div class="cms-panel-title"><div><h4>All user accounts</h4><small>Accounts across every role</small></div></div>
-      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Account status</th><th>Registered</th></tr></thead><tbody>
+      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Email</th><th>Account status</th><th>Registered</th></tr></thead><tbody id="adminUserAccounts">
         <tr><td>Ana Silva</td><td>ana.silva</td><td>Client</td><td>ana@example.com</td><td><span class="cms-badge cms-badge-success">Yes</span></td><td>21 Sep</td></tr>
         <tr><td>Miguel Costa</td><td>mcosta</td><td>Courier</td><td>miguel@example.com</td><td><span class="cms-badge cms-badge-success">Yes</span></td><td>19 Sep</td></tr>
         <tr><td>Rui Alves</td><td>ralves</td><td>Courier</td><td>rui@example.com</td><td><span class="cms-badge cms-badge-warning">Pending</span></td><td>03 Oct</td></tr>

@@ -13,9 +13,11 @@ Movio brings customers, couriers and delivery teams together to manage the deliv
 
 ## Frontend demo
 
-Choose an account type on the login page to open its dashboard. Registration creates a temporary Client or Courier session. The selected role and email are kept in the current browser tab using `sessionStorage`; **Sign out** ends that session. Operational pages are grouped by role, and direct navigation to a page for another role redirects to the current role's dashboard.
+Choose an account type on the login page to open its dashboard. Client and Courier registration creates a temporary session. Staff registration submits an application for Admin review; a Staff session can only be opened after that application is approved. Demo applications and their decisions are stored in the current browser's `localStorage`, while the active role and email are kept in the current tab using `sessionStorage`; **Sign out** ends that session. Operational pages are grouped by role, and direct navigation to a page for another role redirects to the current role's dashboard.
 
-This is a frontend demonstration, not authentication or security. Any valid email and non-empty password can be used to sign in. Account information, orders, approvals and other actions are not persisted. Browser-side role checks can be bypassed and must not protect real data. A production backend must authenticate users, authorize every request and enforce account approval and other business rules.
+To try the Staff flow, register with **Apply for Staff**, sign in as Admin, open **Users and staff** from the Admin dashboard and approve the application. Sign out, then sign in using the applicant's email and the Staff role. Rejected and pending applicants cannot enter the Staff area.
+
+This is a frontend demonstration, not authentication or security. Client, Courier and Admin sign-in accept any valid email and non-empty password; Staff sign-in additionally checks the demo application status. Other account information, orders and operational actions are not persisted. Browser-side role checks and application records can be changed or bypassed and must not protect real data. A production backend must authenticate users, authorize every request and enforce account approval and other business rules.
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 
