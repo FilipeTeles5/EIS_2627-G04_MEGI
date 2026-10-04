@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Track an order | Movio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="keywords" content="Movio, parcel delivery, order tracking, delivery status">
+    <meta name="description" content="View a delivery order status and its recorded progress with Movio.">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/cms.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid p-0">
+  <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
+    <a href="index.html" class="navbar-brand ml-lg-3">
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
+    </a>
+    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between px-lg-3" id="navbarCollapse">
+      <div class="navbar-nav m-auto py-0">
+        <a href="index.html" class="nav-item nav-link">Home</a>
+        <a href="about.html" class="nav-item nav-link">About Us</a>
+        <a href="team.html" class="nav-item nav-link">Team</a>
+        <a href="workspace.html" class="nav-item nav-link d-none" data-workspace-link>My workspace</a>
+      </div>
+      <div class="d-flex align-items-center">
+        <a href="login.html" class="btn btn-outline-primary py-2 px-3 mr-2">Login</a>
+        <a href="register.html" class="btn btn-primary py-2 px-3">Register</a>
+        <span class="align-self-center mr-3 d-none" data-demo-user></span>
+        <button type="button" class="btn btn-outline-primary d-none" data-demo-logout>Sign out</button>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<section class="cms-page-hero">
+  <div class="container">
+    <h1>Track your delivery</h1>
+    <p class="mb-0">Enter an order reference to review its latest recorded status and delivery details.</p>
+  </div>
+</section>
+
+<main class="container-fluid py-5">
+  <div class="container">
+    <div class="cms-alert cms-alert-info mb-4" role="note">
+      <strong>Preview information.</strong> These sample orders show how delivery tracking will look. They are not connected to live shipments.
+    </div>
+
+    <form action="tracking.html" method="get" class="cms-tracking-search mb-4">
+      <label for="trackingSearch" class="mb-2">Track another order</label>
+      <div class="input-group">
+        <input id="trackingSearch" name="order" type="text" class="form-control" placeholder="Order reference, e.g. 1042" aria-label="Order reference" pattern="#?[0-9]+" title="Enter the digits in your order reference, for example 1042." required>
+        <div class="input-group-append"><button class="btn btn-primary px-4" type="submit">View order</button></div>
+      </div>
+    </form>
+
+    <section id="trackingNotFound" class="cms-panel p-4 p-md-5 text-center d-none" aria-live="polite">
+      <div class="cms-icon"><i class="fa fa-box-open"></i></div>
+      <h2 id="trackingMessageTitle" class="h3">Enter an order reference</h2>
+      <p id="trackingMessageBody" class="text-muted mb-4">Use the search above to view a sample delivery order. Try 1042, 1031 or 1028.</p>
+      <a class="btn btn-primary px-4" href="index.html">Back to Movio</a>
+    </section>
+
+    <div id="trackingDetails" class="d-none" aria-live="polite">
+      <section class="cms-panel cms-tracking-header p-4 p-md-5 mb-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+          <div>
+            <span class="cms-section-title">Delivery order</span>
+            <h2 class="h3 mt-2 mb-1">Order <span id="trackingOrderNumber"></span></h2>
+            <p class="text-muted mb-md-0">Latest update: <span id="trackingLastUpdate"></span></p>
+          </div>
+          <div class="mt-3 mt-md-0 text-md-right">
+            <span class="cms-meta-label">Current status</span>
+            <span id="trackingStatus" class="cms-badge"></span>
+          </div>
+        </div>
+      </section>
+
+      <div class="row">
+        <div class="col-lg-7 mb-4">
+          <section class="cms-panel p-4 p-md-5 h-100">
+            <div class="cms-panel-title">
+              <div><h3 class="h4">Delivery progress</h3><small>Recorded order updates</small></div>
+            </div>
+            <ul id="trackingTimeline" class="cms-timeline cms-tracking-timeline"></ul>
+          </section>
+        </div>
+        <div class="col-lg-5 mb-4">
+          <section class="cms-panel p-4 p-md-5 h-100">
+            <div class="cms-panel-title">
+              <div><h3 class="h4">Delivery details</h3><small>Pickup, destination and assignment</small></div>
+            </div>
+            <div class="cms-tracking-location mb-4">
+              <span class="cms-tracking-location-icon"><i class="fa fa-circle"></i></span>
+              <div><span class="cms-meta-label">Pickup</span><strong id="trackingPickup"></strong></div>
+            </div>
+            <div class="cms-tracking-location mb-4">
+              <span class="cms-tracking-location-icon destination"><i class="fa fa-map-marker-alt"></i></span>
+              <div><span class="cms-meta-label">Delivery destination</span><strong id="trackingDestination"></strong></div>
+            </div>
+            <div class="cms-meta-grid cms-tracking-meta">
+              <div><span class="cms-meta-label">Route</span><span id="trackingRoute" class="cms-meta-value"></span></div>
+              <div><span class="cms-meta-label">Delivery attempts</span><span id="trackingAttempt" class="cms-meta-value"></span></div>
+              <div><span class="cms-meta-label">Parcel contents</span><span id="trackingItemCount" class="cms-meta-value"></span></div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <section class="cms-panel p-4 p-md-5 mb-4">
+        <div class="cms-panel-title">
+          <div><h3 class="h4">Items in this delivery</h3><small>Parcel details recorded with the order</small></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table cms-table mb-0">
+            <thead><tr><th>Item</th><th>Category</th><th>Weight</th></tr></thead>
+            <tbody id="trackingItems"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="trackingProof" class="cms-panel p-4 p-md-5 d-none">
+        <div class="d-flex align-items-center">
+          <div class="cms-icon mb-0 mr-3"><i class="fa fa-check"></i></div>
+          <div><h3 class="h4 mb-1">Delivery confirmed</h3><p class="text-muted mb-0">Confirmation recorded: <strong id="trackingProofType"></strong></p></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="cms-site-footer mt-5">
+  <div class="container py-5 px-sm-3 px-md-5">
+    <div class="row">
+      <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
+        <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+        <h2 class="cms-footer-heading">Explore Movio</h2>
+        <nav class="cms-footer-links" aria-label="Footer navigation">
+          <a href="index.html"><i class="fa fa-angle-right"></i>Home</a>
+          <a href="about.html"><i class="fa fa-angle-right"></i>About Us</a>
+          <a href="team.html"><i class="fa fa-angle-right"></i>Team</a>
+          <a href="login.html" data-dashboard-link><i class="fa fa-angle-right"></i>Login</a>
+        </nav>
+      </div>
+      <div class="col-lg-4 col-md-12">
+        <h2 class="cms-footer-heading">From pickup to doorstep</h2>
+        <p class="cms-footer-description mb-3">A smoother delivery journey starts here.</p>
+        <a class="cms-footer-cta" href="register.html" data-get-started>Get started<i class="fa fa-arrow-right ml-2"></i></a>
+      </div>
+    </div>
+    <div class="cms-footer-bottom"><p>&copy; 2026 Movio. All rights reserved.</p></div>
+  </div>
+</footer>
+
+<div id="cmsToast"></div>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="lib/easing/easing.min.js"></script>
+<script src="lib/waypoints/waypoints.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/cms.js"></script>
+</body>
+</html>

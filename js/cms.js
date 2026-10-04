@@ -16,17 +16,131 @@ function cmsValidate(form) {
     return form.checkValidity();
 }
 
-function cmsDemoTrack() {
-    const input = document.getElementById('trackingId');
-    const result = document.getElementById('trackingResult');
-    if (!input || !result) return;
-    const value = input.value.trim().replace(/[^a-zA-Z0-9-]/g, '');
-    if (!value) {
-        result.textContent = 'Enter an order reference to see a tracking preview.';
+const cmsTrackingOrders = {
+    '1042': {
+        status: 'In progress',
+        statusClass: 'cms-badge-info',
+        route: '#R-88',
+        attempt: '1',
+        pickup: 'FEUP, Porto',
+        destination: 'Porto, Portugal',
+        lastUpdate: '03 Oct · 14:42',
+        itemCount: '2 items',
+        items: [
+            {name: 'Laptop', category: 'Electronics', weight: '2.40 kg'},
+            {name: 'Documents', category: 'Documents', weight: '0.60 kg'}
+        ],
+        timeline: [
+            {title: 'Order placed', detail: '03 Oct · 14:20 · Courier #14', state: 'done'},
+            {title: 'In progress', detail: '03 Oct · 14:42 · Courier #14', state: 'current'},
+            {title: 'Delivered', detail: 'Waiting for delivery confirmation', state: ''}
+        ],
+        activeStep: 1
+    },
+    '1031': {
+        status: 'Delivered',
+        statusClass: 'cms-badge-success',
+        route: '#R-81',
+        attempt: '1',
+        pickup: 'Not available in this preview',
+        destination: 'Not available in this preview',
+        lastUpdate: 'Delivery confirmed',
+        itemCount: '1 item',
+        items: [{name: 'Parcel', category: 'General', weight: 'Not provided'}],
+        timeline: [
+            {title: 'Order placed', detail: 'Recorded', state: 'done'},
+            {title: 'In progress', detail: 'Delivery route #R-81', state: 'done'},
+            {title: 'Delivered', detail: 'Delivery photo recorded', state: 'current'}
+        ],
+        activeStep: 2,
+        proof: 'Photo'
+    },
+    '1028': {
+        status: 'Awaiting courier assignment',
+        statusClass: 'cms-badge-warning',
+        route: 'Not assigned',
+        attempt: '0',
+        pickup: 'Provided with the order',
+        destination: 'Provided with the order',
+        lastUpdate: 'Awaiting route assignment',
+        itemCount: '1 item',
+        items: [{name: 'Parcel', category: 'General', weight: 'Not provided'}],
+        timeline: [
+            {title: 'Order placed', detail: 'Order received', state: 'current'},
+            {title: 'Courier assigned', detail: 'Waiting for assignment', state: ''},
+            {title: 'Delivered', detail: 'Not yet delivered', state: ''}
+        ],
+        activeStep: 0
+    }
+};
+
+function cmsInitTrackingPage() {
+    const content = document.getElementById('trackingDetails');
+    if (!content) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const rawReference = params.get('order') || '';
+    const reference = rawReference.trim().replace(/^#/, '');
+    const searchInput = document.getElementById('trackingSearch');
+    if (searchInput) searchInput.value = reference ? '#' + reference : '';
+    const order = /^\d+$/.test(reference) ? cmsTrackingOrders[reference] : null;
+    const notFound = document.getElementById('trackingNotFound');
+
+    if (!order) {
+        content.classList.add('d-none');
+        notFound.classList.remove('d-none');
+        document.getElementById('trackingMessageTitle').textContent = reference
+            ? 'We couldn’t find that sample order'
+            : 'Enter an order reference';
+        document.getElementById('trackingMessageBody').textContent = reference
+            ? 'No preview order matches #' + reference + '. Try one of the example references: 1042, 1031 or 1028.'
+            : 'Use the search above to view a sample delivery order. Try 1042, 1031 or 1028.';
         return;
     }
-    result.textContent = 'Sample tracking result for order #' + value +
-        ': In progress. Live tracking is not available in this preview.';
+
+    content.classList.remove('d-none');
+    notFound.classList.add('d-none');
+    document.getElementById('trackingOrderNumber').textContent = '#' + reference;
+    const badge = document.getElementById('trackingStatus');
+    badge.textContent = order.status;
+    badge.className = 'cms-badge ' + order.statusClass;
+
+    document.getElementById('trackingLastUpdate').textContent = order.lastUpdate;
+    document.getElementById('trackingPickup').textContent = order.pickup;
+    document.getElementById('trackingDestination').textContent = order.destination;
+    document.getElementById('trackingRoute').textContent = order.route;
+    document.getElementById('trackingAttempt').textContent = order.attempt;
+    document.getElementById('trackingItemCount').textContent = order.itemCount;
+
+    const timeline = document.getElementById('trackingTimeline');
+    order.timeline.forEach((step, index) => {
+        const item = document.createElement('li');
+        item.className = step.state;
+        if (index > order.activeStep) item.classList.add('upcoming');
+        const title = document.createElement('strong');
+        title.textContent = step.title;
+        const detail = document.createElement('small');
+        detail.textContent = step.detail;
+        item.append(title, detail);
+        timeline.appendChild(item);
+    });
+
+    const itemList = document.getElementById('trackingItems');
+    order.items.forEach(parcel => {
+        const row = document.createElement('tr');
+        [parcel.name, parcel.category, parcel.weight].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        itemList.appendChild(row);
+    });
+
+    const proof = document.getElementById('trackingProof');
+    if (order.proof) {
+        document.getElementById('trackingProofType').textContent = order.proof;
+        proof.classList.remove('d-none');
+    }
 }
 
 function cmsCreateMap(id, points, options = {}) {
@@ -336,9 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Home tracking
-    document.getElementById('trackButton')?.addEventListener('click', cmsDemoTrack);
-
     // Client dashboard preview map (required Client area map)
     if (document.getElementById('clientDashboardMap')) {
         cmsCreateMap('clientDashboardMap', [
@@ -510,3 +621,9 @@ document.addEventListener('DOMContentLoaded', () => {
         cmsToast('Account details updated in this preview. No data has been saved.');
     });
 });
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', cmsInitTrackingPage);
+} else {
+    cmsInitTrackingPage();
+}

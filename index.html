@@ -49,14 +49,13 @@
       <a href="register.html" class="btn btn-primary py-3 px-4">Create Account</a>
       <a href="login.html" class="btn btn-light py-3 px-4">Login</a>
     </div>
-    <div class="mx-auto" style="width:100%;max-width:620px;">
+    <form id="trackingForm" class="mx-auto" style="width:100%;max-width:620px;" action="tracking.html" method="get">
       <div class="input-group">
-        <input id="trackingId" type="text" class="form-control border-light" style="padding:30px;" placeholder="Enter an order reference, e.g. 1042" aria-label="Order reference">
-        <div class="input-group-append"><button id="trackButton" class="btn btn-primary px-3">Track an order</button></div>
+        <input id="trackingId" name="order" type="text" class="form-control border-light" style="padding:30px;" placeholder="Enter an order reference, e.g. 1042" aria-label="Order reference" pattern="#?[0-9]+" title="Enter the digits in your order reference, for example 1042." required>
+        <div class="input-group-append"><button id="trackButton" class="btn btn-primary px-3" type="submit">Track an order</button></div>
       </div>
-      <div id="trackingResult" class="text-white mt-3"></div>
-      <small class="d-block text-white-50 mt-2">Tracking results are sample data in this preview.</small>
-    </div>
+      <small class="d-block text-white-50 mt-2">Tracking details shown here are sample data.</small>
+    </form>
   </div>
 </div>
 
