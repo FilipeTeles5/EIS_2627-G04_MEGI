@@ -89,6 +89,13 @@
             <div><span class="cms-meta-label">Delivery attempt</span><span id="currentOrderAttempt" class="cms-meta-value">1</span></div>
             <div><span class="cms-meta-label">Items</span><span id="currentOrderItems" class="cms-meta-value">2</span></div>
           </div>
+          <!-- Product detail logic:
+               - Show every product linked to the active order.
+               - Display description, category, weight, and volume; keep created_at internal. -->
+          <h6>Products in this order</h6>
+          <div class="table-responsive mb-4">
+            <table class="table cms-table mb-0"><thead><tr><th>Description</th><th>Category</th><th>Weight</th><th>Volume</th></tr></thead><tbody id="currentOrderProducts"></tbody></table>
+          </div>
           <button id="advanceStatus" type="button" class="btn btn-primary py-3 px-4 mr-2 mb-2">Start delivery</button>
           <button id="cancelDelivery" class="btn btn-outline-danger py-3 px-4 mb-2">Cancel this delivery</button>
           <hr>

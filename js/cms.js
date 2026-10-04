@@ -30,8 +30,8 @@ const cmsTrackingOrders = {
         lastUpdate: '03 Oct · 14:42',
         itemCount: '2 items',
         items: [
-            {name: 'Laptop', category: 'Electronics', weight: '2.40 kg'},
-            {name: 'Documents', category: 'Documents', weight: '0.60 kg'}
+            {name: 'Laptop', category: 'Electronics', weight: '2.40 kg', volume: '0.030 m³'},
+            {name: 'Documents', category: 'Documents', weight: '0.60 kg', volume: '0.004 m³'}
         ],
         timeline: [
             {title: 'Order placed', detail: '03 Oct · 14:20 · Courier #14', state: 'done'},
@@ -49,7 +49,7 @@ const cmsTrackingOrders = {
         destination: 'Not available in this preview',
         lastUpdate: 'Delivery confirmed',
         itemCount: '1 item',
-        items: [{name: 'Parcel', category: 'General', weight: 'Not provided'}],
+        items: [{name: 'Parcel', category: 'General', weight: 'Not provided', volume: 'Not provided'}],
         timeline: [
             {title: 'Order placed', detail: 'Recorded', state: 'done'},
             {title: 'In progress', detail: 'Delivery route #R-81', state: 'done'},
@@ -67,7 +67,7 @@ const cmsTrackingOrders = {
         destination: 'Provided with the order',
         lastUpdate: 'Awaiting route assignment',
         itemCount: '1 item',
-        items: [{name: 'Parcel', category: 'General', weight: 'Not provided'}],
+        items: [{name: 'Parcel', category: 'General', weight: 'Not provided', volume: 'Not provided'}],
         timeline: [
             {title: 'Order placed', detail: 'Order received', state: 'current'},
             {title: 'Courier assigned', detail: 'Waiting for assignment', state: ''},
@@ -76,6 +76,254 @@ const cmsTrackingOrders = {
         activeStep: 0
     }
 };
+
+// Shared browser-only order records keep client order, courier, and tracking previews consistent.
+const cmsDemoOrdersKey = 'movioDemoOrders';
+
+// Seed sample orders with their products; created_at is stored but not shown to users.
+function cmsDefaultDemoOrders() {
+    return [
+        {
+            id:'1042', status:'in-progress', routeId:'R-88', destination:'Boavista', pickup:'FEUP', attempt:1,
+            products:[
+                {description:'Laptop', category:'Electronics', weight_kg:2.4, volume_m3:0.03, created_at:'2026-10-03T14:20:00Z'},
+                {description:'Documents', category:'Documents', weight_kg:0.6, volume_m3:0.004, created_at:'2026-10-03T14:20:00Z'}
+            ]
+        },
+        {
+            id:'1043', status:'initiated', routeId:'R-88', destination:'Matosinhos', pickup:'FEUP', attempt:0,
+            products:[{description:'Parcel', category:'General', weight_kg:83, volume_m3:1.366, created_at:'2026-10-03T14:25:00Z'}]
+        },
+        {
+            id:'1031', status:'completed', routeId:'R-81', destination:'Porto', pickup:'Not provided', attempt:1,
+            products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-02T10:00:00Z'}],
+            proofFile:'order-1031.jpg'
+        },
+        {
+            id:'1028', status:'pending', routeId:null, destination:'Not provided', pickup:'Not provided', attempt:0,
+            products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-04T09:00:00Z'}]
+        }
+    ];
+}
+
+// Load shared demo orders and seed the browser once when no records exist yet.
+function cmsLoadDemoOrders() {
+    try {
+        const stored = localStorage.getItem(cmsDemoOrdersKey);
+        if (stored === null) {
+            const initial = cmsDefaultDemoOrders();
+            localStorage.setItem(cmsDemoOrdersKey, JSON.stringify(initial));
+            return initial;
+        }
+        const orders = JSON.parse(stored);
+        if (!Array.isArray(orders) || !orders.every(order =>
+            order && typeof order.id === 'string' && Array.isArray(order.products)
+        )) throw new Error('Stored demo orders have an invalid format.');
+        return orders;
+    } catch (error) {
+        console.error('Could not load demo orders.', error);
+        cmsToast('Could not load order data from this browser. Check browser storage and try again.');
+        return null;
+    }
+}
+
+// Save shared browser-only demo orders without uploading product files or data to a server.
+function cmsSaveDemoOrders(orders) {
+    try {
+        localStorage.setItem(cmsDemoOrdersKey, JSON.stringify(orders));
+        return true;
+    } catch (error) {
+        console.error('Could not save demo orders.', error);
+        cmsToast('Could not save order data in this browser.');
+        return false;
+    }
+}
+
+// Synchronize courier order status and product details into the shared client/tracking preview.
+function cmsSyncCourierOrders(operations) {
+    const sharedOrders = cmsLoadDemoOrders();
+    if (!sharedOrders) return;
+    operations.orders.forEach(order => {
+        let sharedOrder = sharedOrders.find(item => item.id === order.id);
+        if (!sharedOrder) {
+            sharedOrder = {
+                id:order.id,
+                destination:order.destination || 'Not provided',
+                pickup:'FEUP',
+                attempt:order.attempt || 1,
+                products:Array.isArray(order.products) ? order.products : []
+            };
+            sharedOrders.push(sharedOrder);
+        }
+        sharedOrder.status = order.status;
+        sharedOrder.routeId = order.routeId || null;
+        sharedOrder.destination = order.destination || sharedOrder.destination;
+        sharedOrder.products = Array.isArray(order.products) ? order.products : sharedOrder.products;
+        if (order.proofFile) sharedOrder.proofFile = order.proofFile;
+        if (order.completedOn) sharedOrder.completedOn = order.completedOn;
+    });
+    cmsSaveDemoOrders(sharedOrders);
+}
+
+// Format numeric product measurements for the client, courier, and tracking views.
+function cmsFormatProductMeasurement(value, unit, digits) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(digits) + ' ' + unit : 'Not provided';
+}
+
+// Render one table body with the visible product attributes for an order.
+function cmsRenderProductRows(body, products) {
+    body.replaceChildren();
+    (products || []).forEach(product => {
+        const row = document.createElement('tr');
+        [
+            product.description || 'Not provided',
+            product.category || 'Not provided',
+            cmsFormatProductMeasurement(product.weight_kg, 'kg', 2),
+            cmsFormatProductMeasurement(product.volume_m3, 'm³', 3)
+        ].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        body.appendChild(row);
+    });
+    if (!(products || []).length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.textContent = 'No product details recorded.';
+        row.appendChild(cell);
+        body.appendChild(row);
+    }
+}
+
+// Build a product table using the public product fields while keeping created_at internal.
+function cmsBuildProductTable(products) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-responsive';
+    const table = document.createElement('table');
+    table.className = 'table cms-table mb-0';
+    const head = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    ['Description','Category','Weight','Volume'].forEach(label => {
+        const cell = document.createElement('th');
+        cell.textContent = label;
+        headRow.appendChild(cell);
+    });
+    head.appendChild(headRow);
+    const body = document.createElement('tbody');
+    cmsRenderProductRows(body, products);
+    table.append(head, body);
+    wrapper.appendChild(table);
+    return wrapper;
+}
+
+// Render the full browser-local order list and its product details for the Client page.
+function cmsRenderClientOrders() {
+    const tableBody = document.getElementById('clientOrdersTableBody');
+    const details = document.getElementById('clientOrderDetails');
+    if (!tableBody || !details) return;
+    const orders = cmsLoadDemoOrders();
+    if (!orders) return;
+    tableBody.replaceChildren();
+    details.replaceChildren();
+
+    orders.forEach(order => {
+        const row = document.createElement('tr');
+        const cells = [
+            '#' + order.id,
+            String((order.products || []).length),
+            order.routeId ? '#' + order.routeId : 'Not assigned'
+        ];
+        cells.forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        const statusCell = document.createElement('td');
+        statusCell.appendChild(cmsCourierOrderBadge(order.status));
+        row.appendChild(statusCell);
+        const attemptsCell = document.createElement('td');
+        attemptsCell.textContent = String(order.attempt || 0);
+        row.appendChild(attemptsCell);
+        const proofCell = document.createElement('td');
+        proofCell.textContent = order.proofFile || '—';
+        row.appendChild(proofCell);
+        const actions = document.createElement('td');
+        const detailsLink = document.createElement('a');
+        detailsLink.href = '#client-order-' + order.id;
+        detailsLink.className = 'btn btn-sm btn-outline-primary mr-1';
+        detailsLink.textContent = 'Details';
+        actions.appendChild(detailsLink);
+        if (order.status === 'pending' && !order.routeId) {
+            const cancelButton = document.createElement('button');
+            cancelButton.type = 'button';
+            cancelButton.className = 'btn btn-sm btn-outline-danger';
+            cancelButton.dataset.cancelClientOrder = order.id;
+            cancelButton.textContent = 'Cancel';
+            actions.appendChild(cancelButton);
+        }
+        row.appendChild(actions);
+        tableBody.appendChild(row);
+
+        const section = document.createElement('section');
+        section.id = 'client-order-' + order.id;
+        section.className = 'cms-panel p-4 mb-4';
+        const title = document.createElement('div');
+        title.className = 'cms-panel-title';
+        const titleGroup = document.createElement('div');
+        const heading = document.createElement('h4');
+        heading.textContent = 'Order #' + order.id;
+        const subtitle = document.createElement('small');
+        subtitle.textContent = 'Delivery details and associated products';
+        titleGroup.append(heading, subtitle);
+        title.append(titleGroup, cmsCourierOrderBadge(order.status));
+        const meta = document.createElement('div');
+        meta.className = 'cms-meta-grid mb-4';
+        [
+            ['Pickup location', order.pickup || 'Not provided'],
+            ['Delivery location', order.destination || 'Not provided'],
+            ['Route', order.routeId ? '#' + order.routeId : 'Not assigned'],
+            ['Delivery attempts', String(order.attempt || 0)]
+        ].forEach(([label, value]) => {
+            const item = document.createElement('div');
+            const name = document.createElement('span');
+            name.className = 'cms-meta-label';
+            name.textContent = label;
+            const content = document.createElement('span');
+            content.className = 'cms-meta-value';
+            content.textContent = value;
+            item.append(name, content);
+            meta.appendChild(item);
+        });
+        const productsHeading = document.createElement('h6');
+        productsHeading.textContent = 'Products in this order';
+        section.append(title, meta, productsHeading, cmsBuildProductTable(order.products));
+        details.appendChild(section);
+    });
+}
+
+// Persist a client cancellation while keeping the cancelled order visible in the order list.
+function cmsInitClientOrders() {
+    const tableBody = document.getElementById('clientOrdersTableBody');
+    if (!tableBody) return;
+    cmsRenderClientOrders();
+    tableBody.addEventListener('click', event => {
+        const button = event.target.closest('[data-cancel-client-order]');
+        if (!button) return;
+        const orders = cmsLoadDemoOrders();
+        const order = orders && orders.find(item => item.id === button.dataset.cancelClientOrder);
+        if (!order || order.status !== 'pending' || order.routeId) return;
+        order.status = 'cancelled';
+        if (!cmsSaveDemoOrders(orders)) return;
+        cmsRenderClientOrders();
+        cmsToast('Order #' + order.id + ' was cancelled and remains in your order list.');
+    });
+    window.addEventListener('storage', event => {
+        if (event.key === cmsDemoOrdersKey) cmsRenderClientOrders();
+    });
+}
 
 // Read the requested sample order and render its status, route details, and timeline.
 function cmsInitTrackingPage() {
@@ -87,7 +335,43 @@ function cmsInitTrackingPage() {
     const reference = rawReference.trim().replace(/^#/, '');
     const searchInput = document.getElementById('trackingSearch');
     if (searchInput) searchInput.value = reference ? '#' + reference : '';
-    const order = /^\d+$/.test(reference) ? cmsTrackingOrders[reference] : null;
+    const sharedOrder = /^\d+$/.test(reference)
+        ? (cmsLoadDemoOrders() || []).find(item => item.id === reference)
+        : null;
+    let order = /^\d+$/.test(reference) ? cmsTrackingOrders[reference] : null;
+    if (sharedOrder) {
+        const statusDetails = {
+            pending: {label:'Awaiting courier assignment', badge:'cms-badge-warning', step:0},
+            initiated: {label:'Initiated', badge:'cms-badge-warning', step:0},
+            'in-progress': {label:'In progress', badge:'cms-badge-info', step:1},
+            completed: {label:'Delivered', badge:'cms-badge-success', step:2},
+            cancelled: {label:'Cancelled', badge:'cms-badge-danger', step:2}
+        }[sharedOrder.status] || {label:'Unknown', badge:'cms-badge-warning', step:0};
+        const statusDetail = statusDetails;
+        order = {
+            status:statusDetail.label,
+            statusClass:statusDetail.badge,
+            route:sharedOrder.routeId ? '#' + sharedOrder.routeId : 'Not assigned',
+            attempt:String(sharedOrder.attempt || 0),
+            pickup:sharedOrder.pickup || 'Not provided',
+            destination:sharedOrder.destination || 'Not provided',
+            lastUpdate:sharedOrder.completedOn ? 'Completed ' + sharedOrder.completedOn : 'Order status recorded',
+            itemCount:(sharedOrder.products || []).length + ((sharedOrder.products || []).length === 1 ? ' item' : ' items'),
+            items:(sharedOrder.products || []).map(product => ({
+                name:product.description,
+                category:product.category,
+                weight:cmsFormatProductMeasurement(product.weight_kg, 'kg', 2),
+                volume:cmsFormatProductMeasurement(product.volume_m3, 'm³', 3)
+            })),
+            timeline:[
+                {title:'Order placed', detail:'Order #' + sharedOrder.id, state:statusDetail.step > 0 ? 'done' : 'current'},
+                {title:'In progress', detail:statusDetail.step > 0 ? 'Courier is handling this order' : 'Waiting for courier', state:statusDetail.step === 1 ? 'current' : ''},
+                {title:sharedOrder.status === 'cancelled' ? 'Cancelled' : 'Delivered', detail:sharedOrder.proofFile || 'Final order status', state:statusDetail.step === 2 ? 'current' : ''}
+            ],
+            activeStep:statusDetail.step,
+            proof:sharedOrder.proofFile ? 'File' : undefined
+        };
+    }
     const notFound = document.getElementById('trackingNotFound');
 
     if (!order) {
@@ -132,7 +416,7 @@ function cmsInitTrackingPage() {
     const itemList = document.getElementById('trackingItems');
     order.items.forEach(parcel => {
         const row = document.createElement('tr');
-        [parcel.name, parcel.category, parcel.weight].forEach(value => {
+        [parcel.name, parcel.category, parcel.weight, parcel.volume || 'Not provided'].forEach(value => {
             const cell = document.createElement('td');
             cell.textContent = value;
             row.appendChild(cell);
@@ -630,9 +914,9 @@ function cmsInitRoleAccess() {
         if (hero) {
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
-            // Courier route and order changes persist only in this browser and remain demo data.
-            notice.textContent = ['courier.html','courier-route.html'].includes(page)
-                ? 'Preview mode: sample courier orders are used, and route changes are saved in this browser only.'
+            // Client orders and Courier route changes persist only in this browser as demo data.
+            notice.textContent = ['courier.html','courier-route.html','client-order.html','client-orders.html'].includes(page)
+                ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
                 : 'Preview mode: this page uses sample data, and your changes are not saved.';
             hero.appendChild(notice);
         }
@@ -647,7 +931,7 @@ function cmsInitRoleAccess() {
  * - A courier can have only one route in preparation or execution at a time.
  * - Pending orders can join a route only during preparation and become Initiated when added.
  * - Starting a route locks its membership; another route can be created after all its orders are terminal.
- * - Completed orders appear in a separate history; order transitions and proof submission remain out of scope.
+ * - Completed orders appear in a separate history; Active Route handles transitions and proof submission.
  */
 const cmsCourierOperationsKey = 'movioDemoCourierOperations:';
 
@@ -660,10 +944,19 @@ function cmsDefaultCourierOperations() {
             {id:'R-87', status:'completed', orderIds:['1039']}
         ],
         orders: [
-            {id:'1042', destination:'Boavista', parcels:2, status:'initiated', routeId:'R-88'},
-            {id:'1043', destination:'Matosinhos', parcels:1, status:'initiated', routeId:'R-88'},
-            {id:'1044', destination:'Paranhos', parcels:1, status:'pending', routeId:null},
-            {id:'1039', destination:'Porto', parcels:1, status:'completed', routeId:'R-87', completedOn:'02 Oct'}
+            {id:'1042', destination:'Boavista', parcels:2, status:'initiated', routeId:'R-88', products:[
+                {description:'Laptop', category:'Electronics', weight_kg:2.4, volume_m3:0.03, created_at:'2026-10-03T14:20:00Z'},
+                {description:'Documents', category:'Documents', weight_kg:0.6, volume_m3:0.004, created_at:'2026-10-03T14:20:00Z'}
+            ]},
+            {id:'1043', destination:'Matosinhos', parcels:1, status:'initiated', routeId:'R-88', products:[
+                {description:'Parcel', category:'General', weight_kg:83, volume_m3:1.366, created_at:'2026-10-03T14:25:00Z'}
+            ]},
+            {id:'1044', destination:'Paranhos', parcels:1, status:'pending', routeId:null, products:[
+                {description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-04T09:00:00Z'}
+            ]},
+            {id:'1039', destination:'Porto', parcels:1, status:'completed', routeId:'R-87', completedOn:'02 Oct', products:[
+                {description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-02T10:00:00Z'}
+            ]}
         ]
     };
 }
@@ -682,6 +975,7 @@ function cmsLoadCourierOperations() {
         if (stored === null) {
             const initial = cmsDefaultCourierOperations();
             localStorage.setItem(key, JSON.stringify(initial));
+            cmsSyncCourierOrders(initial);
             return initial;
         }
         const operations = JSON.parse(stored);
@@ -691,6 +985,19 @@ function cmsLoadCourierOperations() {
                 ['pending','initiated','in-progress','completed','cancelled'].includes(order.status)
             );
         if (!valid) throw new Error('Stored Courier operations have an invalid format.');
+        const sharedOrders = cmsLoadDemoOrders() || [];
+        const sampleOrders = cmsDefaultCourierOperations().orders;
+        operations.orders.forEach(order => {
+            const sharedOrder = sharedOrders.find(item => item.id === order.id);
+            const sampleOrder = sampleOrders.find(item => item.id === order.id);
+            if (!Array.isArray(order.products) || !order.products.length) {
+                order.products = sharedOrder?.products || sampleOrder?.products || [{
+                    description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01,
+                    created_at:new Date().toISOString()
+                }];
+            }
+            order.parcels = order.products.length;
+        });
         return operations;
     } catch (error) {
         console.error('Could not load demo Courier operations.', error);
@@ -703,6 +1010,7 @@ function cmsLoadCourierOperations() {
 function cmsSaveCourierOperations(operations) {
     try {
         localStorage.setItem(cmsCourierOperationsStorageKey(), JSON.stringify(operations));
+        cmsSyncCourierOrders(operations);
         return true;
     } catch (error) {
         console.error('Could not save demo Courier operations.', error);
@@ -786,7 +1094,10 @@ function cmsRenderCourierDashboard() {
     const routeOrders = route
         ? route.orderIds.map(id => operations.orders.find(order => order.id === id)).filter(Boolean)
         : [];
-    const pendingOrders = operations.orders.filter(order => order.status === 'pending' && !order.routeId);
+    const unroutedOrders = operations.orders.filter(order =>
+        ['pending','cancelled'].includes(order.status) && !order.routeId
+    );
+    const routableOrders = unroutedOrders.filter(order => order.status === 'pending');
     const completedOrders = operations.orders.filter(order => order.status === 'completed');
 
     document.getElementById('courierActiveRouteCount').textContent = route ? '1' : '0';
@@ -847,18 +1158,18 @@ function cmsRenderCourierDashboard() {
         header.append(reference, cmsCourierOrderBadge(order.status));
         const detail = document.createElement('small');
         detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
-        card.append(header, detail);
+        card.append(header, detail, cmsBuildProductTable(order.products));
         routeOrderList.appendChild(card);
     });
 
     pendingList.replaceChildren();
-    if (!pendingOrders.length) {
+    if (!unroutedOrders.length) {
         const empty = document.createElement('p');
         empty.className = 'text-muted mb-0';
-        empty.textContent = 'There are no pending orders assigned to you.';
+        empty.textContent = 'There are no pending or returned orders assigned to you.';
         pendingList.appendChild(empty);
     }
-    pendingOrders.forEach(order => {
+    unroutedOrders.forEach(order => {
         const card = document.createElement('div');
         card.className = 'cms-order-card mb-3';
         const header = document.createElement('div');
@@ -870,7 +1181,12 @@ function cmsRenderCourierDashboard() {
         detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
         card.append(header, detail);
 
-        if (route?.status === 'planning') {
+        if (order.status === 'cancelled') {
+            const note = document.createElement('small');
+            note.className = 'd-block text-muted mt-2';
+            note.textContent = 'Cancelled and returned to your order list; it cannot be added to a route.';
+            card.appendChild(note);
+        } else if (route?.status === 'planning') {
             const addButton = document.createElement('button');
             addButton.type = 'button';
             addButton.className = 'btn btn-sm btn-outline-primary mt-2';
@@ -895,7 +1211,7 @@ function cmsRenderCourierDashboard() {
         }
         pendingList.appendChild(card);
     });
-    createRouteButton.classList.toggle('d-none', Boolean(route) || pendingOrders.length === 0);
+    createRouteButton.classList.toggle('d-none', Boolean(route) || routableOrders.length === 0);
 
     const completedList = document.getElementById('courierCompletedOrders');
     completedList.replaceChildren();
@@ -1066,6 +1382,7 @@ function cmsRenderCourierRoute(operations) {
     document.getElementById('currentOrderDestination').textContent = currentOrder.destination;
     document.getElementById('currentOrderAttempt').textContent = String(currentOrder.attempt || 1);
     document.getElementById('currentOrderItems').textContent = String(currentOrder.parcels);
+    cmsRenderProductRows(document.getElementById('currentOrderProducts'), currentOrder.products);
 
     const status = document.getElementById('orderStatus');
     const badge = cmsCourierOrderBadge(currentOrder.status);
@@ -1125,11 +1442,14 @@ function cmsInitCourierRoute() {
         const order = route && cmsCurrentCourierRouteOrder(currentOperations, route);
         if (!currentOperations || !route || route.status !== 'active' || !order) return;
         order.status = 'cancelled';
+        order.routeId = null;
+        route.orderIds = route.orderIds.filter(id => id !== order.id);
+        if (!route.orderIds.length) route.status = 'completed';
         delete order.proofRequired;
         if (!cmsSaveCourierOperations(currentOperations)) return;
         cmsCloseFinishedCourierRoutes(currentOperations);
         cmsRenderCourierRoute(currentOperations);
-        cmsToast('Order #' + order.id + ' was cancelled.');
+        cmsToast('Order #' + order.id + ' was cancelled and returned to your order list.');
     });
 
     document.getElementById('submitProof')?.addEventListener('click', () => {
@@ -1318,7 +1638,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawRoute([41.1779,-8.5980], [41.1579,-8.6291]);
 
         const orderForm = document.getElementById('createOrderForm');
-        // Validate order details and coordinates before previewing the requested route.
+        // Validate locations and persist the order with every entered product field.
         orderForm?.addEventListener('submit', e => {
             e.preventDefault();
             if (!cmsValidate(orderForm)) return;
@@ -1332,8 +1652,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 cmsToast('Check the pickup and delivery coordinates. Latitude must be between -90 and 90; longitude between -180 and 180.');
                 return;
             }
+            const createdAt = new Date().toISOString();
+            const products = [...orderForm.querySelectorAll('.cms-product-row')].map(row => ({
+                description:row.querySelector('.product-description').value.trim(),
+                category:row.querySelector('.product-category').value.trim(),
+                weight_kg:Number(row.querySelector('.product-weight').value),
+                volume_m3:Number(row.querySelector('.product-volume').value),
+                created_at:createdAt
+            }));
+            const orders = cmsLoadDemoOrders();
+            if (!orders) return;
+            const id = String(Date.now());
+            orders.push({
+                id,
+                status:'pending',
+                routeId:null,
+                pickup:olat + ', ' + olng,
+                destination:dlat + ', ' + dlng,
+                attempt:0,
+                products,
+                created_at:createdAt
+            });
+            if (!cmsSaveDemoOrders(orders)) return;
             drawRoute([olat,olng],[dlat,dlng]);
-            cmsToast('Delivery order created in this preview. No data has been saved.');
+            cmsToast('Order #' + id + ' was saved in this browser with ' + products.length + ' product(s).');
         });
 
         // Preview a route from the current coordinate fields without submitting the form.
@@ -1379,6 +1721,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Courier active-route order handling and file-based proof simulation.
     cmsInitCourierRoute();
+    cmsInitClientOrders();
     cmsInitSignature();
 
     // Generic approvals / rejections

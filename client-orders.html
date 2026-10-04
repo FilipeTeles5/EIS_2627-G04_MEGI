@@ -49,50 +49,16 @@
         <!-- Order history with delivery status, attempts, and available actions. -->
         <table class="table cms-table">
           <thead class="thead-light"><tr><th>Order</th><th>Items</th><th>Route</th><th>Status</th><th>Delivery attempts</th><th>Delivery proof</th><th></th></tr></thead>
-          <tbody>
-            <tr><td>#1042</td><td>2</td><td>#R-88</td><td><span class="cms-badge cms-badge-info">In Progress</span></td><td>1</td><td>—</td><td><a href="#order1042" class="btn btn-sm btn-outline-primary">Details</a></td></tr>
-            <tr><td>#1031</td><td>1</td><td>#R-81</td><td><span class="cms-badge cms-badge-success">Completed</span></td><td>1</td><td>Photo</td><td><a href="#order1031" class="btn btn-sm btn-outline-primary">Details</a></td></tr>
-            <tr><td>#1028</td><td>1</td><td>Not assigned</td><td><span class="cms-badge cms-badge-warning">Initiated</span></td><td>0</td><td>—</td><td><button class="btn btn-sm btn-outline-danger" type="button" onclick="cmsToast('Order cancellation is a preview only. No data has been saved.')">Cancel</button></td></tr>
-          </tbody>
+          <!-- Order-list logic:
+               - Show every shared demo order, including orders returned after cancellation.
+               - Keep cancelled orders in the list with their terminal status; they are not route candidates. -->
+          <tbody id="clientOrdersTableBody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Detailed status, route, parcel, and progress information for order 1042. -->
-    <div id="order1042" class="row">
-      <div class="col-lg-7 mb-4">
-        <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Order #1042</h4><small>Delivery details</small></div><span class="cms-badge cms-badge-info">In progress</span></div>
-          <div class="cms-meta-grid">
-            <div><span class="cms-meta-label">Pickup location</span><span class="cms-meta-value">41.1779, -8.5980</span></div>
-            <div><span class="cms-meta-label">Delivery location</span><span class="cms-meta-value">41.1579, -8.6291</span></div>
-            <div><span class="cms-meta-label">Route</span><span class="cms-meta-value">#R-88</span></div>
-            <div><span class="cms-meta-label">Delivery attempt</span><span class="cms-meta-value">1</span></div>
-          </div>
-          <hr>
-          <h6>Items in this delivery</h6>
-          <!-- Itemized parcel contents for the selected order. -->
-          <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Description</th><th>Category</th><th>Weight</th><th>Volume</th></tr></thead><tbody><tr><td>Laptop</td><td>Electronics</td><td>2.40 kg</td><td>0.030 m³</td></tr><tr><td>Documents</td><td>Documents</td><td>0.60 kg</td><td>0.004 m³</td></tr></tbody></table></div>
-        </div>
-      </div>
-      <div class="col-lg-5 mb-4">
-        <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Delivery progress</h4><small>Updates from order placement to completion</small></div></div>
-          <!-- Chronological progress updates for the selected delivery. -->
-          <ul class="cms-timeline">
-            <li class="done"><strong>Order placed</strong><small>03 Oct · 14:20 · Courier #14</small></li>
-            <li class="current"><strong>In progress</strong><small>03 Oct · 14:42 · Courier #14</small></li>
-            <li><strong>Completed or cancelled</strong><small>Awaiting update</small></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delivery confirmation details for a completed order. -->
-    <div id="order1031" class="cms-panel p-4">
-      <div class="cms-panel-title"><div><h4>Completed order #1031</h4><small>Delivery confirmation</small></div><span class="cms-badge cms-badge-success">Completed</span></div>
-      <div class="row"><div class="col-md-6"><span class="cms-meta-label">Confirmation type</span><span class="cms-meta-value">Photo</span></div><div class="col-md-6"><span class="cms-meta-label">Confirmation file</span><span class="cms-meta-value">order-1031.jpg</span></div></div>
-    </div>
+    <!-- Order-detail logic: render every order's route, status, proof, and linked products from shared demo data. -->
+    <div id="clientOrderDetails"></div>
   </div>
 </section>
 

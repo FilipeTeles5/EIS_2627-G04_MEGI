@@ -92,7 +92,7 @@
 
     <!-- Route-order logic:
          - Orders on the current route are listed separately from orders awaiting a route.
-         - Each order on a route is Initiated once associated; order transition controls are deferred.
+          - Each order on a route is Initiated once associated and progresses through its courier workflow.
          - Route membership is frozen as soon as execution starts. -->
     <div class="row">
       <div class="col-lg-6 mb-4">
@@ -104,11 +104,12 @@
       <div class="col-lg-6 mb-4">
         <div class="cms-panel p-4 h-100">
           <!-- Pending-order logic:
-               - This list contains pending orders assigned to this individual courier but not yet routed.
+            - This list contains pending orders and cancelled orders returned from this courier's route.
                - While a route is in preparation, an order can be added and becomes Initiated.
                - With no active route, selected pending orders create the next route.
-               - During route execution, pending orders remain available for a later route. -->
-          <div class="cms-panel-title"><div><h4>Pending orders</h4><small>Assigned to you, awaiting a route</small></div></div>
+            - Cancelled orders remain visible but cannot be added to a later route automatically.
+            - During route execution, pending orders remain available for a later route. -->
+          <div class="cms-panel-title"><div><h4>Orders list</h4><small>Pending orders and cancellations returned from a route</small></div></div>
           <div id="courierPendingOrders" aria-live="polite"></div>
           <button id="createCourierRoute" type="button" class="btn btn-primary mt-3 d-none">Create route from selected orders</button>
         </div>
@@ -118,7 +119,7 @@
     <!-- Completed-order logic:
          - Completed orders are shown in a history separate from the active route and pending queue.
          - The route ends only after every routed order reaches Completed or Cancelled.
-         - Status-transition controls and final proof submission are intentionally deferred. -->
+          - Status transitions and proof submission are performed on the Active Route page. -->
     <div class="row">
       <div class="col-12 mb-4">
         <div class="cms-panel p-4">
