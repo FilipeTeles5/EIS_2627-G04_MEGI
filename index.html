@@ -5,7 +5,7 @@
     <title>Home | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
-    <meta content="Academic Courier Management System frontend prototype" name="description">
+    <meta content="Manage delivery orders, routes and fleet activity with Movio." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -28,19 +28,13 @@
         <a href="index.html" class="nav-item nav-link active">Home</a>
         <a href="team.html" class="nav-item nav-link">Team</a>
         <a href="about.html" class="nav-item nav-link">About Us</a>
-        <div class="nav-item dropdown">
-          <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Prototype Areas</a>
-          <div class="dropdown-menu rounded-0 m-0">
-            <a href="client.html" class="dropdown-item">Client</a>
-            <a href="courier.html" class="dropdown-item">Courier</a>
-            <a href="staff.html" class="dropdown-item">Staff</a>
-            <a href="admin.html" class="dropdown-item">Admin</a>
-          </div>
-        </div>
+        <a href="workspace.html" class="nav-item nav-link d-none" data-workspace-link>My workspace</a>
       </div>
-      <div class="d-none d-lg-flex">
+      <div class="d-flex align-items-center">
         <a href="login.html" class="btn btn-outline-primary py-2 px-3 mr-2">Login</a>
         <a href="register.html" class="btn btn-primary py-2 px-3">Register</a>
+        <span class="align-self-center mr-3 d-none" data-demo-user></span>
+        <button type="button" class="btn btn-outline-primary d-none" data-demo-logout>Sign out</button>
       </div>
     </div>
   </nav>
@@ -68,14 +62,14 @@
 <section class="container-fluid py-5">
   <div class="container">
     <div class="text-center pb-2">
-      <h6 class="text-primary text-uppercase font-weight-bold">System Overview</h6>
+      <h6 class="text-primary text-uppercase font-weight-bold">Movio at a glance</h6>
       <h1 class="mb-4">Four roles, one delivery lifecycle</h1>
     </div>
     <div class="row">
-      <div class="col-lg-3 col-md-6 mb-4"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-box"></i></div><h5>Client</h5><p>Register products, place orders, define GPS coordinates and follow order status.</p><a href="client.html">Open demo</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-route"></i></div><h5>Courier</h5><p>Select vehicles, execute routes, transition order status and submit e-POD.</p><a href="courier.html">Open demo</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-clipboard-check"></i></div><h5>Staff</h5><p>Validate couriers and vehicles, inspect documents and receive compliance alerts.</p><a href="staff.html">Open demo</a></div></div>
-      <div class="col-lg-3 col-md-6 mb-4"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-chart-line"></i></div><h5>Admin</h5><p>Approve staff, edit personal information and monitor operational KPIs.</p><a href="admin.html">Open demo</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="client"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-box"></i></div><h5>Client</h5><p>Register products, place orders, define GPS coordinates and follow order status.</p><a href="login.html?role=client">Open client workspace</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="courier"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-route"></i></div><h5>Courier</h5><p>Select vehicles, execute routes, transition order status and submit e-POD.</p><a href="login.html?role=courier">Open courier workspace</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="staff"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-clipboard-check"></i></div><h5>Staff</h5><p>Validate couriers and vehicles, inspect documents and receive compliance alerts.</p><a href="login.html?role=staff">Open staff workspace</a></div></div>
+      <div class="col-lg-3 col-md-6 mb-4" data-role-content="admin"><div class="cms-card p-4 text-center"><div class="cms-icon"><i class="fa fa-chart-line"></i></div><h5>Admin</h5><p>Approve staff, edit personal information and monitor operational KPIs.</p><a href="login.html?role=admin">Open admin workspace</a></div></div>
     </div>
   </div>
 </section>
@@ -85,13 +79,13 @@
     <div class="row align-items-center">
       <div class="col-lg-5 mb-4 mb-lg-0"><img class="img-fluid w-100" src="img/feature.jpg" alt="Courier logistics operations"></div>
       <div class="col-lg-7 pl-lg-5">
-        <h6 class="text-primary text-uppercase font-weight-bold">ER-driven interface</h6>
-        <h1 class="mb-4">The navigation follows the data model</h1>
-        <p>The extra internal screens are not additional actors: they expose the main entities and workflows represented in the ER model.</p>
+        <h6 class="text-primary text-uppercase font-weight-bold">One connected delivery service</h6>
+        <h1 class="mb-4">Every delivery, connected</h1>
+        <p>From booking to proof of delivery, Movio brings every step of the delivery journey together.</p>
         <ul class="list-inline">
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Order + Product creation and history</h6></li>
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Route + Vehicle execution and capacity</h6></li>
-          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Notifications, audits and status logs</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Create orders and manage shipment details</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Plan efficient routes and vehicle capacity</h6></li>
+          <li><h6><i class="far fa-dot-circle text-primary mr-3"></i>Stay informed with delivery updates and service alerts</h6></li>
         </ul>
       </div>
     </div>
@@ -100,7 +94,7 @@
 
 <section class="container-fluid py-5">
   <div class="container">
-    <div class="text-center pb-2"><h6 class="text-primary text-uppercase font-weight-bold">Sample Metrics</h6><h1 class="mb-4">Operational snapshot</h1></div>
+    <div class="text-center pb-2"><h6 class="text-primary text-uppercase font-weight-bold">Illustrative metrics</h6><h1 class="mb-4">Operational snapshot</h1></div>
     <div class="row">
       <div class="col-lg-3 col-sm-6 mb-4"><div class="cms-panel cms-kpi p-4"><div class="value">1,284</div><div class="label">Completed Orders</div></div></div>
       <div class="col-lg-3 col-sm-6 mb-4"><div class="cms-panel cms-kpi p-4"><div class="value">86</div><div class="label">Approved Couriers</div></div></div>
@@ -124,13 +118,13 @@
           <a href="index.html"><i class="fa fa-angle-right"></i>Home</a>
           <a href="about.html"><i class="fa fa-angle-right"></i>About Us</a>
           <a href="team.html"><i class="fa fa-angle-right"></i>Team</a>
-          <a href="login.html"><i class="fa fa-angle-right"></i>Login</a>
+          <a href="login.html" data-dashboard-link><i class="fa fa-angle-right"></i>Login</a>
         </nav>
       </div>
       <div class="col-lg-4 col-md-12">
         <h2 class="cms-footer-heading">From pickup to doorstep</h2>
         <p class="cms-footer-description mb-3">A smoother delivery journey starts here.</p>
-        <a class="cms-footer-cta" href="register.html">Get started<i class="fa fa-arrow-right ml-2"></i></a>
+        <a class="cms-footer-cta" href="register.html" data-get-started>Get started<i class="fa fa-arrow-right ml-2"></i></a>
       </div>
     </div>
     <div class="cms-footer-bottom">
@@ -143,8 +137,6 @@
 <div id="cmsToast"></div>
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-<script src="lib/easing/easing.min.js"></script>
-<script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cms.js"></script>
 </body>

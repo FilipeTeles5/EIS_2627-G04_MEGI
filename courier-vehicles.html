@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>My Vehicles | Movio</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="Courier Management System, logistics, delivery, fleet" name="keywords">
+    <meta content="Manage delivery operations with Movio." name="description">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/cms.css" rel="stylesheet">
+
+</head>
+<body>
+
+<div class="container-fluid p-0">
+  <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
+    <a href="index.html" class="navbar-brand ml-lg-3">
+      <h1 class="m-0 display-5 text-uppercase text-primary"><i class="fa fa-truck mr-2"></i>Movio</h1>
+    </a>
+    <div class="ml-auto d-flex align-items-center">
+      <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Courier</span>
+      <button type="button" class="btn btn-outline-primary btn-sm" data-demo-logout>Sign out</button>
+    </div>
+  </nav>
+</div>
+<div class="cms-role-nav">
+  <div class="container"><a href="courier.html" class="">Dashboard</a><a href="courier-route.html" class="">Active Route</a><a href="courier-vehicles.html" class="active">My Vehicles</a></div>
+</div>
+
+<section class="cms-page-hero">
+  <div class="container">
+    <h1>My Vehicles</h1>
+    <p class="mb-0">Register a vehicle for deliveries, provide its documents and follow its approval status.</p>
+    
+  </div>
+</section>
+<section class="container-fluid py-5">
+  <div class="container">
+    <div class="cms-panel p-4 mb-4">
+      <div class="cms-panel-title"><div><h4>Registered vehicles</h4><small>Managed by the logged-in Courier</small></div></div>
+      <div class="table-responsive">
+        <table class="table cms-table">
+          <thead><tr><th>Plate</th><th>Model</th><th>Type</th><th>Max weight</th><th>Max volume</th><th>Insurance</th><th>Inspection</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>48-AB-22</td><td>Mercedes Sprinter</td><td>Van</td><td>1,250 kg</td><td>10.5 m³</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Approved</span></td></tr>
+            <tr><td>91-XZ-04</td><td>Renault Kangoo</td><td>Van</td><td>800 kg</td><td>5.2 m³</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-warning">Expires soon</span></td><td><span class="cms-badge cms-badge-success">Approved</span></td></tr>
+            <tr><td>19-CC-04</td><td>Yamaha NMAX</td><td>Moto</td><td>35 kg</td><td>0.15 m³</td><td><span class="cms-badge cms-badge-danger">Expired</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-warning">Pending</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cms-panel p-4">
+      <div class="cms-panel-title"><div><h4>Register new vehicle</h4><small>New vehicles start as Pending</small></div></div>
+      <form id="vehicleForm" novalidate>
+        <div class="form-row">
+          <div class="form-group col-md-3"><label>License plate</label><input required class="form-control" placeholder="AA-00-AA"><div class="invalid-feedback">Required.</div></div>
+          <div class="form-group col-md-5"><label>Model</label><input required class="form-control" placeholder="Mercedes Sprinter"><div class="invalid-feedback">Required.</div></div>
+          <div class="form-group col-md-4"><label>Vehicle type</label><select required class="form-control"><option>Bike</option><option>Moto</option><option selected>Van</option><option>Truck</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-md-3"><label>Max weight (kg)</label><input required type="number" min="1" class="form-control"><div class="invalid-feedback">Positive capacity required.</div></div>
+          <div class="form-group col-md-3"><label>Max volume (m³)</label><input required type="number" min=".001" step=".001" class="form-control"><div class="invalid-feedback">Positive capacity required.</div></div>
+          <div class="form-group col-md-3"><label>Insurance expiry</label><input required type="date" class="form-control"><div class="invalid-feedback">Required.</div></div>
+          <div class="form-group col-md-3"><label>Inspection expiry</label><input required type="date" class="form-control"><div class="invalid-feedback">Required.</div></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group col-md-6"><label>Insurance certificate</label><input required type="file" class="form-control-file"><div class="invalid-feedback">Required.</div></div>
+          <div class="form-group col-md-6"><label>Inspection certificate</label><input required type="file" class="form-control-file"><div class="invalid-feedback">Required.</div></div>
+        </div>
+        <button class="btn btn-primary px-4 py-2" type="submit">Submit Vehicle for Approval</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<footer class="cms-site-footer mt-5">
+  <div class="container py-5 px-sm-3 px-md-5">
+    <div class="row">
+      <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
+        <a href="index.html" class="cms-footer-brand"><i class="fa fa-truck"></i>Movio</a>
+        <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+        <h2 class="cms-footer-heading">Explore Movio</h2>
+        <nav class="cms-footer-links" aria-label="Footer navigation">
+          <a href="index.html"><i class="fa fa-angle-right"></i>Home</a>
+          <a href="about.html"><i class="fa fa-angle-right"></i>About Us</a>
+          <a href="team.html"><i class="fa fa-angle-right"></i>Team</a>
+          <a href="login.html" data-dashboard-link><i class="fa fa-angle-right"></i>Sign in</a>
+        </nav>
+      </div>
+      <div class="col-lg-4 col-md-12">
+        <h2 class="cms-footer-heading">From pickup to doorstep</h2>
+        <p class="cms-footer-description mb-3">A smoother delivery journey starts here.</p>
+        <a class="cms-footer-cta" href="register.html" data-get-started>Get started<i class="fa fa-arrow-right ml-2"></i></a>
+      </div>
+    </div>
+    <div class="cms-footer-bottom">
+      <p>&copy; 2026 Movio. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+<a href="#" class="btn btn-lg btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
+
+<div id="cmsToast"></div>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/cms.js"></script>
+</body>
+</html>

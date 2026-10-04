@@ -1,7 +1,7 @@
 /* ============================================================
-   CourierMS project styles
+   Movio application styles
    Visual language inspired by the FASTER template.
-   The original template stylesheet is kept in css/style.css.
+   Bootstrap base styles are provided by css/style.css.
    ============================================================ */
 
 :root {
@@ -329,7 +329,15 @@ body { background: #fff; }
 .cms-footer-bottom p { margin: 0; }
 .cms-footer-bottom a { color: rgba(255,255,255,.72); }
 .cms-footer-bottom a:hover { color: #fff; }
-
+.cms-demo-notice {
+    margin-top: .8rem;
+    margin-bottom: 0;
+    padding: .6rem .8rem;
+    border-left: 3px solid var(--cms-primary);
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.84);
+    font-size: .86rem;
+}
 .cms-owner {
     display: inline-flex;
     align-items: center;
@@ -361,6 +369,8 @@ body { background: #fff; }
     padding: .85rem 1rem;
     box-shadow: 0 8px 24px rgba(0,0,0,.25);
 }
+#cmsToast.cms-demo-message { display: block; }
+#cmsToast.is-error { background: #8f2119; }
 
 @media (max-width: 767.98px) {
     .cms-meta-grid { grid-template-columns: 1fr; }
