@@ -219,6 +219,37 @@ function cmsBuildProductTable(products) {
     return wrapper;
 }
 
+// Add a collapsed, accessible product disclosure to a Courier order summary card.
+function cmsAppendCourierProductDisclosure(card, order, scope) {
+    const disclosureId = 'courier-products-' + scope + '-' + order.id;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm btn-outline-dark d-block w-100 mt-3';
+    button.dataset.courierProductToggle = disclosureId;
+    button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', disclosureId);
+    button.textContent = 'View products (' + (order.products || []).length + ')';
+
+    const panel = document.createElement('div');
+    panel.id = disclosureId;
+    panel.dataset.courierProductPanel = disclosureId;
+    panel.className = 'd-none mt-2';
+    panel.appendChild(cmsBuildProductTable(order.products));
+    card.append(button, panel);
+}
+
+// Toggle one Courier product disclosure without navigating away from the order list.
+function cmsToggleCourierProductDisclosure(container, button) {
+    const panel = [...container.querySelectorAll('[data-courier-product-panel]')]
+        .find(item => item.dataset.courierProductPanel === button.dataset.courierProductToggle);
+    if (!panel) return;
+    const expanded = panel.classList.toggle('d-none') === false;
+    button.setAttribute('aria-expanded', String(expanded));
+    button.textContent = expanded
+        ? 'Hide products'
+        : 'View products (' + panel.querySelectorAll('tbody tr').length + ')';
+}
+
 // Render the full browser-local order list and its product details for the Client page.
 function cmsRenderClientOrders() {
     const tableBody = document.getElementById('clientOrdersTableBody');
@@ -251,6 +282,14 @@ function cmsRenderClientOrders() {
         proofCell.textContent = order.proofFile || '—';
         row.appendChild(proofCell);
         const actions = document.createElement('td');
+        const productsButton = document.createElement('button');
+        productsButton.type = 'button';
+        productsButton.className = 'btn btn-sm btn-outline-secondary mr-1';
+        productsButton.dataset.toggleClientProducts = order.id;
+        productsButton.setAttribute('aria-expanded', 'false');
+        productsButton.setAttribute('aria-controls', 'client-products-' + order.id);
+        productsButton.textContent = 'View products (' + (order.products || []).length + ')';
+        actions.appendChild(productsButton);
         const detailsLink = document.createElement('a');
         detailsLink.href = '#client-order-' + order.id;
         detailsLink.className = 'btn btn-sm btn-outline-primary mr-1';
@@ -266,6 +305,16 @@ function cmsRenderClientOrders() {
         }
         row.appendChild(actions);
         tableBody.appendChild(row);
+
+        const productsRow = document.createElement('tr');
+        productsRow.id = 'client-products-' + order.id;
+        productsRow.dataset.clientProductsFor = order.id;
+        productsRow.className = 'd-none';
+        const productsCell = document.createElement('td');
+        productsCell.colSpan = 7;
+        productsCell.appendChild(cmsBuildProductTable(order.products));
+        productsRow.appendChild(productsCell);
+        tableBody.appendChild(productsRow);
 
         const section = document.createElement('section');
         section.id = 'client-order-' + order.id;
@@ -310,6 +359,17 @@ function cmsInitClientOrders() {
     if (!tableBody) return;
     cmsRenderClientOrders();
     tableBody.addEventListener('click', event => {
+        const productsButton = event.target.closest('[data-toggle-client-products]');
+        if (productsButton) {
+            const productsRow = [...tableBody.querySelectorAll('[data-client-products-for]')]
+                .find(row => row.dataset.clientProductsFor === productsButton.dataset.toggleClientProducts);
+            if (!productsRow) return;
+            const expanded = productsRow.classList.toggle('d-none') === false;
+            productsButton.setAttribute('aria-expanded', String(expanded));
+            productsButton.textContent = expanded ? 'Hide products' : 'View products (' +
+                productsRow.querySelectorAll('tbody tr').length + ')';
+            return;
+        }
         const button = event.target.closest('[data-cancel-client-order]');
         if (!button) return;
         const orders = cmsLoadDemoOrders();
@@ -1209,6 +1269,7 @@ function cmsRenderCourierDashboard() {
             label.append(checkbox, document.createTextNode('Add to the next route'));
             card.appendChild(label);
         }
+        cmsAppendCourierProductDisclosure(card, order, 'unrouted');
         pendingList.appendChild(card);
     });
     createRouteButton.classList.toggle('d-none', Boolean(route) || routableOrders.length === 0);
@@ -1232,6 +1293,7 @@ function cmsRenderCourierDashboard() {
         const detail = document.createElement('small');
         detail.textContent = order.destination + (order.completedOn ? ' · Completed ' + order.completedOn : '');
         card.append(header, detail);
+        cmsAppendCourierProductDisclosure(card, order, 'completed');
         completedList.appendChild(card);
     });
 }
@@ -1243,6 +1305,11 @@ function cmsInitCourierDashboard() {
     cmsRenderCourierDashboard();
 
     pendingList.addEventListener('click', event => {
+        const productToggle = event.target.closest('[data-courier-product-toggle]');
+        if (productToggle) {
+            cmsToggleCourierProductDisclosure(pendingList, productToggle);
+            return;
+        }
         const button = event.target.closest('[data-add-courier-order]');
         if (!button) return;
         const operations = cmsLoadCourierOperations();
@@ -1251,6 +1318,11 @@ function cmsInitCourierDashboard() {
             cmsRenderCourierDashboard();
             cmsToast('Order #' + button.dataset.addCourierOrder + ' added to the route as Initiated.');
         }
+    });
+
+    document.getElementById('courierCompletedOrders')?.addEventListener('click', event => {
+        const productToggle = event.target.closest('[data-courier-product-toggle]');
+        if (productToggle) cmsToggleCourierProductDisclosure(event.currentTarget, productToggle);
     });
 
     document.getElementById('createCourierRoute')?.addEventListener('click', () => {
@@ -1356,6 +1428,7 @@ function cmsRenderCourierRoute(operations) {
         const detail = document.createElement('small');
         detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
         card.append(header, detail);
+        cmsAppendCourierProductDisclosure(card, order, 'route');
         if (order.proofFile) {
             const proof = document.createElement('small');
             proof.className = 'd-block text-muted';
@@ -1415,6 +1488,11 @@ function cmsInitCourierRoute() {
     if (!operations) return;
     cmsCloseFinishedCourierRoutes(operations);
     cmsRenderCourierRoute(operations);
+
+    document.getElementById('courierRouteOrderList')?.addEventListener('click', event => {
+        const productToggle = event.target.closest('[data-courier-product-toggle]');
+        if (productToggle) cmsToggleCourierProductDisclosure(event.currentTarget, productToggle);
+    });
 
     advance.addEventListener('click', () => {
         const currentOperations = cmsLoadCourierOperations();
