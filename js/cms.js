@@ -492,14 +492,22 @@ function cmsInitTrackingPage() {
 }
 
 // Create a Leaflet map with valid markers and fit its view to the supplied points.
+const cmsOsmTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const cmsOsmAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
 function cmsCreateMap(id, points, options = {}) {
     const node = document.getElementById(id);
-    if (!node || !window.L) return null;
+    if (!node) return null;
+    if (!window.L) {
+        node.textContent = 'Map unavailable. Check the Leaflet library connection.';
+        return null;
+    }
 
-    const map = L.map(id);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const map = L.map(node);
+    L.tileLayer(cmsOsmTileUrl, {
         maxZoom: 19,
-        attribution: '&copy; OpenStreetMap contributors'
+        attribution: cmsOsmAttribution,
+        referrerPolicy: 'strict-origin-when-cross-origin'
     }).addTo(map);
 
     const valid = points.filter(p => Array.isArray(p.coords));
@@ -514,6 +522,9 @@ function cmsCreateMap(id, points, options = {}) {
     } else {
         map.setView(valid[0]?.coords || [41.1779, -8.5980], options.zoom || 14);
     }
+    const refreshMapSize = () => map.invalidateSize({pan:false});
+    requestAnimationFrame(refreshMapSize);
+    window.addEventListener('resize', refreshMapSize);
     return map;
 }
 
@@ -1695,25 +1706,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Client order creation
-    // Set up the pickup/delivery map and route preview only on the order form page.
+    // Render one movable pickup marker on the order form's OSM map for this sprint.
     if (document.getElementById('clientOrderMap')) {
-        const orderMap = L.map('clientOrderMap').setView([41.1779,-8.5980], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom:19, attribution:'&copy; OpenStreetMap contributors'
-        }).addTo(orderMap);
-
-        let overlays = [];
-        // Replace the map's current route with markers and a line between two coordinates.
-        function drawRoute(a,b) {
-            overlays.forEach(x => orderMap.removeLayer(x));
-            overlays = [
-                L.marker(a).addTo(orderMap).bindPopup('Origin'),
-                L.marker(b).addTo(orderMap).bindPopup('Destination'),
-                L.polyline([a,b], {color:'#FF4800',weight:5,opacity:.85}).addTo(orderMap)
-            ];
-            orderMap.fitBounds([a,b], {padding:[30,30]});
+        const orderMap = cmsCreateMap('clientOrderMap', [], {zoom:14});
+        let pickupMarker = null;
+        // Keep exactly one pickup marker and recenter it on the requested location.
+        function showPickupMarker(coords, label) {
+            if (!orderMap || !window.L) return;
+            if (pickupMarker) orderMap.removeLayer(pickupMarker);
+            pickupMarker = L.marker(coords).addTo(orderMap).bindPopup(label);
+            orderMap.setView(coords, 14);
         }
-        drawRoute([41.1779,-8.5980], [41.1579,-8.6291]);
+        showPickupMarker([41.1779,-8.5980], 'FEUP pickup');
 
         const orderForm = document.getElementById('createOrderForm');
         // Validate locations and persist the order with every entered product field.
@@ -1752,17 +1756,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 created_at:createdAt
             });
             if (!cmsSaveDemoOrders(orders)) return;
-            drawRoute([olat,olng],[dlat,dlng]);
+            showPickupMarker([olat,olng], 'Pickup location');
             cmsToast('Order #' + id + ' was saved in this browser with ' + products.length + ' product(s).');
         });
 
-        // Preview a route from the current coordinate fields without submitting the form.
+        // Preview the pickup location with the same single marker, without creating an order.
         document.getElementById('previewRoute')?.addEventListener('click', () => {
             const olat = Number(orderForm.elements['originLat'].value);
             const olng = Number(orderForm.elements['originLng'].value);
-            const dlat = Number(orderForm.elements['destLat'].value);
-            const dlng = Number(orderForm.elements['destLng'].value);
-            if ([olat,olng,dlat,dlng].every(Number.isFinite)) drawRoute([olat,olng],[dlat,dlng]);
+            if (Number.isFinite(olat) && Number.isFinite(olng)) {
+                showPickupMarker([olat,olng], 'Pickup location');
+            }
         });
     }
 
@@ -1788,13 +1792,11 @@ document.addEventListener('DOMContentLoaded', () => {
             {coords:[41.1779,-8.5980], label:'FEUP'}
         ], {zoom:14});
     }
-    // Show the sample stops assigned to the courier's route page.
+    // Show the same single FEUP marker on the Courier Navigation Cockpit route page.
     if (document.getElementById('courierRouteMap')) {
         cmsCreateMap('courierRouteMap', [
-            {coords:[41.1779,-8.5980], label:'Route origin · FEUP'},
-            {coords:[41.1655,-8.6209], label:'Order #1042'},
-            {coords:[41.1579,-8.6291], label:'Order #1043'}
-        ]);
+            {coords:[41.1779,-8.5980], label:'FEUP'}
+        ], {zoom:14});
     }
 
     // Courier active-route order handling and file-based proof simulation.
