@@ -47,34 +47,83 @@
 <!-- Main content section containing the primary information and actions for this page. -->
 <section class="container-fluid py-5">
   <div class="container">
-    <!-- Summary cards for the courier routes, orders, vehicles, and deliveries. -->
+    <!-- Dashboard summary logic:
+         - A courier can have at most one route in preparation or execution.
+         - The route and order totals reflect the courier's browser-stored demo data.
+         - Vehicle information is intentionally left unchanged in this iteration.
+         - Completed deliveries are counted separately from pending and routed orders. -->
     <div class="row">
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value">1</div><small>Active routes</small></div></div>
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value">2</div><small>Orders on route</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierActiveRouteCount">1</div><small>Active routes</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierRouteOrderCount">2</div><small>Orders on route</small></div></div>
       <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value">3</div><small>Approved vehicles</small></div></div>
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value">74</div><small>Completed deliveries</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierCompletedOrderCount">1</div><small>Completed deliveries</small></div></div>
     </div>
 
     <div class="row mt-3">
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Current route</h4><small>Route #R-88</small></div><span class="cms-badge cms-badge-info">Active</span></div>
-          <div class="cms-meta-grid">
+          <!-- Route lifecycle logic:
+               - A courier has at most one route in preparation or execution.
+               - Pending orders can be added only while the route is in preparation.
+               - Adding an order associates it with this route and changes it to Initiated.
+               - Starting execution locks route membership; a new route is available only after this one ends. -->
+          <div class="cms-panel-title"><div><h4 id="courierRouteTitle">Current route</h4><small id="courierRouteReference">Route #R-88</small></div><span id="courierRouteStatus" class="cms-badge cms-badge-warning">In preparation</span></div>
+          <div id="courierRouteDetails" class="cms-meta-grid">
             <div><span class="cms-meta-label">Assigned vehicle</span><span class="cms-meta-value">48-AB-22</span></div>
             <div><span class="cms-meta-label">Vehicle type</span><span class="cms-meta-value">Van</span></div>
-            <div><span class="cms-meta-label">Orders on route</span><span class="cms-meta-value">#1042 · #1043</span></div>
-            <div><span class="cms-meta-label">Next delivery</span><span class="cms-meta-value">#1042</span></div>
+            <div><span class="cms-meta-label">Orders on route</span><span id="courierRouteOrderReferences" class="cms-meta-value">#1042 · #1043</span></div>
+            <div><span class="cms-meta-label">Route rule</span><span id="courierRouteRule" class="cms-meta-value">Orders can still be added</span></div>
           </div>
+          <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Select pending orders below to create the next route.</p>
           <hr>
-          <a href="courier-route.html" class="btn btn-primary btn-block py-3">View route and deliveries</a>
+          <button id="startCourierRoute" type="button" class="btn btn-primary btn-block py-3">Start route</button>
+          <a href="courier-route.html" class="btn btn-outline-primary btn-block py-3">View route and deliveries</a>
           <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block py-3">Manage vehicles</a>
         </div>
       </div>
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4 h-100">
           <div class="cms-panel-title"><div><h4>Route map</h4><small>Example delivery locations</small></div></div>
-          <!-- Map showing example delivery stops on the courier route. -->
+          <!-- Map logic: keep the sprint visualization focused on the single FEUP marker. -->
           <div id="courierDashboardMap" class="cms-map cms-map-sm"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Route-order logic:
+         - Orders on the current route are listed separately from orders awaiting a route.
+         - Each order on a route is Initiated once associated; order transition controls are deferred.
+         - Route membership is frozen as soon as execution starts. -->
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        <div class="cms-panel p-4 h-100">
+          <div class="cms-panel-title"><div><h4>Orders on this route</h4><small>Encomendas já associadas à rota atual</small></div></div>
+          <div id="courierRouteOrders" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="col-lg-6 mb-4">
+        <div class="cms-panel p-4 h-100">
+          <!-- Pending-order logic:
+               - This list contains pending orders assigned to this individual courier but not yet routed.
+               - While a route is in preparation, an order can be added and becomes Initiated.
+               - With no active route, selected pending orders create the next route.
+               - During route execution, pending orders remain available for a later route. -->
+          <div class="cms-panel-title"><div><h4>Pending orders</h4><small>Assigned to you, awaiting a route</small></div></div>
+          <div id="courierPendingOrders" aria-live="polite"></div>
+          <button id="createCourierRoute" type="button" class="btn btn-primary mt-3 d-none">Create route from selected orders</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed-order logic:
+         - Completed orders are shown in a history separate from the active route and pending queue.
+         - The route ends only after every routed order reaches Completed or Cancelled.
+         - Status-transition controls and final proof submission are intentionally deferred. -->
+    <div class="row">
+      <div class="col-12 mb-4">
+        <div class="cms-panel p-4">
+          <div class="cms-panel-title"><div><h4>Completed orders</h4><small>Delivery history</small></div></div>
+          <div id="courierCompletedOrders" aria-live="polite"></div>
         </div>
       </div>
     </div>

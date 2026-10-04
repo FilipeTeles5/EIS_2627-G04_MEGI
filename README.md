@@ -17,7 +17,7 @@ Choose an account type on the login page to open its dashboard. Client and Couri
 
 To try the Staff flow, register with **Apply for Staff**, sign in as Admin, open **Users and staff** from the Admin dashboard and approve the application. Sign out, then sign in using the applicant's email and the Staff role. Rejected and pending applicants cannot enter the Staff area.
 
-This is a frontend demonstration, not authentication or security. Client, Courier and Admin sign-in accept any valid email and non-empty password; Staff sign-in additionally checks the demo application status. Other account information, orders and operational actions are not persisted. Browser-side role checks and application records can be changed or bypassed and must not protect real data. A production backend must authenticate users, authorize every request and enforce account approval and other business rules.
+This is a frontend demonstration, not authentication or security. Client, Courier and Admin sign-in accept any valid email and non-empty password; Staff sign-in additionally checks the demo application status. Courier dashboard route and order demo state is stored in the current browser's `localStorage`, separately for each demo email; other account information, orders and operational actions are not persisted. Browser-side role checks and application records can be changed or bypassed and must not protect real data. A production backend must authenticate users, authorize every request and enforce account approval and other business rules.
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 

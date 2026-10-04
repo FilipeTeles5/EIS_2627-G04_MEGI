@@ -630,12 +630,348 @@ function cmsInitRoleAccess() {
         if (hero) {
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
-            notice.textContent = 'Preview mode: this page uses sample data, and your changes are not saved.';
+            // Courier route and order changes persist only in this browser and remain demo data.
+            notice.textContent = page === 'courier.html'
+                ? 'Preview mode: sample courier orders are used, and route changes are saved in this browser only.'
+                : 'Preview mode: this page uses sample data, and your changes are not saved.';
             hero.appendChild(notice);
         }
     }
 
     return true;
+}
+
+/*
+ * Courier dashboard data and behavior:
+ * - Each courier sees a separate set of assigned orders, stored under their session email.
+ * - A courier can have only one route in preparation or execution at a time.
+ * - Pending orders can join a route only during preparation and become Initiated when added.
+ * - Starting a route locks its membership; another route can be created after all its orders are terminal.
+ * - Completed orders appear in a separate history; order transitions and proof submission remain out of scope.
+ */
+const cmsCourierOperationsKey = 'movioDemoCourierOperations:';
+
+// Return a fresh sample dataset for a courier who has not used this dashboard before.
+function cmsDefaultCourierOperations() {
+    return {
+        nextRouteNumber: 89,
+        routes: [
+            {id:'R-88', status:'planning', orderIds:['1042','1043']},
+            {id:'R-87', status:'completed', orderIds:['1039']}
+        ],
+        orders: [
+            {id:'1042', destination:'Boavista', parcels:2, status:'initiated', routeId:'R-88'},
+            {id:'1043', destination:'Matosinhos', parcels:1, status:'initiated', routeId:'R-88'},
+            {id:'1044', destination:'Paranhos', parcels:1, status:'pending', routeId:null},
+            {id:'1039', destination:'Porto', parcels:1, status:'completed', routeId:'R-87', completedOn:'02 Oct'}
+        ]
+    };
+}
+
+// Scope each browser-stored courier workflow to the signed-in demo email.
+function cmsCourierOperationsStorageKey() {
+    const email = (sessionStorage.getItem(cmsEmailKey) || 'courier@example.com').trim().toLowerCase();
+    return cmsCourierOperationsKey + encodeURIComponent(email);
+}
+
+// Load a courier's operational preview and seed it once with assigned sample orders.
+function cmsLoadCourierOperations() {
+    const key = cmsCourierOperationsStorageKey();
+    try {
+        const stored = localStorage.getItem(key);
+        if (stored === null) {
+            const initial = cmsDefaultCourierOperations();
+            localStorage.setItem(key, JSON.stringify(initial));
+            return initial;
+        }
+        const operations = JSON.parse(stored);
+        const valid = operations && Array.isArray(operations.routes) && Array.isArray(operations.orders) &&
+            Number.isInteger(operations.nextRouteNumber) && operations.orders.every(order =>
+                order && typeof order.id === 'string' &&
+                ['pending','initiated','in-progress','completed','cancelled'].includes(order.status)
+            );
+        if (!valid) throw new Error('Stored Courier operations have an invalid format.');
+        return operations;
+    } catch (error) {
+        console.error('Could not load demo Courier operations.', error);
+        cmsToast('Could not load courier orders from this browser. Check browser storage and try again.');
+        return null;
+    }
+}
+
+// Persist a courier's current route and orders in this browser only.
+function cmsSaveCourierOperations(operations) {
+    try {
+        localStorage.setItem(cmsCourierOperationsStorageKey(), JSON.stringify(operations));
+        return true;
+    } catch (error) {
+        console.error('Could not save demo Courier operations.', error);
+        cmsToast('Could not save courier route changes in this browser.');
+        return false;
+    }
+}
+
+// Find the courier's one route that is still being prepared or executed.
+function cmsCurrentCourierRoute(operations) {
+    return operations.routes.find(route => ['planning','active'].includes(route.status)) || null;
+}
+
+// Return an order's visible status label and matching dashboard badge style.
+function cmsCourierOrderBadge(status) {
+    const labels = {
+        pending: 'Pending',
+        initiated: 'Initiated',
+        'in-progress': 'In Progress',
+        completed: 'Completed',
+        cancelled: 'Cancelled'
+    };
+    const styles = {
+        pending: 'cms-badge-warning',
+        initiated: 'cms-badge-warning',
+        'in-progress': 'cms-badge-info',
+        completed: 'cms-badge-success',
+        cancelled: 'cms-badge-danger'
+    };
+    const badge = document.createElement('span');
+    badge.className = 'cms-badge ' + (styles[status] || 'cms-badge-warning');
+    badge.textContent = labels[status] || status;
+    return badge;
+}
+
+// Close a route once every associated order is Completed or Cancelled.
+function cmsCloseFinishedCourierRoutes(operations) {
+    let changed = false;
+    operations.routes.forEach(route => {
+        const allOrdersAreFinal = route.orderIds.length > 0 && route.orderIds.every(id => {
+            const order = operations.orders.find(item => item.id === id);
+            return order && ['completed','cancelled'].includes(order.status);
+        });
+        if (['planning','active'].includes(route.status) && allOrdersAreFinal) {
+            route.status = 'completed';
+            changed = true;
+        }
+    });
+    if (changed) cmsSaveCourierOperations(operations);
+}
+
+// Add selected Pending orders to a route and transition them to Initiated.
+function cmsAddCourierOrdersToRoute(operations, route, orderIds) {
+    if (!route || route.status !== 'planning') {
+        cmsToast('Orders can only be added while the route is in preparation.');
+        return false;
+    }
+    const orders = orderIds.map(id => operations.orders.find(order => order.id === id));
+    if (!orders.length || orders.some(order => !order || order.status !== 'pending')) {
+        cmsToast('Select one or more pending orders assigned to you.');
+        return false;
+    }
+    orders.forEach(order => {
+        order.status = 'initiated';
+        order.routeId = route.id;
+        route.orderIds.push(order.id);
+    });
+    if (!cmsSaveCourierOperations(operations)) return false;
+    return true;
+}
+
+// Render route state, routed orders, pending assignments, summary counts, and completed history.
+function cmsRenderCourierDashboard() {
+    const pendingList = document.getElementById('courierPendingOrders');
+    if (!pendingList) return;
+    const operations = cmsLoadCourierOperations();
+    if (!operations) return;
+    cmsCloseFinishedCourierRoutes(operations);
+
+    const route = cmsCurrentCourierRoute(operations);
+    const routeOrders = route
+        ? route.orderIds.map(id => operations.orders.find(order => order.id === id)).filter(Boolean)
+        : [];
+    const pendingOrders = operations.orders.filter(order => order.status === 'pending' && !order.routeId);
+    const completedOrders = operations.orders.filter(order => order.status === 'completed');
+
+    document.getElementById('courierActiveRouteCount').textContent = route ? '1' : '0';
+    document.getElementById('courierRouteOrderCount').textContent = String(routeOrders.length);
+    document.getElementById('courierCompletedOrderCount').textContent = String(completedOrders.length);
+
+    const routeTitle = document.getElementById('courierRouteTitle');
+    const routeReference = document.getElementById('courierRouteReference');
+    const routeStatus = document.getElementById('courierRouteStatus');
+    const routeDetails = document.getElementById('courierRouteDetails');
+    const noRouteMessage = document.getElementById('courierNoRouteMessage');
+    const routeReferences = document.getElementById('courierRouteOrderReferences');
+    const routeRule = document.getElementById('courierRouteRule');
+    const startRouteButton = document.getElementById('startCourierRoute');
+    const createRouteButton = document.getElementById('createCourierRoute');
+
+    if (route) {
+        const preparing = route.status === 'planning';
+        routeTitle.textContent = preparing ? 'Route in preparation' : 'Route in progress';
+        routeReference.textContent = 'Route #' + route.id;
+        routeStatus.textContent = preparing ? 'In preparation' : 'Active';
+        routeStatus.className = 'cms-badge ' + (preparing ? 'cms-badge-warning' : 'cms-badge-info');
+        routeStatus.classList.remove('d-none');
+        routeDetails.classList.remove('d-none');
+        noRouteMessage.classList.add('d-none');
+        routeReferences.textContent = routeOrders.length
+            ? routeOrders.map(order => '#' + order.id).join(' · ')
+            : 'No orders yet';
+        routeRule.textContent = preparing
+            ? 'Orders can still be added'
+            : 'Membership is locked during execution';
+        startRouteButton.classList.toggle('d-none', !preparing);
+        startRouteButton.disabled = routeOrders.length === 0;
+    } else {
+        routeTitle.textContent = 'No active route';
+        routeReference.textContent = 'Create a route from pending orders';
+        routeStatus.classList.add('d-none');
+        routeDetails.classList.add('d-none');
+        noRouteMessage.classList.remove('d-none');
+        startRouteButton.classList.add('d-none');
+    }
+
+    const routeOrderList = document.getElementById('courierRouteOrders');
+    routeOrderList.replaceChildren();
+    if (!routeOrders.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = route ? 'No orders have been added to this route yet.' : 'There are no orders on a route.';
+        routeOrderList.appendChild(empty);
+    }
+    routeOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'cms-order-card mb-3';
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between align-items-center';
+        const reference = document.createElement('strong');
+        reference.textContent = '#' + order.id;
+        header.append(reference, cmsCourierOrderBadge(order.status));
+        const detail = document.createElement('small');
+        detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
+        card.append(header, detail);
+        routeOrderList.appendChild(card);
+    });
+
+    pendingList.replaceChildren();
+    if (!pendingOrders.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = 'There are no pending orders assigned to you.';
+        pendingList.appendChild(empty);
+    }
+    pendingOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'cms-order-card mb-3';
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between align-items-center';
+        const reference = document.createElement('strong');
+        reference.textContent = '#' + order.id;
+        header.append(reference, cmsCourierOrderBadge(order.status));
+        const detail = document.createElement('small');
+        detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
+        card.append(header, detail);
+
+        if (route?.status === 'planning') {
+            const addButton = document.createElement('button');
+            addButton.type = 'button';
+            addButton.className = 'btn btn-sm btn-outline-primary mt-2';
+            addButton.dataset.addCourierOrder = order.id;
+            addButton.textContent = 'Add to current route';
+            card.appendChild(addButton);
+        } else if (route?.status === 'active') {
+            const note = document.createElement('small');
+            note.className = 'd-block text-muted mt-2';
+            note.textContent = 'Available for the next route';
+            card.appendChild(note);
+        } else {
+            const label = document.createElement('label');
+            label.className = 'd-flex align-items-center mt-2 mb-0';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'mr-2';
+            checkbox.value = order.id;
+            checkbox.dataset.createCourierRouteOrder = 'true';
+            label.append(checkbox, document.createTextNode('Add to the next route'));
+            card.appendChild(label);
+        }
+        pendingList.appendChild(card);
+    });
+    createRouteButton.classList.toggle('d-none', Boolean(route) || pendingOrders.length === 0);
+
+    const completedList = document.getElementById('courierCompletedOrders');
+    completedList.replaceChildren();
+    if (!completedOrders.length) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = 'No completed orders yet.';
+        completedList.appendChild(empty);
+    }
+    completedOrders.forEach(order => {
+        const card = document.createElement('div');
+        card.className = 'cms-order-card mb-3';
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between align-items-center';
+        const reference = document.createElement('strong');
+        reference.textContent = '#' + order.id;
+        header.append(reference, cmsCourierOrderBadge(order.status));
+        const detail = document.createElement('small');
+        detail.textContent = order.destination + (order.completedOn ? ' · Completed ' + order.completedOn : '');
+        card.append(header, detail);
+        completedList.appendChild(card);
+    });
+}
+
+// Bind route creation and order association controls on the courier dashboard only.
+function cmsInitCourierDashboard() {
+    const pendingList = document.getElementById('courierPendingOrders');
+    if (!pendingList) return;
+    cmsRenderCourierDashboard();
+
+    pendingList.addEventListener('click', event => {
+        const button = event.target.closest('[data-add-courier-order]');
+        if (!button) return;
+        const operations = cmsLoadCourierOperations();
+        const route = operations && cmsCurrentCourierRoute(operations);
+        if (operations && cmsAddCourierOrdersToRoute(operations, route, [button.dataset.addCourierOrder])) {
+            cmsRenderCourierDashboard();
+            cmsToast('Order #' + button.dataset.addCourierOrder + ' added to the route as Initiated.');
+        }
+    });
+
+    document.getElementById('createCourierRoute')?.addEventListener('click', () => {
+        const operations = cmsLoadCourierOperations();
+        if (!operations || cmsCurrentCourierRoute(operations)) return;
+        const selectedIds = [...pendingList.querySelectorAll('[data-create-courier-route-order]:checked')]
+            .map(checkbox => checkbox.value);
+        if (!selectedIds.length) {
+            cmsToast('Select at least one pending order to create a route.');
+            return;
+        }
+        const routeId = 'R-' + operations.nextRouteNumber++;
+        const route = {id:routeId, status:'planning', orderIds:[]};
+        operations.routes.push(route);
+        if (!cmsAddCourierOrdersToRoute(operations, route, selectedIds)) {
+            operations.routes = operations.routes.filter(item => item !== route);
+            return;
+        }
+        cmsRenderCourierDashboard();
+        cmsToast('Route #' + routeId + ' created with the selected orders.');
+    });
+
+    document.getElementById('startCourierRoute')?.addEventListener('click', () => {
+        const operations = cmsLoadCourierOperations();
+        const route = operations && cmsCurrentCourierRoute(operations);
+        if (!operations || !route || route.status !== 'planning' || !route.orderIds.length) return;
+        route.status = 'active';
+        if (!cmsSaveCourierOperations(operations)) return;
+        cmsRenderCourierDashboard();
+        cmsToast('Route started. No more orders can be added to it.');
+    });
+
+    // Keep this courier's dashboard current if another tab updates the same demo workflow.
+    const storageKey = cmsCourierOperationsStorageKey();
+    window.addEventListener('storage', event => {
+        if (event.key === storageKey) cmsRenderCourierDashboard();
+    });
 }
 
 // Initialize access control, account flows, counters, and page-specific preview controls.
@@ -832,13 +1168,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.product-weight,.product-volume').forEach(i => i.addEventListener('input', cmsUpdateProductTotals));
     cmsUpdateProductTotals();
 
-    // Courier maps
-    // Show a sample origin-to-destination route on the courier dashboard.
+    // Courier dashboard
+    // Render this courier's route and orders, then show the sprint's single FEUP marker.
+    cmsInitCourierDashboard();
     if (document.getElementById('courierDashboardMap')) {
         cmsCreateMap('courierDashboardMap', [
-            {coords:[41.1779,-8.5980], label:'Origin · FEUP'},
-            {coords:[41.1579,-8.6291], label:'Destination · Matosinhos'}
-        ]);
+            {coords:[41.1779,-8.5980], label:'FEUP'}
+        ], {zoom:14});
     }
     // Show the sample stops assigned to the courier's route page.
     if (document.getElementById('courierRouteMap')) {
