@@ -80,27 +80,44 @@ const cmsTrackingOrders = {
 // Shared browser-only order records keep client order, courier, and tracking previews consistent.
 const cmsDemoOrdersKey = 'movioDemoOrders';
 
-// Seed sample orders with their products; created_at is stored but not shown to users.
+// Seed shared browser-only sample orders used by client, courier, and tracking pages.
 function cmsDefaultDemoOrders() {
     return [
         {
-            id:'1042', status:'in-progress', routeId:'R-88', destination:'Boavista', pickup:'FEUP', attempt:1,
+            id:'1042', status:'in-progress', routeId:'R-88', pickup:'FEUP', destination:'Matosinhos',
+            courier:'Miguel Costa', vehicle:'Van · 48-AB-22', attempt:1, created_at:'2026-10-05T14:20:00Z',
             products:[
                 {description:'Laptop', category:'Electronics', weight_kg:2.4, volume_m3:0.03, created_at:'2026-10-03T14:20:00Z'},
                 {description:'Documents', category:'Documents', weight_kg:0.6, volume_m3:0.004, created_at:'2026-10-03T14:20:00Z'}
             ]
         },
         {
-            id:'1043', status:'initiated', routeId:'R-88', destination:'Matosinhos', pickup:'FEUP', attempt:0,
+            id:'1043', status:'initiated', routeId:'R-88', pickup:'Porto', destination:'Braga',
+            attempt:0, created_at:'2026-10-06T09:00:00Z',
             products:[{description:'Parcel', category:'General', weight_kg:83, volume_m3:1.366, created_at:'2026-10-03T14:25:00Z'}]
         },
         {
-            id:'1031', status:'completed', routeId:'R-81', destination:'Porto', pickup:'Not provided', attempt:1,
+            id:'1041', status:'completed', routeId:'R-86', pickup:'Braga', destination:'Porto',
+            courier:'Ana Silva', vehicle:'Van · 22-CD-45', attempt:1,
+            created_at:'2026-10-02T10:00:00Z', completedAt:'2026-10-03T12:00:00Z',
             products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-02T10:00:00Z'}],
+            proofFile:'order-1041.jpg'
+        },
+        {
+            id:'1040', status:'completed', routeId:'R-85', pickup:'Porto', destination:'Maia',
+            courier:'João Costa', vehicle:'Van · 31-EF-77', attempt:1,
+            created_at:'2026-09-30T08:00:00Z', completedAt:'2026-10-01T15:00:00Z',
+            products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-09-30T08:00:00Z'}]
+        },
+        {
+            id:'1031', status:'completed', routeId:'R-81', pickup:'Braga', destination:'Porto',
+            attempt:1, created_at:'2026-09-27T10:00:00Z', completedAt:'2026-09-28T12:00:00Z',
+            products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-09-27T10:00:00Z'}],
             proofFile:'order-1031.jpg'
         },
         {
-            id:'1028', status:'pending', routeId:null, destination:'Not provided', pickup:'Not provided', attempt:0,
+            id:'1028', status:'pending', routeId:null, destination:'Not provided', pickup:'Not provided',
+            attempt:0, created_at:'2026-10-04T09:00:00Z',
             products:[{description:'Parcel', category:'General', weight_kg:1, volume_m3:0.01, created_at:'2026-10-04T09:00:00Z'}]
         }
     ];
@@ -119,6 +136,30 @@ function cmsLoadDemoOrders() {
         if (!Array.isArray(orders) || !orders.every(order =>
             order && typeof order.id === 'string' && Array.isArray(order.products)
         )) throw new Error('Stored demo orders have an invalid format.');
+        let updated = false;
+        cmsDefaultDemoOrders().forEach(sampleOrder => {
+            let order = orders.find(item => item.id === sampleOrder.id);
+            if (!order) {
+                orders.push(sampleOrder);
+                updated = true;
+                return;
+            }
+            ['courier','vehicle','created_at','completedAt'].forEach(field => {
+                if ((order[field] === undefined || order[field] === null || order[field] === '') &&
+                    sampleOrder[field] !== undefined) {
+                    order[field] = sampleOrder[field];
+                    updated = true;
+                }
+            });
+            ['pickup','destination'].forEach(field => {
+                if ((!order[field] || order[field] === 'Not provided') && sampleOrder[field] &&
+                    sampleOrder[field] !== 'Not provided') {
+                    order[field] = sampleOrder[field];
+                    updated = true;
+                }
+            });
+        });
+        if (updated) localStorage.setItem(cmsDemoOrdersKey, JSON.stringify(orders));
         return orders;
     } catch (error) {
         console.error('Could not load demo orders.', error);
@@ -164,8 +205,11 @@ function cmsSyncCourierOrders(operations) {
         sharedOrder.routeId = order.routeId || null;
         sharedOrder.destination = order.destination || sharedOrder.destination;
         sharedOrder.products = Array.isArray(order.products) ? order.products : sharedOrder.products;
+        if (order.courier) sharedOrder.courier = order.courier;
+        if (order.vehicle) sharedOrder.vehicle = order.vehicle;
         if (order.proofFile) sharedOrder.proofFile = order.proofFile;
         if (order.completedOn) sharedOrder.completedOn = order.completedOn;
+        if (order.completedAt) sharedOrder.completedAt = order.completedAt;
     });
     cmsSaveDemoOrders(sharedOrders);
 }
@@ -296,7 +340,7 @@ function cmsRenderClientOrders() {
         productsButton.textContent = 'View products (' + (order.products || []).length + ')';
         actions.appendChild(productsButton);
         const detailsLink = document.createElement('a');
-        detailsLink.href = '#client-order-' + order.id;
+        detailsLink.href = '#order' + order.id;
         detailsLink.className = 'btn btn-sm btn-outline-primary mr-1';
         detailsLink.textContent = 'Details';
         actions.appendChild(detailsLink);
@@ -322,7 +366,7 @@ function cmsRenderClientOrders() {
         tableBody.appendChild(productsRow);
 
         const section = document.createElement('section');
-        section.id = 'client-order-' + order.id;
+        section.id = 'order' + order.id;
         section.className = 'cms-panel p-4 mb-4';
         const title = document.createElement('div');
         title.className = 'cms-panel-title';
@@ -390,25 +434,134 @@ function cmsInitClientOrders() {
     });
 }
 
-// Keep the Client dashboard introduction synchronized with its active demo orders.
-function cmsInitClientDashboard() {
+// Build a dashboard card from the shared client order record.
+function cmsBuildClientDashboardOrderCard(order, isRecent) {
+    const column = document.createElement('div');
+    column.className = isRecent ? 'col-lg-4 col-md-6 mb-3' : 'col-md-6 mb-3';
+    const card = document.createElement('div');
+    card.className = 'cms-order-card';
+
+    const header = document.createElement('div');
+    header.className = 'd-flex justify-content-between align-items-start mb-2';
+    const title = document.createElement('h5');
+    title.textContent = 'Order #' + order.id;
+    header.append(title, cmsCourierOrderBadge(order.status));
+
+    const locations = document.createElement('p');
+    locations.className = 'mb-2';
+    locations.textContent = (order.pickup || 'Pickup not provided') + ' → ' +
+        (order.destination || 'Destination not provided');
+    card.append(header, locations);
+
+    if (isRecent) {
+        const completedDate = order.completedAt || order.completedOn;
+        if (completedDate) {
+            const delivered = document.createElement('small');
+            delivered.className = 'd-block mb-2';
+            const parsedDate = new Date(completedDate);
+            const displayDate = /^\d{4}-\d{2}-\d{2}/.test(String(completedDate)) &&
+                !Number.isNaN(parsedDate.getTime())
+                ? parsedDate.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})
+                : completedDate;
+            delivered.textContent = 'Delivered: ' + displayDate;
+            card.appendChild(delivered);
+        }
+    } else {
+        const assignments = [
+            ['Courier', order.courier],
+            ['Vehicle', order.vehicle],
+            ['Route', order.routeId]
+        ].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '');
+
+        if (order.status === 'initiated' && assignments.length === 0) {
+            const waiting = document.createElement('p');
+            waiting.className = 'mb-2';
+            waiting.textContent = 'Waiting for courier assignment';
+            card.appendChild(waiting);
+        } else {
+            assignments.forEach(([label, value]) => {
+                const detail = document.createElement('small');
+                detail.className = 'd-block';
+                detail.textContent = label + ': ' + value;
+                card.appendChild(detail);
+            });
+        }
+    }
+
+    const detailsLink = document.createElement('a');
+    detailsLink.href = 'client-orders.html#order' + order.id;
+    detailsLink.className = 'btn btn-outline-primary btn-sm mt-2';
+    detailsLink.textContent = 'View details';
+    card.appendChild(detailsLink);
+    column.appendChild(card);
+    return column;
+}
+
+// Render every Client dashboard section from the same browser-local order list.
+function cmsRenderClientDashboard(orders) {
     const description = document.getElementById('clientDashboardActiveOrdersDescription');
-    if (!description) return;
+    const activeContainer = document.getElementById('clientDashboardActiveDeliveries');
+    const recentContainer = document.getElementById('clientDashboardRecentDeliveries');
+    if (!description || !activeContainer || !recentContainer) return;
 
-    const updateDescription = () => {
+    const activeOrders = cmsGetActiveOrders(orders);
+    const initiatedCount = orders.filter(order => order.status === 'initiated').length;
+    const inProgressCount = orders.filter(order => order.status === 'in-progress').length;
+    const completedOrders = orders.filter(order => order.status === 'completed');
+    const numberOfActiveOrders = activeOrders.length;
+
+    description.textContent = numberOfActiveOrders === 0
+        ? 'You currently have no active orders. Create a new delivery when you\'re ready.'
+        : numberOfActiveOrders === 1
+            ? 'You currently have 1 active order. Track its progress or create a new delivery.'
+            : 'You currently have ' + numberOfActiveOrders + ' active orders. Track their progress or create a new delivery.';
+
+    document.getElementById('clientDashboardTotalOrders').textContent = String(orders.length);
+    document.getElementById('clientDashboardInitiatedOrders').textContent = String(initiatedCount);
+    document.getElementById('clientDashboardInProgressOrders').textContent = String(inProgressCount);
+    document.getElementById('clientDashboardCompletedOrders').textContent = String(completedOrders.length);
+
+    activeContainer.replaceChildren();
+    if (activeOrders.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'col-12 mb-0';
+        empty.textContent = 'You have no active deliveries right now.';
+        activeContainer.appendChild(empty);
+    } else {
+        activeOrders.forEach(order => activeContainer.appendChild(cmsBuildClientDashboardOrderCard(order, false)));
+    }
+
+    recentContainer.replaceChildren();
+    const recentOrders = completedOrders
+        .slice()
+        .sort((first, second) => {
+            const firstDate = first.completedAt || first.created_at ||
+                (first.products && first.products[0] && first.products[0].created_at) || first.completedOn || '';
+            const secondDate = second.completedAt || second.created_at ||
+                (second.products && second.products[0] && second.products[0].created_at) || second.completedOn || '';
+            return (Date.parse(secondDate) || 0) - (Date.parse(firstDate) || 0);
+        })
+        .slice(0, 3);
+    if (recentOrders.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'col-12 mb-2';
+        empty.textContent = 'No completed deliveries yet.';
+        recentContainer.appendChild(empty);
+    } else {
+        recentOrders.forEach(order => recentContainer.appendChild(cmsBuildClientDashboardOrderCard(order, true)));
+    }
+}
+
+// Keep the dashboard introduction, delivery cards, and statistics synchronized.
+function cmsInitClientDashboard() {
+    if (!document.getElementById('clientDashboardActiveDeliveries')) return;
+    const updateDashboard = () => {
         const orders = cmsLoadDemoOrders();
-        if (!orders) return;
-        const activeOrderCount = cmsGetActiveOrders(orders).length;
-        description.textContent = activeOrderCount === 0
-            ? 'You currently have no active orders. Create a new delivery when you\'re ready.'
-            : activeOrderCount === 1
-                ? 'You currently have 1 active order. Track its progress or create a new delivery.'
-                : 'You currently have ' + activeOrderCount + ' active orders. Track their progress or create a new delivery.';
+        if (orders) cmsRenderClientDashboard(orders);
     };
-
-    updateDescription();
+    updateDashboard();
     window.addEventListener('storage', event => {
-        if (event.key === cmsDemoOrdersKey) updateDescription();
+        if (event.key === cmsDemoOrdersKey) updateDashboard();
     });
 }
 
@@ -1584,6 +1737,7 @@ function cmsInitCourierRoute() {
         }
         order.status = 'completed';
         order.proofFile = file.name;
+        order.completedAt = new Date().toISOString();
         order.completedOn = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
         delete order.proofRequired;
         if (!cmsSaveCourierOperations(currentOperations)) return;
@@ -1724,14 +1878,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Client dashboard preview map (required Client area map)
+    // Client dashboard
     cmsInitClientDashboard();
-    // Add the sample FEUP marker when the Client dashboard contains its map element.
-    if (document.getElementById('clientDashboardMap')) {
-        cmsCreateMap('clientDashboardMap', [
-            {coords:[41.1779,-8.5980], label:'FEUP marker'}
-        ], {zoom:14});
-    }
 
     // Client order creation
     // Render one movable pickup marker on the order form's OSM map for this sprint.
