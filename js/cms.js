@@ -127,6 +127,11 @@ function cmsLoadDemoOrders() {
     }
 }
 
+// Return the shared demo orders that are still active in the delivery workflow.
+function cmsGetActiveOrders(orders) {
+    return orders.filter(order => order.status === 'initiated' || order.status === 'in-progress');
+}
+
 // Save shared browser-only demo orders without uploading product files or data to a server.
 function cmsSaveDemoOrders(orders) {
     try {
@@ -382,6 +387,28 @@ function cmsInitClientOrders() {
     });
     window.addEventListener('storage', event => {
         if (event.key === cmsDemoOrdersKey) cmsRenderClientOrders();
+    });
+}
+
+// Keep the Client dashboard introduction synchronized with its active demo orders.
+function cmsInitClientDashboard() {
+    const description = document.getElementById('clientDashboardActiveOrdersDescription');
+    if (!description) return;
+
+    const updateDescription = () => {
+        const orders = cmsLoadDemoOrders();
+        if (!orders) return;
+        const activeOrderCount = cmsGetActiveOrders(orders).length;
+        description.textContent = activeOrderCount === 0
+            ? 'You currently have no active orders. Create a new delivery when you\'re ready.'
+            : activeOrderCount === 1
+                ? 'You currently have 1 active order. Track its progress or create a new delivery.'
+                : 'You currently have ' + activeOrderCount + ' active orders. Track their progress or create a new delivery.';
+    };
+
+    updateDescription();
+    window.addEventListener('storage', event => {
+        if (event.key === cmsDemoOrdersKey) updateDescription();
     });
 }
 
@@ -1698,6 +1725,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Client dashboard preview map (required Client area map)
+    cmsInitClientDashboard();
     // Add the sample FEUP marker when the Client dashboard contains its map element.
     if (document.getElementById('clientDashboardMap')) {
         cmsCreateMap('clientDashboardMap', [
