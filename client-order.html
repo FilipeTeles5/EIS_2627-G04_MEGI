@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Create Order | Movio</title>
+    <title>Create a new delivery | Movio</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="Movio, parcel delivery, delivery management, courier services" name="keywords">
-    <meta content="Add parcel details and pickup and delivery locations to create a Movio delivery order." name="description">
+    <meta content="Tell us what you're sending and where it needs to go." name="description">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -39,8 +39,8 @@
 <!-- Page introduction identifying the current view and its purpose. -->
 <section class="cms-page-hero">
   <div class="container">
-    <h1>Create Order</h1>
-    <p class="mb-0">Add parcel details and pickup and delivery locations to create a new order.</p>
+    <h1>Create a new delivery</h1>
+    <p class="mb-0">Tell us what you're sending and where it needs to go.</p>
     
   </div>
 </section>
@@ -51,15 +51,18 @@
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4">
           <div class="cms-panel-title"><div><h4>Products</h4><small>Add one or more products to this delivery</small></div></div>
+          <div id="orderFormAlert" class="alert alert-danger d-none" role="alert">
+            Please check the highlighted fields before creating your order.
+          </div>
           <!-- Form for entering parcel items and pickup and delivery locations. -->
           <form id="createOrderForm" novalidate>
-            <h6 class="mb-3">Items in this delivery</h6>
+            <h6 class="mb-3">Products in this delivery</h6>
             <!-- Container for parcel items included in the new delivery. -->
             <div id="productRows">
               <div class="cms-product-row">
                 <div class="d-flex justify-content-between align-items-center mb-2"><strong>Product 1</strong></div>
                 <div class="form-row">
-                  <div class="form-group col-md-5"><label>Description</label><input class="form-control product-description" required><div class="invalid-feedback">Description is required.</div></div>
+                  <div class="form-group col-md-5"><label>Description</label><input class="form-control product-description" required placeholder="e.g. Laptop"><div class="invalid-feedback">Description is required.</div></div>
                   <div class="form-group col-md-3"><label>Category</label><select class="form-control product-category" required><option value="" selected disabled>Select category</option><option>Electronics</option><option>Food</option><option>Furniture</option><option>Clothes</option><option>Other</option></select><div class="invalid-feedback">Category is required.</div></div>
                   <div class="form-group col-md-2"><label>Weight (kg)</label><input class="form-control product-weight" required type="number" min="0.01" step="0.01"><div class="invalid-feedback">Positive weight required.</div></div>
                   <div class="form-group col-md-2"><label>Volume (m³)</label><input class="form-control product-volume" required type="number" min="0.001" step="0.001"><div class="invalid-feedback">Positive volume required.</div></div>
@@ -83,9 +86,9 @@
               <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
               <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
-            <div class="d-flex flex-wrap">
-              <button id="previewLocations" class="btn btn-outline-dark py-3 px-4 mb-2" type="button">Preview locations</button>
-              <button class="btn btn-primary py-3 px-4 mr-2 mb-2" type="submit">Create delivery order</button>
+            <div class="d-flex flex-wrap justify-content-between">
+              <button id="previewLocations" class="btn btn-outline-dark py-3 px-4 mr-2 mb-2" type="button">Preview locations</button>
+              <button class="btn btn-primary py-3 px-4 mb-2" type="submit">Create delivery order</button>
             </div>
           </form>
         </div>
@@ -112,11 +115,11 @@
       </div>
       <div class="modal-body">
         <p id="orderCreatedModalMessage" class="mb-2">Your order #1044 has been created.</p>
-        <p class="mb-0">Status: Initiated</p>
+        <p class="mb-0">Status: Pending</p>
       </div>
       <div class="modal-footer">
         <a href="client-orders.html" class="btn btn-primary">View My Orders</a>
-        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>

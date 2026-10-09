@@ -27,13 +27,11 @@ function cmsValidateOrderField(field) {
     return valid;
 }
 
-// Validate every browser-validatable control, including controls in added product rows.
-function cmsValidateOrderForm(form) {
-    form.classList.add('was-validated');
+// Return every invalid browser-validatable control, including added product-row fields.
+function cmsGetInvalidOrderFields(form) {
     return [...form.elements]
-        .filter(field => field.willValidate)
-        .map(cmsValidateOrderField)
-        .every(Boolean);
+        .filter(field => field.matches('input, select, textarea') && field.willValidate)
+        .filter(field => !cmsValidateOrderField(field));
 }
 
 // Sample delivery records used to populate the tracking preview by reference.
@@ -763,6 +761,7 @@ function cmsPreviewOrderLocations(form, map, layers) {
 
 // Validate fields on blur and clear errors as existing or dynamically added fields are corrected.
 function cmsBindOrderFormValidation(form) {
+    const alert = document.getElementById('orderFormAlert');
     form.addEventListener('blur', event => {
         const field = event.target;
         if (field.willValidate) cmsValidateOrderField(field);
@@ -772,6 +771,10 @@ function cmsBindOrderFormValidation(form) {
             const field = event.target;
             if (field.willValidate && field.classList.contains('is-invalid')) {
                 cmsValidateOrderField(field);
+            }
+            if (alert && !alert.classList.contains('d-none') &&
+                cmsGetInvalidOrderFields(form).length === 0) {
+                alert.classList.add('d-none');
             }
         });
     });
@@ -786,7 +789,7 @@ function cmsAddProductRow() {
     row.className = 'cms-product-row';
     row.innerHTML = `
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <strong>Item ${index}</strong>
+        <strong>Product ${index}</strong>
         <button type="button" class="btn btn-sm btn-outline-danger cms-remove-product">Remove</button>
       </div>
       <div class="form-row">
@@ -809,12 +812,12 @@ function cmsAddProductRow() {
         </div>
         <div class="form-group col-md-2">
           <label>Weight (kg)</label>
-          <input class="form-control product-weight" required type="number" min="0.01" step="0.01" value="1">
+          <input class="form-control product-weight" required type="number" min="0.01" step="0.01">
           <div class="invalid-feedback">Enter a weight greater than zero.</div>
         </div>
         <div class="form-group col-md-2">
           <label>Volume (m³)</label>
-          <input class="form-control product-volume" required type="number" min="0.001" step="0.001" value="0.01">
+          <input class="form-control product-volume" required type="number" min="0.001" step="0.001">
           <div class="invalid-feedback">Enter a volume greater than zero.</div>
         </div>
       </div>`;
@@ -1976,7 +1979,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Validate every product and location field before persisting the demo order.
         orderForm?.addEventListener('submit', e => {
             e.preventDefault();
-            if (!cmsValidateOrderForm(orderForm)) return;
+            const invalidFields = cmsGetInvalidOrderFields(orderForm);
+            const orderFormAlert = document.getElementById('orderFormAlert');
+            if (invalidFields.length > 0) {
+                orderFormAlert?.classList.remove('d-none');
+                const firstInvalid = invalidFields[0];
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+                    firstInvalid.focus({preventScroll:true});
+                }
+                return;
+            }
+            orderFormAlert?.classList.add('d-none');
 
             const olat = cmsReadCoordinate(orderForm,'originLat',-90,90);
             const olng = cmsReadCoordinate(orderForm,'originLng',-180,180);
@@ -2000,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = String(Date.now());
             orders.push({
                 id,
-                status:'initiated',
+                status:'pending',
                 routeId:null,
                 pickup:olat + ', ' + olng,
                 destination:dlat + ', ' + dlng,
