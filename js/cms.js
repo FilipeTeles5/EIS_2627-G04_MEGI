@@ -186,7 +186,9 @@ function cmsLoadDemoOrders() {
 
 // Return the shared demo orders that are still active in the delivery workflow.
 function cmsGetActiveOrders(orders) {
-    return orders.filter(order => order.status === 'initiated' || order.status === 'in-progress');
+    return orders.filter(order =>
+        ['pending', 'initiated', 'in-progress'].includes(order.status)
+    );
 }
 
 // Save shared browser-only demo orders without uploading product files or data to a server.
@@ -487,21 +489,21 @@ function cmsBuildClientDashboardOrderCard(order, isRecent) {
             ['Courier', order.courier],
             ['Vehicle', order.vehicle],
             ['Route', order.routeId]
-        ].filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '');
+        ].filter(([, value]) => value !== null && value !== undefined &&
+            !['', 'null', 'undefined'].includes(String(value).trim().toLowerCase()));
 
-        if (order.status === 'initiated' && assignments.length === 0) {
+        if (order.status === 'pending') {
             const waiting = document.createElement('p');
             waiting.className = 'mb-2';
             waiting.textContent = 'Waiting for courier assignment';
             card.appendChild(waiting);
-        } else {
-            assignments.forEach(([label, value]) => {
-                const detail = document.createElement('small');
-                detail.className = 'd-block';
-                detail.textContent = label + ': ' + value;
-                card.appendChild(detail);
-            });
         }
+        assignments.forEach(([label, value]) => {
+            const detail = document.createElement('small');
+            detail.className = 'd-block';
+            detail.textContent = label + ': ' + value;
+            card.appendChild(detail);
+        });
     }
 
     const detailsLink = document.createElement('a');
@@ -521,6 +523,7 @@ function cmsRenderClientDashboard(orders) {
     if (!description || !activeContainer || !recentContainer) return;
 
     const activeOrders = cmsGetActiveOrders(orders);
+    const pendingCount = orders.filter(order => order.status === 'pending').length;
     const initiatedCount = orders.filter(order => order.status === 'initiated').length;
     const inProgressCount = orders.filter(order => order.status === 'in-progress').length;
     const completedOrders = orders.filter(order => order.status === 'completed');
@@ -532,7 +535,7 @@ function cmsRenderClientDashboard(orders) {
             ? 'You currently have 1 active order. Track its progress or create a new delivery.'
             : 'You currently have ' + numberOfActiveOrders + ' active orders. Track their progress or create a new delivery.';
 
-    document.getElementById('clientDashboardTotalOrders').textContent = String(orders.length);
+    document.getElementById('clientDashboardPendingOrders').textContent = String(pendingCount);
     document.getElementById('clientDashboardInitiatedOrders').textContent = String(initiatedCount);
     document.getElementById('clientDashboardInProgressOrders').textContent = String(inProgressCount);
     document.getElementById('clientDashboardCompletedOrders').textContent = String(completedOrders.length);
