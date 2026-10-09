@@ -18,6 +18,24 @@ function cmsValidate(form) {
     return form.checkValidity();
 }
 
+// Validate one form control and keep its Bootstrap error state synchronized.
+function cmsValidateOrderField(field) {
+    const valid = field.value.trim() !== '' &&
+        field.validity.valid &&
+        !(field.matches('.product-category') && field.value === 'Select category');
+    field.classList.toggle('is-invalid', !valid);
+    return valid;
+}
+
+// Validate every browser-validatable control, including controls in added product rows.
+function cmsValidateOrderForm(form) {
+    form.classList.add('was-validated');
+    return [...form.elements]
+        .filter(field => field.willValidate)
+        .map(cmsValidateOrderField)
+        .every(Boolean);
+}
+
 // Sample delivery records used to populate the tracking preview by reference.
 const cmsTrackingOrders = {
     '1042': {
@@ -711,8 +729,52 @@ function cmsCreateMap(id, points, options = {}) {
 // Parse a named form field only when its numeric value is within the given bounds.
 function cmsReadCoordinate(form, name, min, max) {
     const el = form.elements[name];
-    const n = Number(el?.value);
+    const value = el?.value.trim();
+    if (!value) return null;
+    const n = Number(value);
     return Number.isFinite(n) && n >= min && n <= max ? n : null;
+}
+
+// Preview pickup and delivery coordinates as markers connected by a visual line.
+function cmsPreviewOrderLocations(form, map, layers) {
+    if (!form || !map || !layers || !window.L) return;
+
+    const pickup = [
+        cmsReadCoordinate(form, 'originLat', -90, 90),
+        cmsReadCoordinate(form, 'originLng', -180, 180)
+    ];
+    const delivery = [
+        cmsReadCoordinate(form, 'destLat', -90, 90),
+        cmsReadCoordinate(form, 'destLng', -180, 180)
+    ];
+    if ([...pickup, ...delivery].some(value => value === null)) return;
+
+    layers.clearLayers();
+    L.marker(pickup).addTo(layers).bindPopup('Pickup location');
+    L.marker(delivery).addTo(layers).bindPopup('Delivery location');
+    L.polyline([pickup, delivery], { color: '#FF4800', weight: 5, opacity: .85 }).addTo(layers);
+    map.invalidateSize({pan:false});
+    map.fitBounds([pickup, delivery], {padding:[30, 30]});
+
+    document.getElementById('clientOrderMap')
+        ?.closest('.cms-panel')
+        ?.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Validate fields on blur and clear errors as existing or dynamically added fields are corrected.
+function cmsBindOrderFormValidation(form) {
+    form.addEventListener('blur', event => {
+        const field = event.target;
+        if (field.willValidate) cmsValidateOrderField(field);
+    }, true);
+    ['input', 'change'].forEach(eventName => {
+        form.addEventListener(eventName, event => {
+            const field = event.target;
+            if (field.willValidate && field.classList.contains('is-invalid')) {
+                cmsValidateOrderField(field);
+            }
+        });
+    });
 }
 
 // Add a product-entry row and connect its controls to removal and total updates.
@@ -735,7 +797,14 @@ function cmsAddProductRow() {
         </div>
         <div class="form-group col-md-3">
           <label>Category</label>
-          <input class="form-control product-category" required placeholder="Electronics">
+          <select class="form-control product-category" required>
+            <option value="" selected disabled>Select category</option>
+            <option>Electronics</option>
+            <option>Food</option>
+            <option>Furniture</option>
+            <option>Clothes</option>
+            <option>Other</option>
+          </select>
           <div class="invalid-feedback">Enter an item category.</div>
         </div>
         <div class="form-group col-md-2">
@@ -1882,24 +1951,32 @@ document.addEventListener('DOMContentLoaded', () => {
     cmsInitClientDashboard();
 
     // Client order creation
-    // Render one movable pickup marker on the order form's OSM map for this sprint.
+    // Initialize the order form map without markers until the user previews entered coordinates.
     if (document.getElementById('clientOrderMap')) {
         const orderMap = cmsCreateMap('clientOrderMap', [], {zoom:14});
-        let pickupMarker = null;
-        // Keep exactly one pickup marker and recenter it on the requested location.
-        function showPickupMarker(coords, label) {
-            if (!orderMap || !window.L) return;
-            if (pickupMarker) orderMap.removeLayer(pickupMarker);
-            pickupMarker = L.marker(coords).addTo(orderMap).bindPopup(label);
-            orderMap.setView(coords, 14);
-        }
-        showPickupMarker([41.1779,-8.5980], 'FEUP pickup');
-
+        const previewLayers = orderMap && window.L ? L.layerGroup().addTo(orderMap) : null;
         const orderForm = document.getElementById('createOrderForm');
-        // Validate locations and persist the order with every entered product field.
+        if (orderForm) cmsBindOrderFormValidation(orderForm);
+        function resetOrderForm() {
+            const productRows = orderForm.querySelector('#productRows');
+            [...productRows.querySelectorAll('.cms-product-row')].slice(1).forEach(row => row.remove());
+            orderForm.reset();
+            orderForm.classList.remove('was-validated');
+            orderForm.querySelectorAll('.is-invalid, .is-valid').forEach(field => {
+                field.classList.remove('is-invalid', 'is-valid');
+            });
+            cmsUpdateProductTotals();
+
+            if (previewLayers) previewLayers.clearLayers();
+            if (orderMap) {
+                orderMap.setView([41.1779, -8.5980], 14);
+                orderMap.invalidateSize({pan:false});
+            }
+        }
+        // Validate every product and location field before persisting the demo order.
         orderForm?.addEventListener('submit', e => {
             e.preventDefault();
-            if (!cmsValidate(orderForm)) return;
+            if (!cmsValidateOrderForm(orderForm)) return;
 
             const olat = cmsReadCoordinate(orderForm,'originLat',-90,90);
             const olng = cmsReadCoordinate(orderForm,'originLng',-180,180);
@@ -1923,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = String(Date.now());
             orders.push({
                 id,
-                status:'pending',
+                status:'initiated',
                 routeId:null,
                 pickup:olat + ', ' + olng,
                 destination:dlat + ', ' + dlng,
@@ -1932,17 +2009,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 created_at:createdAt
             });
             if (!cmsSaveDemoOrders(orders)) return;
-            showPickupMarker([olat,olng], 'Pickup location');
-            cmsToast('Order #' + id + ' was saved in this browser with ' + products.length + ' product(s).');
+            document.getElementById('orderCreatedModalMessage').textContent =
+                'Your order #' + id + ' has been created.';
+            resetOrderForm();
+            $('#orderCreatedModal').modal('show');
         });
 
-        // Preview the pickup location with the same single marker, without creating an order.
-        document.getElementById('previewRoute')?.addEventListener('click', () => {
-            const olat = Number(orderForm.elements['originLat'].value);
-            const olng = Number(orderForm.elements['originLng'].value);
-            if (Number.isFinite(olat) && Number.isFinite(olng)) {
-                showPickupMarker([olat,olng], 'Pickup location');
-            }
+        // Preview both locations without treating the button as a form validation action.
+        document.getElementById('previewLocations')?.addEventListener('click', () => {
+            cmsPreviewOrderLocations(orderForm, orderMap, previewLayers);
         });
     }
 

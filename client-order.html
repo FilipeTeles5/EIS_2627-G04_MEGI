@@ -50,49 +50,49 @@
     <div class="row">
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Parcel details</h4><small>Add one or more items to this delivery</small></div></div>
+          <div class="cms-panel-title"><div><h4>Products</h4><small>Add one or more products to this delivery</small></div></div>
           <!-- Form for entering parcel items and pickup and delivery locations. -->
           <form id="createOrderForm" novalidate>
             <h6 class="mb-3">Items in this delivery</h6>
             <!-- Container for parcel items included in the new delivery. -->
             <div id="productRows">
               <div class="cms-product-row">
-                <div class="d-flex justify-content-between align-items-center mb-2"><strong>Item 1</strong></div>
+                <div class="d-flex justify-content-between align-items-center mb-2"><strong>Product 1</strong></div>
                 <div class="form-row">
-                  <div class="form-group col-md-5"><label>Description</label><input class="form-control product-description" required value="Laptop"><div class="invalid-feedback">Description is required.</div></div>
-                  <div class="form-group col-md-3"><label>Category</label><input class="form-control product-category" required value="Electronics"><div class="invalid-feedback">Category is required.</div></div>
-                  <div class="form-group col-md-2"><label>Weight (kg)</label><input class="form-control product-weight" required type="number" min="0.01" step="0.01" value="2.40"><div class="invalid-feedback">Positive weight required.</div></div>
-                  <div class="form-group col-md-2"><label>Volume (m³)</label><input class="form-control product-volume" required type="number" min="0.001" step="0.001" value="0.03"><div class="invalid-feedback">Positive volume required.</div></div>
+                  <div class="form-group col-md-5"><label>Description</label><input class="form-control product-description" required><div class="invalid-feedback">Description is required.</div></div>
+                  <div class="form-group col-md-3"><label>Category</label><select class="form-control product-category" required><option value="" selected disabled>Select category</option><option>Electronics</option><option>Food</option><option>Furniture</option><option>Clothes</option><option>Other</option></select><div class="invalid-feedback">Category is required.</div></div>
+                  <div class="form-group col-md-2"><label>Weight (kg)</label><input class="form-control product-weight" required type="number" min="0.01" step="0.01"><div class="invalid-feedback">Positive weight required.</div></div>
+                  <div class="form-group col-md-2"><label>Volume (m³)</label><input class="form-control product-volume" required type="number" min="0.001" step="0.001"><div class="invalid-feedback">Positive volume required.</div></div>
                 </div>
               </div>
             </div>
-            <button id="addProduct" type="button" class="btn btn-outline-primary btn-sm mb-4"><i class="fa fa-plus mr-1"></i>Add another item</button>
+            <button id="addProduct" type="button" class="btn btn-outline-primary btn-sm mb-4"><i class="fa fa-plus mr-1"></i>Add another product</button>
             <div class="row mb-4">
-              <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total weight</span><strong id="totalWeight">2.40 kg</strong></div></div>
-              <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total volume</span><strong id="totalVolume">0.030 m³</strong></div></div>
+              <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total weight</span><strong id="totalWeight">0.00 kg</strong></div></div>
+              <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total volume</span><strong id="totalVolume">0.000 m³</strong></div></div>
             </div>
 
             <h6 class="mb-3">Pickup location</h6>
             <div class="form-row">
-              <div class="form-group col-md-6"><label>Latitude</label><input required name="originLat" type="number" step="any" value="41.1779" class="form-control"><div class="invalid-feedback">Latitude is required.</div></div>
-              <div class="form-group col-md-6"><label>Longitude</label><input required name="originLng" type="number" step="any" value="-8.5980" class="form-control"><div class="invalid-feedback">Longitude is required.</div></div>
+              <div class="form-group col-md-6"><label>Latitude</label><input required name="originLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
+              <div class="form-group col-md-6"><label>Longitude</label><input required name="originLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
 
             <h6 class="mb-3 mt-2">Delivery location</h6>
             <div class="form-row">
-              <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" step="any" value="41.1579" class="form-control"><div class="invalid-feedback">Latitude is required.</div></div>
-              <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" step="any" value="-8.6291" class="form-control"><div class="invalid-feedback">Longitude is required.</div></div>
+              <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
+              <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
             <div class="d-flex flex-wrap">
+              <button id="previewLocations" class="btn btn-outline-dark py-3 px-4 mb-2" type="button">Preview locations</button>
               <button class="btn btn-primary py-3 px-4 mr-2 mb-2" type="submit">Create delivery order</button>
-              <button id="previewRoute" class="btn btn-outline-dark py-3 px-4 mb-2" type="button">Preview locations</button>
             </div>
           </form>
         </div>
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Pickup and delivery map</h4><small>Check the selected locations</small></div></div>
+          <div class="cms-panel-title"><div><h4>Location Preview</h4><small>Preview the pickup and delivery locations</small></div></div>
           <!-- Map preview of the selected pickup and delivery locations. -->
           <div id="clientOrderMap" class="cms-map"></div>
         </div>
@@ -101,6 +101,26 @@
   </div>
 </section>
 
+<div class="modal fade" id="orderCreatedModal" tabindex="-1" role="dialog" aria-labelledby="orderCreatedModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="orderCreatedModalTitle">Order created successfully!</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="orderCreatedModalMessage" class="mb-2">Your order #1044 has been created.</p>
+        <p class="mb-0">Status: Initiated</p>
+      </div>
+      <div class="modal-footer">
+        <a href="client-orders.html" class="btn btn-primary">View My Orders</a>
+        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Shared site footer with brand details, navigation, and a call to action. -->
 <footer class="cms-site-footer mt-5">
