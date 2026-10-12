@@ -64,6 +64,7 @@
       <div class="col-lg-7 mb-4">
         <div class="cms-panel p-4">
           <div class="cms-panel-title"><div><h4>Products</h4><small>Add one or more products to this delivery</small></div></div>
+          <!-- Validation summary displayed when the order form contains invalid fields. -->
           <div id="orderFormAlert" class="alert alert-danger d-none" role="alert">
             Please check the highlighted fields before creating your order.
           </div>
@@ -83,22 +84,26 @@
               </div>
             </div>
             <button id="addProduct" type="button" class="btn btn-outline-primary btn-sm mb-4"><i class="fa fa-plus mr-1"></i>Add another product</button>
+            <!-- Automatically calculated totals for all products included in the order. -->
             <div class="row mb-4">
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total weight</span><strong id="totalWeight">0.00 kg</strong></div></div>
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total volume</span><strong id="totalVolume">0.000 m³</strong></div></div>
             </div>
 
+            <!-- GPS coordinates defining the pickup location of the delivery. -->
             <h6 class="mb-3">Pickup location</h6>
             <div class="form-row">
               <div class="form-group col-md-6"><label>Latitude</label><input required name="originLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
               <div class="form-group col-md-6"><label>Longitude</label><input required name="originLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
 
+            <!-- GPS coordinates defining the destination of the delivery. -->
             <h6 class="mb-3 mt-2">Delivery location</h6>
             <div class="form-row">
               <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
               <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
+            <!-- Order actions for previewing the selected locations and submitting the delivery request. -->
             <div class="d-flex flex-wrap justify-content-between">
               <button id="previewLocations" class="btn btn-outline-dark py-3 px-4 mr-2 mb-2" type="button">Preview locations</button>
               <button class="btn btn-primary py-3 px-4 mb-2" type="submit">Create delivery order</button>
@@ -117,6 +122,7 @@
   </div>
 </section>
 
+<!-- Confirmation modal displayed after a new delivery order is successfully created. -->
 <div class="modal fade" id="orderCreatedModal" tabindex="-1" role="dialog" aria-labelledby="orderCreatedModalTitle" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content">

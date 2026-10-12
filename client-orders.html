@@ -56,6 +56,7 @@
 <!-- Main content section containing the primary information and actions for this page. -->
 <section class="container-fluid py-5">
   <div class="container">
+    <!-- Quick lookup used to open a specific order directly by its reference number. -->
     <section class="bg-light rounded border-left border-primary p-4 p-md-5 mb-5" aria-labelledby="trackOrderHeading">
       <h3 id="trackOrderHeading" class="font-weight-bold mb-1">Track an order</h3>
       <p class="text-muted mb-3">Quickly open the details and progress of a specific order.</p>
@@ -75,6 +76,7 @@
 
     <section id="clientOrdersPanel" class="cms-panel p-4 mt-5 mb-4" aria-labelledby="clientOrdersHeading">
       <div class="cms-panel-title"><div><h4 id="clientOrdersHeading">Your delivery orders</h4><small>Browse and filter your current and past orders.</small></div></div>
+      <!-- Search, status, and date filters used to narrow the Client order history. -->
       <div class="form-row align-items-end mb-3">
         <div class="form-group col-lg-4 col-md-6">
           <label for="clientOrdersSearch">Search</label>
@@ -103,6 +105,7 @@
           <button id="clearClientOrderFilters" type="button" class="btn btn-outline-dark w-100">Clear filters</button>
         </div>
       </div>
+      <!-- Paginated table containing the Client's current and past delivery orders. -->
       <div class="table-responsive">
         <!-- Order history with delivery status, attempts, and available actions. -->
         <table class="table cms-table">
@@ -113,6 +116,7 @@
           <tbody id="clientOrdersTableBody"></tbody>
         </table>
       </div>
+      <!-- Pagination controls for navigating through filtered order results. -->
       <nav id="clientOrdersPagination" class="d-flex justify-content-center mt-3 d-none" aria-label="Order pages"></nav>
     </section>
 
