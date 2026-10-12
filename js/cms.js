@@ -531,7 +531,7 @@ function cmsRenderClientOrderDetails(order, sortedOrders) {
         message.textContent = 'Select an order from the list above to view its delivery details and tracking information.';
         const backButton = document.createElement('button');
         backButton.type = 'button';
-        backButton.className = 'btn btn-outline-primary';
+        backButton.className = 'btn btn-outline-dark';
         backButton.dataset.backToClientOrders = '';
         backButton.textContent = 'Back to order list';
         section.append(heading, message, backButton);
@@ -618,7 +618,7 @@ function cmsRenderClientOrderDetails(order, sortedOrders) {
     previousButton.disabled = orderIndex <= 0;
     const backButton = document.createElement('button');
     backButton.type = 'button';
-    backButton.className = 'btn btn-outline-secondary mb-2';
+    backButton.className = 'btn btn-outline-dark mb-2';
     backButton.dataset.backToClientOrders = '';
     backButton.textContent = 'Back to order list';
     const nextButton = document.createElement('button');
@@ -751,6 +751,8 @@ function cmsInitClientOrders() {
     document.getElementById('clientOrderDetails')?.addEventListener('click', event => {
         const backButton = event.target.closest('[data-back-to-client-orders]');
         if (backButton) {
+            cmsClientOrdersSelectedId = null;
+            cmsRenderClientOrderDetails(null, []);
             document.getElementById('clientOrdersPanel')?.scrollIntoView({behavior:'smooth', block:'start'});
             return;
         }
