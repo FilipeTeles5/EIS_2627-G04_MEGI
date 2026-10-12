@@ -317,26 +317,141 @@ function cmsToggleCourierProductDisclosure(container, button) {
         : 'View products (' + panel.querySelectorAll('tbody tr').length + ')';
 }
 
-// Render the full browser-local order list and its product details for the Client page.
-function cmsRenderClientOrders() {
-    const tableBody = document.getElementById('clientOrdersTableBody');
-    const details = document.getElementById('clientOrderDetails');
-    if (!tableBody || !details) return;
-    const orders = cmsLoadDemoOrders();
-    if (!orders) return;
-    tableBody.replaceChildren();
-    details.replaceChildren();
+let cmsClientOrdersCurrentPage = 1;
+const cmsClientOrdersPageSize = 10;
+let cmsClientOrdersSelectedId = null;
 
-    orders.forEach(order => {
+function cmsSortClientOrdersByCreatedAt(orders) {
+    return [...orders].sort((first, second) => {
+        const firstCreated = Date.parse(first.created_at);
+        const secondCreated = Date.parse(second.created_at);
+        const firstTimestamp = Number.isNaN(firstCreated) ? -Infinity : firstCreated;
+        const secondTimestamp = Number.isNaN(secondCreated) ? -Infinity : secondCreated;
+        return secondTimestamp - firstTimestamp;
+    });
+}
+
+function cmsNormalizeClientOrderNumber(value) {
+    return String(value || '').replace(/\s+/g, '').replace(/^#/, '');
+}
+
+function cmsFilterClientOrders(orders) {
+    const search = cmsNormalizeClientOrderNumber(
+        document.getElementById('clientOrdersSearch')?.value
+    ).toLowerCase();
+    const status = document.getElementById('clientOrdersStatus')?.value || '';
+    const from = document.getElementById('clientOrdersFrom')?.value || '';
+    const to = document.getElementById('clientOrdersTo')?.value || '';
+    const fromTimestamp = from ? new Date(from + 'T00:00:00').getTime() : null;
+    const toDate = to ? new Date(to + 'T00:00:00') : null;
+    if (toDate) toDate.setDate(toDate.getDate() + 1);
+    const toTimestamp = toDate ? toDate.getTime() : null;
+
+    return orders.filter(order => {
+        if (search && !String(order.id).toLowerCase().includes(search)) return false;
+        if (status && order.status !== status) return false;
+        if (from || to) {
+            const createdTimestamp = Date.parse(order.created_at);
+            if (Number.isNaN(createdTimestamp)) return false;
+            if (fromTimestamp !== null && createdTimestamp < fromTimestamp) return false;
+            if (toTimestamp !== null && createdTimestamp >= toTimestamp) return false;
+        }
+        return true;
+    });
+}
+
+function cmsRenderClientOrdersPagination(totalPages) {
+    const pagination = document.getElementById('clientOrdersPagination');
+    if (!pagination) return;
+    pagination.replaceChildren();
+    pagination.classList.toggle('d-none', totalPages <= 1);
+    if (totalPages <= 1) return;
+
+    const addPageButton = (label, page, {active = false, disabled = false, ellipsis = false} = {}) => {
+        if (ellipsis) {
+            const gap = document.createElement('span');
+            gap.className = 'px-2 align-self-center';
+            gap.textContent = '…';
+            pagination.appendChild(gap);
+            return;
+        }
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-sm mx-1 ' +
+            (active ? 'btn-primary active' : 'btn-outline-primary');
+        button.textContent = label;
+        button.disabled = disabled;
+        button.dataset.clientOrdersPage = String(page);
+        if (active) button.setAttribute('aria-current', 'page');
+        button.setAttribute('aria-label', label === '←'
+            ? 'Previous page'
+            : label === '→' ? 'Next page' : 'Page ' + page);
+        pagination.appendChild(button);
+    };
+
+    addPageButton('←', cmsClientOrdersCurrentPage - 1, {
+        disabled: cmsClientOrdersCurrentPage === 1
+    });
+
+    let pages = Array.from({length:totalPages}, (_, index) => index + 1);
+    if (totalPages > 7) {
+        pages = [...new Set([
+            1,
+            cmsClientOrdersCurrentPage - 1,
+            cmsClientOrdersCurrentPage,
+            cmsClientOrdersCurrentPage + 1,
+            totalPages
+        ].filter(page => page >= 1 && page <= totalPages))];
+    }
+    pages.forEach((page, index) => {
+        if (index > 0 && page - pages[index - 1] > 1) {
+            addPageButton('…', null, {ellipsis:true});
+        }
+        addPageButton(String(page), page, {active: page === cmsClientOrdersCurrentPage});
+    });
+
+    addPageButton('→', cmsClientOrdersCurrentPage + 1, {
+        disabled: cmsClientOrdersCurrentPage === totalPages
+    });
+}
+
+function cmsRenderClientOrdersTable(orders) {
+    const tableBody = document.getElementById('clientOrdersTableBody');
+    if (!tableBody) return;
+    const totalPages = Math.ceil(orders.length / cmsClientOrdersPageSize);
+    cmsClientOrdersCurrentPage = Math.min(Math.max(cmsClientOrdersCurrentPage, 1), Math.max(totalPages, 1));
+    const startIndex = (cmsClientOrdersCurrentPage - 1) * cmsClientOrdersPageSize;
+    const visibleOrders = orders.slice(startIndex, startIndex + cmsClientOrdersPageSize);
+    tableBody.replaceChildren();
+
+    if (!orders.length) {
         const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 8;
+        cell.className = 'text-center py-4';
+        cell.textContent = 'No orders match your filters.';
+        row.appendChild(cell);
+        tableBody.appendChild(row);
+    }
+
+    visibleOrders.forEach(order => {
+        const row = document.createElement('tr');
+        const createdAt = order.created_at ? new Date(order.created_at) : null;
+        const createdDate = createdAt && !Number.isNaN(createdAt.getTime())
+            ? createdAt.toLocaleDateString('en-GB', {
+                day:'2-digit', month:'short', year:'numeric'
+            })
+            : '—';
         const cells = [
             '#' + order.id,
+            createdDate,
             String((order.products || []).length),
             order.routeId ? '#' + order.routeId : 'Not assigned'
         ];
-        cells.forEach(value => {
+        cells.forEach((value, index) => {
             const cell = document.createElement('td');
             cell.textContent = value;
+            if (index === 1) cell.classList.add('text-nowrap');
             row.appendChild(cell);
         });
         const statusCell = document.createElement('td');
@@ -349,27 +464,35 @@ function cmsRenderClientOrders() {
         proofCell.textContent = order.proofFile || '—';
         row.appendChild(proofCell);
         const actions = document.createElement('td');
+        const actionGroup = document.createElement('div');
+        actionGroup.className = 'd-flex flex-column align-items-start';
         const productsButton = document.createElement('button');
         productsButton.type = 'button';
-        productsButton.className = 'btn btn-sm btn-outline-secondary mr-1';
+        productsButton.className = 'btn btn-sm btn-outline-dark';
+        productsButton.style.width = '11rem';
         productsButton.dataset.toggleClientProducts = order.id;
         productsButton.setAttribute('aria-expanded', 'false');
         productsButton.setAttribute('aria-controls', 'client-products-' + order.id);
         productsButton.textContent = 'View products (' + (order.products || []).length + ')';
-        actions.appendChild(productsButton);
-        const detailsLink = document.createElement('a');
-        detailsLink.href = '#order' + order.id;
-        detailsLink.className = 'btn btn-sm btn-outline-primary mr-1';
-        detailsLink.textContent = 'Details';
-        actions.appendChild(detailsLink);
+        actionGroup.appendChild(productsButton);
+        const secondaryActions = document.createElement('div');
+        secondaryActions.className = 'd-flex justify-content-between align-items-center mt-2 w-100';
+        const detailsButton = document.createElement('button');
+        detailsButton.type = 'button';
+        detailsButton.className = 'btn btn-sm btn-outline-primary';
+        detailsButton.dataset.selectClientOrder = order.id;
+        detailsButton.textContent = 'Details';
+        secondaryActions.appendChild(detailsButton);
         if (order.status === 'pending' && !order.routeId) {
             const cancelButton = document.createElement('button');
             cancelButton.type = 'button';
             cancelButton.className = 'btn btn-sm btn-outline-danger';
             cancelButton.dataset.cancelClientOrder = order.id;
             cancelButton.textContent = 'Cancel';
-            actions.appendChild(cancelButton);
+            secondaryActions.appendChild(cancelButton);
         }
+        actionGroup.appendChild(secondaryActions);
+        actions.appendChild(actionGroup);
         row.appendChild(actions);
         tableBody.appendChild(row);
 
@@ -378,46 +501,156 @@ function cmsRenderClientOrders() {
         productsRow.dataset.clientProductsFor = order.id;
         productsRow.className = 'd-none';
         const productsCell = document.createElement('td');
-        productsCell.colSpan = 7;
+        productsCell.colSpan = 8;
         productsCell.appendChild(cmsBuildProductTable(order.products));
         productsRow.appendChild(productsCell);
         tableBody.appendChild(productsRow);
-
-        const section = document.createElement('section');
-        section.id = 'order' + order.id;
-        section.className = 'cms-panel p-4 mb-4';
-        const title = document.createElement('div');
-        title.className = 'cms-panel-title';
-        const titleGroup = document.createElement('div');
-        const heading = document.createElement('h4');
-        heading.textContent = 'Order #' + order.id;
-        const subtitle = document.createElement('small');
-        subtitle.textContent = 'Delivery details and associated products';
-        titleGroup.append(heading, subtitle);
-        title.append(titleGroup, cmsCourierOrderBadge(order.status));
-        const meta = document.createElement('div');
-        meta.className = 'cms-meta-grid mb-4';
-        [
-            ['Pickup location', order.pickup || 'Not provided'],
-            ['Delivery location', order.destination || 'Not provided'],
-            ['Route', order.routeId ? '#' + order.routeId : 'Not assigned'],
-            ['Delivery attempts', String(order.attempt || 0)]
-        ].forEach(([label, value]) => {
-            const item = document.createElement('div');
-            const name = document.createElement('span');
-            name.className = 'cms-meta-label';
-            name.textContent = label;
-            const content = document.createElement('span');
-            content.className = 'cms-meta-value';
-            content.textContent = value;
-            item.append(name, content);
-            meta.appendChild(item);
-        });
-        const productsHeading = document.createElement('h6');
-        productsHeading.textContent = 'Products in this order';
-        section.append(title, meta, productsHeading, cmsBuildProductTable(order.products));
-        details.appendChild(section);
     });
+
+    cmsRenderClientOrdersPagination(totalPages);
+}
+
+function cmsClientOrderValue(value, fallback) {
+    if (value === null || value === undefined) return fallback;
+    const text = String(value).trim();
+    return !text || ['null', 'undefined'].includes(text.toLowerCase()) ? fallback : text;
+}
+
+function cmsRenderClientOrderDetails(order, sortedOrders) {
+    const details = document.getElementById('clientOrderDetails');
+    if (!details) return;
+    details.replaceChildren();
+
+    const section = document.createElement('section');
+    section.className = 'cms-panel p-4 mb-4 border-top';
+    if (!order) {
+        const heading = document.createElement('h4');
+        heading.textContent = 'Order Details';
+        const message = document.createElement('p');
+        message.className = 'mb-3';
+        message.textContent = 'Select an order from the list above to view its delivery details and tracking information.';
+        const backButton = document.createElement('button');
+        backButton.type = 'button';
+        backButton.className = 'btn btn-outline-primary';
+        backButton.dataset.backToClientOrders = '';
+        backButton.textContent = 'Back to order list';
+        section.append(heading, message, backButton);
+        details.appendChild(section);
+        return;
+    }
+
+    const title = document.createElement('div');
+    title.className = 'cms-panel-title';
+    const titleGroup = document.createElement('div');
+    const heading = document.createElement('h4');
+    heading.textContent = 'Order #' + order.id;
+    const subtitle = document.createElement('small');
+    subtitle.textContent = 'Delivery details and tracking information';
+    titleGroup.append(heading, subtitle);
+    title.append(titleGroup, cmsCourierOrderBadge(order.status));
+
+    const createdAt = order.created_at ? new Date(order.created_at) : null;
+    const createdDate = createdAt && !Number.isNaN(createdAt.getTime())
+        ? createdAt.toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'})
+        : '—';
+    const meta = document.createElement('div');
+    meta.className = 'cms-meta-grid mb-4';
+    [
+        ['Created', createdDate],
+        ['Pickup location', cmsClientOrderValue(order.pickup, 'Not provided')],
+        ['Delivery location', cmsClientOrderValue(order.destination, 'Not provided')],
+        ['Courier', cmsClientOrderValue(order.courier, 'Not assigned')],
+        ['Vehicle', cmsClientOrderValue(order.vehicle, 'Not assigned')],
+        ['Route', cmsClientOrderValue(order.routeId, '') ? '#' + order.routeId : 'Not assigned'],
+        ['Delivery attempts', String(Number(order.attempt) || 0)]
+    ].forEach(([label, value]) => {
+        const item = document.createElement('div');
+        const name = document.createElement('span');
+        name.className = 'cms-meta-label';
+        name.textContent = label;
+        const content = document.createElement('span');
+        content.className = 'cms-meta-value';
+        content.textContent = value;
+        item.append(name, content);
+        meta.appendChild(item);
+    });
+
+    const progressHeading = document.createElement('h5');
+    progressHeading.className = 'mb-3';
+    progressHeading.textContent = 'Order Progress';
+    const progress = document.createElement('ul');
+    progress.className = 'cms-timeline mb-4';
+    const steps = [
+        ['pending', 'Pending'],
+        ['initiated', 'Initiated'],
+        ['in-progress', 'In Progress'],
+        ['completed', 'Completed']
+    ];
+    const currentStep = order.status === 'cancelled'
+        ? 0
+        : steps.findIndex(([status]) => status === order.status);
+    steps.forEach(([, label], index) => {
+        const item = document.createElement('li');
+        if (order.status === 'cancelled') {
+            if (index === 0) item.className = 'done';
+        } else if (currentStep >= 0 && index < currentStep) {
+            item.className = 'done';
+        } else if (index === currentStep) {
+            item.className = 'current';
+        }
+        const stepLabel = document.createElement('strong');
+        stepLabel.textContent = label;
+        item.appendChild(stepLabel);
+        progress.appendChild(item);
+    });
+
+    const productsHeading = document.createElement('h5');
+    productsHeading.className = 'mb-3';
+    productsHeading.textContent = 'Products in this order';
+    const orderIndex = sortedOrders.findIndex(item => item.id === order.id);
+    const navigation = document.createElement('div');
+    navigation.className = 'd-flex justify-content-between align-items-center flex-wrap mt-4';
+    const previousButton = document.createElement('button');
+    previousButton.type = 'button';
+    previousButton.className = 'btn btn-outline-primary mb-2';
+    previousButton.dataset.clientOrderNavigation = 'previous';
+    previousButton.textContent = 'Previous order';
+    previousButton.disabled = orderIndex <= 0;
+    const backButton = document.createElement('button');
+    backButton.type = 'button';
+    backButton.className = 'btn btn-outline-secondary mb-2';
+    backButton.dataset.backToClientOrders = '';
+    backButton.textContent = 'Back to order list';
+    const nextButton = document.createElement('button');
+    nextButton.type = 'button';
+    nextButton.className = 'btn btn-outline-primary mb-2';
+    nextButton.dataset.clientOrderNavigation = 'next';
+    nextButton.textContent = 'Next order';
+    nextButton.disabled = orderIndex < 0 || orderIndex >= sortedOrders.length - 1;
+    navigation.append(previousButton, backButton, nextButton);
+
+    section.append(
+        title,
+        meta,
+        progressHeading,
+        progress,
+        productsHeading,
+        cmsBuildProductTable(order.products),
+        navigation
+    );
+    details.appendChild(section);
+}
+
+// Render the filtered order list and the currently selected order details.
+function cmsRenderClientOrders() {
+    const details = document.getElementById('clientOrderDetails');
+    if (!details) return;
+    const orders = cmsLoadDemoOrders();
+    if (!orders) return;
+    const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+    cmsRenderClientOrdersTable(cmsFilterClientOrders(sortedOrders));
+    const selectedOrder = sortedOrders.find(order => order.id === cmsClientOrdersSelectedId) || null;
+    cmsRenderClientOrderDetails(selectedOrder, sortedOrders);
 }
 
 // Persist a client cancellation while keeping the cancelled order visible in the order list.
@@ -437,6 +670,18 @@ function cmsInitClientOrders() {
                 productsRow.querySelectorAll('tbody tr').length + ')';
             return;
         }
+        const detailsButton = event.target.closest('[data-select-client-order]');
+        if (detailsButton) {
+            const orders = cmsLoadDemoOrders();
+            if (!orders) return;
+            const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+            const order = sortedOrders.find(item => item.id === detailsButton.dataset.selectClientOrder);
+            if (!order) return;
+            cmsClientOrdersSelectedId = order.id;
+            cmsRenderClientOrderDetails(order, sortedOrders);
+            document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
+            return;
+        }
         const button = event.target.closest('[data-cancel-client-order]');
         if (!button) return;
         const orders = cmsLoadDemoOrders();
@@ -446,6 +691,81 @@ function cmsInitClientOrders() {
         if (!cmsSaveDemoOrders(orders)) return;
         cmsRenderClientOrders();
         cmsToast('Order #' + order.id + ' was cancelled and remains in your order list.');
+    });
+    document.getElementById('clientOrdersPagination')?.addEventListener('click', event => {
+        const button = event.target.closest('[data-client-orders-page]');
+        if (!button || button.disabled) return;
+        const page = Number(button.dataset.clientOrdersPage);
+        if (!Number.isInteger(page)) return;
+        const orders = cmsLoadDemoOrders();
+        if (!orders) return;
+        cmsClientOrdersCurrentPage = page;
+        cmsRenderClientOrdersTable(cmsFilterClientOrders(cmsSortClientOrdersByCreatedAt(orders)));
+        document.getElementById('clientOrdersPanel')?.scrollIntoView({
+            behavior:'smooth',
+            block:'start'
+        });
+    });
+    ['clientOrdersSearch', 'clientOrdersStatus', 'clientOrdersFrom', 'clientOrdersTo'].forEach(id => {
+        const control = document.getElementById(id);
+        const eventName = control && control.tagName === 'INPUT' && control.type === 'search'
+            ? 'input'
+            : 'change';
+        control?.addEventListener(eventName, () => {
+            cmsClientOrdersCurrentPage = 1;
+            cmsRenderClientOrders();
+        });
+    });
+    document.getElementById('clearClientOrderFilters')?.addEventListener('click', () => {
+        document.getElementById('clientOrdersSearch').value = '';
+        document.getElementById('clientOrdersStatus').value = '';
+        document.getElementById('clientOrdersFrom').value = '';
+        document.getElementById('clientOrdersTo').value = '';
+        cmsClientOrdersCurrentPage = 1;
+        cmsRenderClientOrders();
+    });
+    const trackInput = document.getElementById('trackOrderNumber');
+    const trackError = document.getElementById('trackOrderError');
+    trackInput?.addEventListener('input', () => {
+        trackInput.classList.remove('is-invalid');
+        trackError?.classList.remove('d-block');
+    });
+    document.getElementById('trackOrderForm')?.addEventListener('submit', event => {
+        event.preventDefault();
+        const orderNumber = cmsNormalizeClientOrderNumber(trackInput?.value);
+        const orders = cmsLoadDemoOrders();
+        if (!orders) return;
+        const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+        const order = sortedOrders.find(item => item.id === orderNumber);
+        if (!order) {
+            trackInput?.classList.add('is-invalid');
+            trackError?.classList.add('d-block');
+            return;
+        }
+        trackInput?.classList.remove('is-invalid');
+        trackError?.classList.remove('d-block');
+        cmsClientOrdersSelectedId = order.id;
+        cmsRenderClientOrderDetails(order, sortedOrders);
+        document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    document.getElementById('clientOrderDetails')?.addEventListener('click', event => {
+        const backButton = event.target.closest('[data-back-to-client-orders]');
+        if (backButton) {
+            document.getElementById('clientOrdersPanel')?.scrollIntoView({behavior:'smooth', block:'start'});
+            return;
+        }
+        const navigationButton = event.target.closest('[data-client-order-navigation]');
+        if (!navigationButton || navigationButton.disabled) return;
+        const orders = cmsLoadDemoOrders();
+        if (!orders) return;
+        const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+        const currentIndex = sortedOrders.findIndex(order => order.id === cmsClientOrdersSelectedId);
+        const offset = navigationButton.dataset.clientOrderNavigation === 'previous' ? -1 : 1;
+        const nextOrder = sortedOrders[currentIndex + offset];
+        if (!nextOrder) return;
+        cmsClientOrdersSelectedId = nextOrder.id;
+        cmsRenderClientOrderDetails(nextOrder, sortedOrders);
+        document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
     });
     window.addEventListener('storage', event => {
         if (event.key === cmsDemoOrdersKey) cmsRenderClientOrders();

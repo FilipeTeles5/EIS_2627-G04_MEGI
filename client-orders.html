@@ -36,29 +36,79 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>My Orders</h1>
-    <p class="mb-0">View current and past delivery orders, their progress and delivery confirmation.</p>
+    <p class="mb-0">Track active deliveries and review your completed order history.</p>
     
   </div>
 </section>
 <!-- Main content section containing the primary information and actions for this page. -->
 <section class="container-fluid py-5">
   <div class="container">
-    <div class="cms-panel p-4 mb-4">
-      <div class="cms-panel-title"><div><h4>Your delivery orders</h4><small>Current and past orders</small></div></div>
+    <section class="cms-panel p-4 mb-4" aria-labelledby="trackOrderHeading">
+      <div class="cms-panel-title">
+        <div>
+          <h4 id="trackOrderHeading">Track an order</h4>
+          <small>Enter an order number to view its details and progress.</small>
+        </div>
+      </div>
+      <form id="trackOrderForm" novalidate>
+        <div class="form-row align-items-end">
+          <div class="form-group col-md-8 mb-md-0">
+            <label for="trackOrderNumber">Order number</label>
+            <input id="trackOrderNumber" class="form-control" type="text" placeholder="e.g. 1042" autocomplete="off">
+            <div id="trackOrderError" class="invalid-feedback">We couldn't find an order with that number.</div>
+          </div>
+          <div class="form-group col-md-4 mb-0">
+            <button type="submit" class="btn btn-primary">Track order</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <section id="clientOrdersPanel" class="cms-panel p-4 mb-4" aria-labelledby="clientOrdersHeading">
+      <div class="cms-panel-title"><div><h4 id="clientOrdersHeading">Your delivery orders</h4><small>Current and past orders</small></div></div>
+      <div class="form-row align-items-end mb-3">
+        <div class="form-group col-lg-4 col-md-6">
+          <label for="clientOrdersSearch">Search</label>
+          <input id="clientOrdersSearch" class="form-control" type="search" placeholder="Search by order number" autocomplete="off">
+        </div>
+        <div class="form-group col-lg-2 col-md-6">
+          <label for="clientOrdersStatus">Status</label>
+          <select id="clientOrdersStatus" class="form-control">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="initiated">Initiated</option>
+            <option value="in-progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+        <div class="form-group col-lg-2 col-md-6">
+          <label for="clientOrdersFrom">From</label>
+          <input id="clientOrdersFrom" class="form-control" type="date">
+        </div>
+        <div class="form-group col-lg-2 col-md-6">
+          <label for="clientOrdersTo">To</label>
+          <input id="clientOrdersTo" class="form-control" type="date">
+        </div>
+        <div class="form-group col-lg-2 mb-0">
+          <button id="clearClientOrderFilters" type="button" class="btn btn-outline-secondary">Clear filters</button>
+        </div>
+      </div>
       <div class="table-responsive">
         <!-- Order history with delivery status, attempts, and available actions. -->
         <table class="table cms-table">
-          <thead class="thead-light"><tr><th>Order</th><th>Items</th><th>Route</th><th>Status</th><th>Delivery attempts</th><th>Delivery proof</th><th>Actions</th></tr></thead>
+          <thead class="thead-light"><tr><th>Order</th><th>Created</th><th>Items</th><th>Route</th><th>Status</th><th>Delivery attempts</th><th>Delivery proof</th><th>Actions</th></tr></thead>
           <!-- Order-list logic:
                - Show every shared demo order, including orders returned after cancellation.
                - Keep cancelled orders in the list with their terminal status; they are not route candidates. -->
           <tbody id="clientOrdersTableBody"></tbody>
         </table>
       </div>
-    </div>
+      <nav id="clientOrdersPagination" class="d-flex justify-content-center mt-3 d-none" aria-label="Order pages"></nav>
+    </section>
 
-    <!-- Order-detail logic: render every order's route, status, proof, and linked products from shared demo data. -->
-    <div id="clientOrderDetails"></div>
+    <!-- Order details show the single selected order, its progress, and its products. -->
+    <div id="clientOrderDetails" class="mt-5"></div>
   </div>
 </section>
 
