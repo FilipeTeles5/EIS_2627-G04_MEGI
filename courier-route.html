@@ -70,14 +70,11 @@
       </div>
       <div class="col-lg-4 mb-4">
         <div class="cms-panel p-4 h-100">
-          <!-- Route vehicle logic:
-               - The vehicle is assigned to the route and remains fixed during route execution.
-               - This page displays the assigned vehicle as read-only information, not as a selector.
-               - Vehicle management remains available through the separate My Vehicles page. -->
-          <div class="cms-panel-title"><div><h4>Assigned vehicle</h4><small>Registration 48-AB-22</small></div><span class="cms-badge cms-badge-success">Approved</span></div>
-          <div class="form-group mb-4"><span class="cms-meta-label">Vehicle assigned to this route</span><strong class="d-block">48-AB-22 · Mercedes Sprinter</strong></div>
-          <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small>86 kg</small><small>1,250 kg max</small></div><div class="cms-capacity mb-3"><span style="width:7%"></span></div>
-          <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small>1.4 m³</small><small>10.5 m³ max</small></div><div class="cms-capacity mb-3"><span style="width:13%"></span></div>
+          <!-- The selected vehicle is displayed read-only here; it can be changed from the dashboard while the route is being prepared. -->
+          <div class="cms-panel-title"><div><h4>Assigned vehicle</h4><small>Registration <span id="courierAssignedVehicleRegistration">48-AB-22</span></small></div><span class="cms-badge cms-badge-success">Approved</span></div>
+          <div class="form-group mb-4"><span class="cms-meta-label">Vehicle assigned to this route</span><strong id="courierAssignedVehicle" class="d-block">48-AB-22 · Mercedes Sprinter</strong></div>
+          <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small>86 kg</small><small><span id="courierVehicleMaxWeight">1,250</span> kg max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleWeightCapacity" style="width:7%"></span></div>
+          <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small>1.4 m³</small><small><span id="courierVehicleMaxVolume">10.5</span> m³ max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleVolumeCapacity" style="width:13%"></span></div>
           <div class="cms-alert-success cms-alert mb-0"><strong>Vehicle capacity is suitable</strong><br><small>The parcels on this route fit within the vehicle's weight and volume limits.</small></div>
           <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block mt-3"><i class="fa fa-truck mr-2"></i>Manage vehicles</a>
         </div>

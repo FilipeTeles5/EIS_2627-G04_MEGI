@@ -82,11 +82,12 @@
                - Starting execution locks route membership; a new route is available only after this one ends. -->
           <div class="cms-panel-title"><div><h4 id="courierRouteTitle">Current route</h4><small id="courierRouteReference">Route #R-88</small></div><span id="courierRouteStatus" class="cms-badge cms-badge-warning">In preparation</span></div>
           <div id="courierRouteDetails" class="cms-meta-grid">
-            <div><span class="cms-meta-label">Assigned vehicle</span><span class="cms-meta-value">48-AB-22</span></div>
-            <div><span class="cms-meta-label">Vehicle type</span><span class="cms-meta-value">Van</span></div>
+            <div><label for="courierRouteVehicle" class="cms-meta-label">Assigned vehicle</label><select id="courierRouteVehicle" class="form-control"></select></div>
+            <div><span class="cms-meta-label">Vehicle type</span><span id="courierRouteVehicleType" class="cms-meta-value">Van</span></div>
             <div><span class="cms-meta-label">Orders on route</span><span id="courierRouteOrderReferences" class="cms-meta-value">#1042 · #1043</span></div>
             <div><span class="cms-meta-label">Route rule</span><span id="courierRouteRule" class="cms-meta-value">Orders can still be added</span></div>
           </div>
+          <div id="courierRouteCapacityNotice" class="cms-alert cms-alert-info mt-3 mb-0" role="status" aria-live="polite"></div>
           <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Select pending orders below to create the next route.</p>
           <hr>
           <button id="startCourierRoute" type="button" class="btn btn-primary btn-block py-3">Start route</button>

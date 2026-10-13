@@ -1583,13 +1583,38 @@ function cmsInitRoleAccess() {
  */
 const cmsCourierOperationsKey = 'movioDemoCourierOperations:';
 
+// Only approved vehicles are available for assignment to a courier route.
+function cmsAvailableCourierVehicles() {
+    return [
+        {id:'48-AB-22', model:'Mercedes Sprinter', type:'Van', maxWeightKg:1250, maxVolumeM3:10.5},
+        {id:'91-XZ-04', model:'Renault Kangoo', type:'Van', maxWeightKg:800, maxVolumeM3:5.2}
+    ];
+}
+
+function cmsCourierVehicle(vehicleId) {
+    return cmsAvailableCourierVehicles().find(vehicle => vehicle.id === vehicleId) ||
+        cmsAvailableCourierVehicles()[0];
+}
+
+function cmsCourierRouteVolume(operations, route) {
+    return route.orderIds.reduce((total, orderId) => {
+        const order = operations.orders.find(item => item.id === orderId);
+        return total + (order?.products || []).reduce((orderTotal, product) =>
+            orderTotal + (Number.isFinite(product.volume_m3) ? product.volume_m3 : 0), 0);
+    }, 0);
+}
+
+function cmsFormatCourierVolume(volume) {
+    return Number(volume.toFixed(2)).toLocaleString('en-US');
+}
+
 // Return a fresh sample dataset for a courier who has not used this dashboard before.
 function cmsDefaultCourierOperations() {
     return {
         nextRouteNumber: 89,
         routes: [
-            {id:'R-88', status:'planning', orderIds:['1042','1043']},
-            {id:'R-87', status:'completed', orderIds:['1039']}
+            {id:'R-88', status:'planning', orderIds:['1042','1043'], vehicleId:'48-AB-22'},
+            {id:'R-87', status:'completed', orderIds:['1039'], vehicleId:'48-AB-22'}
         ],
         orders: [
             {id:'1042', destination:'Boavista', parcels:2, status:'initiated', routeId:'R-88', products:[
@@ -1633,6 +1658,11 @@ function cmsLoadCourierOperations() {
                 ['pending','initiated','in-progress','completed','cancelled'].includes(order.status)
             );
         if (!valid) throw new Error('Stored Courier operations have an invalid format.');
+        operations.routes.forEach(route => {
+            if (!cmsAvailableCourierVehicles().some(vehicle => vehicle.id === route.vehicleId)) {
+                route.vehicleId = cmsAvailableCourierVehicles()[0].id;
+            }
+        });
         const sharedOrders = cmsLoadDemoOrders() || [];
         const sampleOrders = cmsDefaultCourierOperations().orders;
         operations.orders.forEach(order => {
@@ -1778,11 +1808,23 @@ function cmsRenderCourierDashboard() {
     const noRouteMessage = document.getElementById('courierNoRouteMessage');
     const routeReferences = document.getElementById('courierRouteOrderReferences');
     const routeRule = document.getElementById('courierRouteRule');
+    const routeVehicle = document.getElementById('courierRouteVehicle');
+    const routeVehicleType = document.getElementById('courierRouteVehicleType');
+    const capacityNotice = document.getElementById('courierRouteCapacityNotice');
     const startRouteButton = document.getElementById('startCourierRoute');
     const createRouteButton = document.getElementById('createCourierRoute');
 
+    const availableVehicles = cmsAvailableCourierVehicles();
+    routeVehicle.replaceChildren(...availableVehicles.map(vehicle => {
+        const option = document.createElement('option');
+        option.value = vehicle.id;
+        option.textContent = vehicle.id + ' · ' + vehicle.model;
+        return option;
+    }));
+
     if (route) {
         const preparing = route.status === 'planning';
+        const assignedVehicle = cmsCourierVehicle(route.vehicleId);
         routeTitle.textContent = preparing ? 'Route in preparation' : 'Route in progress';
         routeReference.textContent = 'Route #' + route.id;
         routeStatus.textContent = preparing ? 'In preparation' : 'Active';
@@ -1796,6 +1838,20 @@ function cmsRenderCourierDashboard() {
         routeRule.textContent = preparing
             ? 'Orders can still be added'
             : 'Membership is locked during execution';
+        routeVehicle.value = assignedVehicle.id;
+        routeVehicleType.textContent = assignedVehicle.type;
+        routeVehicle.disabled = !preparing;
+        const totalVolume = cmsCourierRouteVolume(operations, route);
+        const capacitySufficient = totalVolume <= assignedVehicle.maxVolumeM3;
+        capacityNotice.className = 'cms-alert mt-3 mb-0 ' +
+            (capacitySufficient ? 'cms-alert-success' : 'cms-alert-danger');
+        capacityNotice.textContent = capacitySufficient
+            ? 'Vehicle capacity is sufficient: the route products use ' +
+                cmsFormatCourierVolume(totalVolume) + ' m³ of ' +
+                cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³.'
+            : 'Vehicle capacity exceeded: the route products use ' +
+                cmsFormatCourierVolume(totalVolume) + ' m³, but this vehicle supports only ' +
+                cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³.';
         startRouteButton.classList.toggle('d-none', !preparing);
         startRouteButton.disabled = routeOrders.length === 0;
     } else {
@@ -1805,6 +1861,8 @@ function cmsRenderCourierDashboard() {
         routeDetails.classList.add('d-none');
         noRouteMessage.classList.remove('d-none');
         startRouteButton.classList.add('d-none');
+        routeVehicle.disabled = true;
+        capacityNotice.classList.add('d-none');
     }
 
     const routeOrderList = document.getElementById('courierRouteOrders');
@@ -1924,7 +1982,26 @@ function cmsInitCourierDashboard() {
     const pendingList = document.getElementById('courierPendingOrders');
     if (!pendingList) return;
     const routeOrderList = document.getElementById('courierRouteOrders');
+    const routeVehicle = document.getElementById('courierRouteVehicle');
     cmsRenderCourierDashboard();
+
+    routeVehicle.addEventListener('change', () => {
+        const operations = cmsLoadCourierOperations();
+        const route = operations && cmsCurrentCourierRoute(operations);
+        const vehicle = cmsAvailableCourierVehicles().find(item => item.id === routeVehicle.value);
+        if (!operations || !route || route.status !== 'planning' || !vehicle) {
+            cmsToast('Choose an available vehicle while the route is in preparation.');
+            cmsRenderCourierDashboard();
+            return;
+        }
+        route.vehicleId = vehicle.id;
+        if (!cmsSaveCourierOperations(operations)) {
+            cmsRenderCourierDashboard();
+            return;
+        }
+        cmsRenderCourierDashboard();
+        cmsToast('Route vehicle updated to ' + vehicle.id + '.');
+    });
 
     routeOrderList.addEventListener('click', event => {
         const button = event.target.closest('[data-remove-courier-order]');
@@ -1969,7 +2046,7 @@ function cmsInitCourierDashboard() {
             return;
         }
         const routeId = 'R-' + operations.nextRouteNumber++;
-        const route = {id:routeId, status:'planning', orderIds:[]};
+        const route = {id:routeId, status:'planning', orderIds:[], vehicleId:cmsAvailableCourierVehicles()[0].id};
         operations.routes.push(route);
         if (!cmsAddCourierOrdersToRoute(operations, route, selectedIds)) {
             operations.routes = operations.routes.filter(item => item !== route);
@@ -1983,6 +2060,14 @@ function cmsInitCourierDashboard() {
         const operations = cmsLoadCourierOperations();
         const route = operations && cmsCurrentCourierRoute(operations);
         if (!operations || !route || route.status !== 'planning' || !route.orderIds.length) return;
+        const vehicle = cmsCourierVehicle(route.vehicleId);
+        const totalVolume = cmsCourierRouteVolume(operations, route);
+        if (totalVolume > vehicle.maxVolumeM3) {
+            cmsToast('Cannot start route: its products need ' + cmsFormatCourierVolume(totalVolume) +
+                ' m³, exceeding vehicle ' + vehicle.id + ' capacity of ' +
+                cmsFormatCourierVolume(vehicle.maxVolumeM3) + ' m³.');
+            return;
+        }
         route.status = 'active';
         if (!cmsSaveCourierOperations(operations)) return;
         cmsRenderCourierDashboard();
@@ -2041,6 +2126,19 @@ function cmsRenderCourierRoute(operations) {
         routeStatus.classList.remove('d-none');
     } else {
         routeStatus.classList.add('d-none');
+    }
+
+    if (displayRoute) {
+        const vehicle = cmsCourierVehicle(displayRoute.vehicleId);
+        const assignedVehicle = document.getElementById('courierAssignedVehicle');
+        document.getElementById('courierAssignedVehicleRegistration').textContent = vehicle.id;
+        assignedVehicle.textContent = vehicle.id + ' · ' + vehicle.model;
+        document.getElementById('courierVehicleMaxWeight').textContent = vehicle.maxWeightKg.toLocaleString('en-US');
+        document.getElementById('courierVehicleMaxVolume').textContent = vehicle.maxVolumeM3.toFixed(1);
+        document.getElementById('courierVehicleWeightCapacity').style.width =
+            Math.min(100, 86 / vehicle.maxWeightKg * 100) + '%';
+        document.getElementById('courierVehicleVolumeCapacity').style.width =
+            Math.min(100, 1.4 / vehicle.maxVolumeM3 * 100) + '%';
     }
 
     const routeOrderList = document.getElementById('courierRouteOrderList');
