@@ -1835,12 +1835,15 @@ function cmsRenderCourierDashboard() {
             note.textContent = 'Cancelled and returned to your order list; it cannot be added to a route.';
             card.appendChild(note);
         } else if (route?.status === 'planning') {
+            const actionContainer = document.createElement('div');
+            actionContainer.className = 'text-right mt-2';
             const addButton = document.createElement('button');
             addButton.type = 'button';
-            addButton.className = 'btn btn-sm btn-outline-primary mt-2';
+            addButton.className = 'btn btn-sm btn-outline-primary';
             addButton.dataset.addCourierOrder = order.id;
             addButton.textContent = 'Add to current route';
-            card.appendChild(addButton);
+            actionContainer.appendChild(addButton);
+            card.appendChild(actionContainer);
         } else if (route?.status === 'active') {
             const note = document.createElement('small');
             note.className = 'd-block text-muted mt-2';
