@@ -1730,6 +1730,25 @@ function cmsAddCourierOrdersToRoute(operations, route, orderIds) {
     return true;
 }
 
+// Return an order to the pending list while its route is still being prepared.
+function cmsRemoveCourierOrderFromRoute(operations, route, orderId) {
+    if (!route || route.status !== 'planning') {
+        cmsToast('Orders can only be removed while the route is in preparation.');
+        return false;
+    }
+    const order = operations.orders.find(item => item.id === orderId);
+    if (!order || order.routeId !== route.id || order.status !== 'initiated' ||
+        !route.orderIds.includes(orderId)) {
+        cmsToast('This order is not available to remove from the current route.');
+        return false;
+    }
+    route.orderIds = route.orderIds.filter(id => id !== orderId);
+    order.status = 'pending';
+    order.routeId = null;
+    if (!cmsSaveCourierOperations(operations)) return false;
+    return true;
+}
+
 // Render route state, routed orders, pending assignments, summary counts, and completed history.
 function cmsRenderCourierDashboard() {
     const pendingList = document.getElementById('courierPendingOrders');
@@ -1807,6 +1826,17 @@ function cmsRenderCourierDashboard() {
         const detail = document.createElement('small');
         detail.textContent = order.destination + ' · ' + order.parcels + (order.parcels === 1 ? ' parcel' : ' parcels');
         card.append(header, detail, cmsBuildProductTable(order.products));
+        if (route?.status === 'planning') {
+            const actionContainer = document.createElement('div');
+            actionContainer.className = 'text-right mt-2';
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'btn btn-sm btn-outline-danger';
+            removeButton.dataset.removeCourierOrder = order.id;
+            removeButton.textContent = 'Remove from route';
+            actionContainer.appendChild(removeButton);
+            card.appendChild(actionContainer);
+        }
         routeOrderList.appendChild(card);
     });
 
@@ -1893,7 +1923,20 @@ function cmsRenderCourierDashboard() {
 function cmsInitCourierDashboard() {
     const pendingList = document.getElementById('courierPendingOrders');
     if (!pendingList) return;
+    const routeOrderList = document.getElementById('courierRouteOrders');
     cmsRenderCourierDashboard();
+
+    routeOrderList.addEventListener('click', event => {
+        const button = event.target.closest('[data-remove-courier-order]');
+        if (!button) return;
+        const operations = cmsLoadCourierOperations();
+        const route = operations && cmsCurrentCourierRoute(operations);
+        const orderId = button.dataset.removeCourierOrder;
+        if (operations && cmsRemoveCourierOrderFromRoute(operations, route, orderId)) {
+            cmsRenderCourierDashboard();
+            cmsToast('Order #' + orderId + ' returned to the pending orders list.');
+        }
+    });
 
     pendingList.addEventListener('click', event => {
         const productToggle = event.target.closest('[data-courier-product-toggle]');
