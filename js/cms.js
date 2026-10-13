@@ -1854,15 +1854,17 @@ function cmsRenderCourierDashboard() {
                 cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³.';
         startRouteButton.classList.toggle('d-none', !preparing);
         startRouteButton.disabled = routeOrders.length === 0;
+        createRouteButton.classList.add('d-none');
     } else {
         routeTitle.textContent = 'No active route';
-        routeReference.textContent = 'Create a route from pending orders';
+        routeReference.textContent = 'Create a route, then add pending orders';
         routeStatus.classList.add('d-none');
         routeDetails.classList.add('d-none');
         noRouteMessage.classList.remove('d-none');
         startRouteButton.classList.add('d-none');
         routeVehicle.disabled = true;
         capacityNotice.classList.add('d-none');
+        createRouteButton.classList.toggle('d-none', routableOrders.length === 0);
     }
 
     const routeOrderList = document.getElementById('courierRouteOrders');
@@ -1938,21 +1940,14 @@ function cmsRenderCourierDashboard() {
             note.textContent = 'Available for the next route';
             card.appendChild(note);
         } else {
-            const label = document.createElement('label');
-            label.className = 'd-flex align-items-center mt-2 mb-0';
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.className = 'mr-2';
-            checkbox.value = order.id;
-            checkbox.dataset.createCourierRouteOrder = 'true';
-            label.append(checkbox, document.createTextNode('Add to the next route'));
-            card.appendChild(label);
+            const note = document.createElement('small');
+            note.className = 'd-block text-muted mt-2';
+            note.textContent = 'Create a route to add this order.';
+            card.appendChild(note);
         }
         cmsAppendCourierProductDisclosure(card, order, 'unrouted');
         pendingList.appendChild(card);
     });
-    createRouteButton.classList.toggle('d-none', Boolean(route) || routableOrders.length === 0);
-
     const completedList = document.getElementById('courierCompletedOrders');
     completedList.replaceChildren();
     if (!completedOrders.length) {
@@ -2039,21 +2034,16 @@ function cmsInitCourierDashboard() {
     document.getElementById('createCourierRoute')?.addEventListener('click', () => {
         const operations = cmsLoadCourierOperations();
         if (!operations || cmsCurrentCourierRoute(operations)) return;
-        const selectedIds = [...pendingList.querySelectorAll('[data-create-courier-route-order]:checked')]
-            .map(checkbox => checkbox.value);
-        if (!selectedIds.length) {
-            cmsToast('Select at least one pending order to create a route.');
+        if (!operations.orders.some(order => order.status === 'pending' && !order.routeId)) {
+            cmsToast('There are no pending orders available for a new route.');
             return;
         }
         const routeId = 'R-' + operations.nextRouteNumber++;
         const route = {id:routeId, status:'planning', orderIds:[], vehicleId:cmsAvailableCourierVehicles()[0].id};
         operations.routes.push(route);
-        if (!cmsAddCourierOrdersToRoute(operations, route, selectedIds)) {
-            operations.routes = operations.routes.filter(item => item !== route);
-            return;
-        }
+        if (!cmsSaveCourierOperations(operations)) return;
         cmsRenderCourierDashboard();
-        cmsToast('Route #' + routeId + ' created with the selected orders.');
+        cmsToast('Route #' + routeId + ' created. Add pending orders from the list.');
     });
 
     document.getElementById('startCourierRoute')?.addEventListener('click', () => {
@@ -2285,7 +2275,7 @@ function cmsInitCourierRoute() {
         cmsCloseFinishedCourierRoutes(currentOperations);
         fileInput.value = '';
         cmsRenderCourierRoute(currentOperations);
-        cmsToast('Order #' + order.id + ' completed. The next route order is now active.');
+        cmsToast('Order #' + order.id + ' completed.');
     });
 
     // Synchronize route details if another browser tab updates the courier's demo orders.

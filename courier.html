@@ -88,8 +88,9 @@
             <div><span class="cms-meta-label">Route rule</span><span id="courierRouteRule" class="cms-meta-value">Orders can still be added</span></div>
           </div>
           <div id="courierRouteCapacityNotice" class="cms-alert cms-alert-info mt-3 mb-0" role="status" aria-live="polite"></div>
-          <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Select pending orders below to create the next route.</p>
+          <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Create a route, then add pending orders from the list below.</p>
           <hr>
+          <button id="createCourierRoute" type="button" class="btn btn-outline-primary btn-block py-3 d-none">Create new route</button>
           <button id="startCourierRoute" type="button" class="btn btn-primary btn-block py-3">Start route</button>
           <a href="courier-route.html" class="btn btn-outline-primary btn-block py-3">View route and deliveries</a>
           <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block py-3">Manage vehicles</a>
@@ -120,12 +121,11 @@
           <!-- Pending-order logic:
             - This list contains pending orders and cancelled orders returned from this courier's route.
                - While a route is in preparation, an order can be added and becomes Initiated.
-               - With no active route, selected pending orders create the next route.
+               - With no active route, create a route first, then add pending orders to it.
             - Cancelled orders remain visible but cannot be added to a later route automatically.
             - During route execution, pending orders remain available for a later route. -->
           <div class="cms-panel-title"><div><h4>Orders list</h4><small>Pending orders and cancellations returned from a route</small></div></div>
           <div id="courierPendingOrders" aria-live="polite"></div>
-          <button id="createCourierRoute" type="button" class="btn btn-primary mt-3 d-none">Create route from selected orders</button>
         </div>
       </div>
     </div>
