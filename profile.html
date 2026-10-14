@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>My Profile | Movio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="View and update your Movio demo profile.">
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/cms.css" rel="stylesheet">
+</head>
+<body>
+<!-- Shared public navigation with a session-aware account menu. -->
+<div class="container-fluid p-0">
+  <nav class="navbar navbar-expand-lg bg-light navbar-light py-3 py-lg-0 px-lg-5">
+    <a href="index.html" class="navbar-brand ml-lg-3">
+      <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
+    </a>
+    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between px-lg-3" id="navbarCollapse">
+      <div class="navbar-nav m-auto py-0">
+        <a href="index.html" class="nav-item nav-link">Home</a>
+        <a href="about.html" class="nav-item nav-link">About Us</a>
+        <a href="team.html" class="nav-item nav-link">Team</a>
+        <a href="workspace.html" class="nav-item nav-link d-none" data-workspace-link>My workspace</a>
+      </div>
+      <div class="d-flex align-items-center">
+        <a href="login.html" class="btn btn-outline-primary py-2 px-3 mr-2">Login</a>
+        <a href="register.html" class="btn btn-primary py-2 px-3">Register</a>
+        <span class="align-self-center mr-3 d-none" data-demo-user></span>
+        <button type="button" class="btn btn-outline-primary d-none" data-demo-logout>Sign out</button>
+      </div>
+    </div>
+  </nav>
+</div>
+
+<!-- Page introduction for the signed-in user's profile. -->
+<section class="cms-page-hero">
+  <div class="container">
+    <h1>My profile</h1>
+    <p class="mb-0">Manage the personal details shown across your Movio workspace.</p>
+  </div>
+</section>
+
+<!-- Editable demo profile details and read-only account identity. -->
+<main class="container-fluid py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 mb-4">
+        <section class="cms-panel p-4 p-md-5">
+          <div class="cms-panel-title">
+            <div><h2 class="h4">Personal details</h2><small>Changes are saved in this browser for the demo.</small></div>
+          </div>
+          <form id="accountProfileForm" class="needs-validation" novalidate>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="profileName">Name</label>
+                <input id="profileName" name="name" class="form-control" required>
+                <div class="invalid-feedback">Enter your name.</div>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="profileUsername">Username</label>
+                <input id="profileUsername" name="username" class="form-control" required>
+                <div class="invalid-feedback">Enter your username.</div>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="profileEmail">Sign-in email</label>
+                <input id="profileEmail" name="email" type="email" class="form-control" readonly>
+                <small class="form-text text-muted">The sign-in email cannot be changed in this demo.</small>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="profilePhone">Phone</label>
+                <input id="profilePhone" name="phone" type="tel" class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Account role</label>
+              <p id="accountProfileRole" class="cms-profile-role mb-0"></p>
+            </div>
+            <button class="btn btn-primary px-4" type="submit">Save profile</button>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Shared Movio footer with key public destinations. -->
+<footer class="cms-site-footer mt-5">
+  <div class="container py-5 px-sm-3 px-md-5">
+    <div class="row">
+      <div class="col-lg-5 col-md-6 mb-4 mb-lg-0">
+        <a href="index.html" class="cms-footer-brand"><img class="cms-footer-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you"></a>
+        <p class="cms-footer-description">We bring customers, couriers and delivery teams together to make every delivery simpler, clearer and more dependable.</p>
+      </div>
+      <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+        <h2 class="cms-footer-heading">Explore Movio</h2>
+        <nav class="cms-footer-links" aria-label="Footer navigation">
+          <a href="index.html"><i class="fa fa-angle-right"></i>Home</a>
+          <a href="about.html"><i class="fa fa-angle-right"></i>About Us</a>
+          <a href="team.html"><i class="fa fa-angle-right"></i>Team</a>
+          <a href="login.html" data-dashboard-link><i class="fa fa-angle-right"></i>Login</a>
+        </nav>
+      </div>
+      <div class="col-lg-4 col-md-12">
+        <h2 class="cms-footer-heading">From pickup to doorstep</h2>
+        <p class="cms-footer-description mb-3">A smoother delivery journey starts here.</p>
+        <a class="cms-footer-cta" href="register.html" data-get-started>Get started<i class="fa fa-arrow-right ml-2"></i></a>
+      </div>
+    </div>
+    <div class="cms-footer-bottom"><p>&copy; 2026 Movio. All rights reserved.</p></div>
+  </div>
+</footer>
+<a href="#" class="btn btn-lg btn-primary back-to-top" aria-label="Back to top"><i class="fa fa-angle-double-up"></i></a>
+<div id="cmsToast"></div>
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="lib/easing/easing.min.js"></script>
+<script src="lib/waypoints/waypoints.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/cms.js"></script>
+</body>
+</html>

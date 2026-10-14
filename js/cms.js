@@ -1258,14 +1258,208 @@ const cmsRoles = {
 // Session-storage keys keep the active demo identity scoped to this browser tab.
 const cmsRoleKey = 'movioDemoRole';
 const cmsEmailKey = 'movioDemoEmail';
+const cmsNameKey = 'movioDemoName';
+const cmsProfilesKey = 'movioDemoProfiles';
 // Local-storage key and initial sample records for the Staff application workflow.
 const cmsStaffApplicationsKey = 'movioDemoStaffApplications';
+const cmsSeedProfiles = [
+    {name:'Ana Silva', username:'ana.silva', email:'ana@example.com', phone:'', role:'client'},
+    {name:'Miguel Costa', username:'mcosta', email:'miguel@example.com', phone:'', role:'courier'},
+    {name:'Rui Alves', username:'ralves', email:'rui@example.com', phone:'', role:'courier'},
+    {name:'Carla Sousa', username:'csousa', email:'carla@example.com', phone:'+351 913 *** ***', role:'staff'},
+    {name:'Admin Demo', username:'admin', email:'admin@example.com', phone:'+351 910 000 000', role:'admin'}
+];
 // Default applications used when this browser has no saved demo decisions yet.
 const cmsDefaultStaffApplications = [
     {name:'Inês Martins', username:'ines.martins', email:'ines@example.com', phone:'+351 912 *** ***', created:'02 Oct', status:'pending'},
     {name:'Pedro Reis', username:'pedro.reis', email:'pedro@example.com', phone:'+351 914 *** ***', created:'01 Oct', status:'pending'},
     {name:'Carla Sousa', username:'csousa', email:'carla@example.com', phone:'+351 913 *** ***', created:'10 Sep', status:'approved'}
 ];
+
+// Read locally stored demo profiles and reject malformed browser data.
+function cmsLoadProfiles() {
+    try {
+        const stored = localStorage.getItem(cmsProfilesKey);
+        if (stored === null) return [];
+        const profiles = JSON.parse(stored);
+        const valid = Array.isArray(profiles) && profiles.every(profile =>
+            profile && typeof profile.name === 'string' &&
+            typeof profile.email === 'string' && typeof profile.role === 'string'
+        );
+        if (!valid) throw new Error('Stored demo profiles have an invalid format.');
+        return profiles;
+    } catch (error) {
+        console.error('Could not load demo profiles.', error);
+        cmsToast('Could not load profile information from this browser.');
+        return null;
+    }
+}
+
+// Save a profile locally without storing passwords or tax identifiers.
+function cmsSaveProfile(profile, previousEmail = '') {
+    const profiles = cmsLoadProfiles();
+    if (!profiles) return false;
+    const email = profile.email.trim().toLowerCase();
+    const previous = previousEmail.trim().toLowerCase();
+    if (previous && previous !== email) {
+        const previousIndex = profiles.findIndex(item => item.email.toLowerCase() === previous);
+        if (previousIndex >= 0) profiles.splice(previousIndex, 1);
+    }
+    const existingIndex = profiles.findIndex(item => item.email.toLowerCase() === email);
+    const savedProfile = {
+        name: profile.name.trim(),
+        username: (profile.username || '').trim(),
+        email,
+        phone: (profile.phone || '').trim(),
+        role: profile.role
+    };
+    if (existingIndex >= 0) profiles[existingIndex] = savedProfile;
+    else profiles.push(savedProfile);
+
+    try {
+        localStorage.setItem(cmsProfilesKey, JSON.stringify(profiles));
+        return true;
+    } catch (error) {
+        console.error('Could not save demo profile.', error);
+        cmsToast('Could not save your profile in this browser.');
+        return false;
+    }
+}
+
+// Resolve a display name from saved profiles, sample identities, or a readable email label.
+function cmsResolveDisplayName(role, email) {
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const profiles = cmsLoadProfiles();
+    const savedProfile = profiles && profiles.find(profile =>
+        profile.email.toLowerCase() === normalizedEmail
+    );
+    if (savedProfile) return savedProfile.name;
+    const seededProfile = cmsSeedProfiles.find(profile =>
+        profile.email === normalizedEmail && profile.role === role
+    );
+    if (seededProfile) return seededProfile.name;
+
+    const applications = role === 'staff' ? cmsLoadStaffApplications() : null;
+    const staffApplication = role === 'staff' && applications && applications.find(application =>
+        application.email.toLowerCase() === normalizedEmail
+    );
+    if (staffApplication) return staffApplication.name;
+
+    const localPart = normalizedEmail.split('@')[0] || '';
+    const readableName = localPart
+        .replace(/[._-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\b\p{L}/gu, letter => letter.toLocaleUpperCase());
+    return readableName || cmsRoles[role].label;
+}
+
+// Find the saved local profile or return its corresponding demo identity.
+function cmsGetProfile(role, email) {
+    const normalizedEmail = (email || '').trim().toLowerCase();
+    const profiles = cmsLoadProfiles();
+    const savedProfile = profiles && profiles.find(profile =>
+        profile.email.toLowerCase() === normalizedEmail
+    );
+    if (savedProfile) {
+        return {
+            ...savedProfile,
+            username: savedProfile.username || '',
+            phone: savedProfile.phone || ''
+        };
+    }
+
+    const seededProfile = cmsSeedProfiles.find(profile =>
+        profile.email === normalizedEmail && profile.role === role
+    );
+    if (seededProfile) return {...seededProfile};
+
+    const applications = role === 'staff' ? cmsLoadStaffApplications() : null;
+    const staffApplication = role === 'staff' && applications && applications.find(application =>
+        application.email.toLowerCase() === normalizedEmail
+    );
+    return {
+        name: staffApplication?.name || cmsResolveDisplayName(role, normalizedEmail),
+        username: staffApplication?.username || normalizedEmail.split('@')[0].replace(/[._-]+/g, '.'),
+        email: normalizedEmail,
+        phone: staffApplication?.phone || '',
+        role
+    };
+}
+
+// Add the role-aware account menu, including profile, workspace, and useful page links.
+function cmsCreateAccountMenu(role, displayName, logoutButton) {
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown cms-account-dropdown';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'btn btn-light dropdown-toggle cms-account-toggle';
+    toggle.dataset.toggle = 'dropdown';
+    toggle.setAttribute('aria-haspopup', 'true');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.innerHTML = '<i class="fa fa-user-circle mr-2" aria-hidden="true"></i>';
+    toggle.appendChild(document.createTextNode(displayName));
+    dropdown.appendChild(toggle);
+
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu dropdown-menu-right cms-account-menu';
+    const header = document.createElement('h6');
+    header.className = 'dropdown-header cms-account-menu-header';
+    header.textContent = displayName + ' · ' + cmsRoles[role].label;
+    menu.appendChild(header);
+    menu.appendChild(document.createElement('div')).className = 'dropdown-divider';
+
+    const addLink = (label, href, icon) => {
+        const link = document.createElement('a');
+        link.className = 'dropdown-item';
+        link.href = href;
+        link.innerHTML = '<i class="fa ' + icon + ' mr-2" aria-hidden="true"></i>' + label;
+        menu.appendChild(link);
+    };
+
+    addLink('My workspace', cmsRoleHome(role), 'fa-th-large');
+    if (role === 'client') {
+        addLink('My orders', 'client-orders.html', 'fa-box');
+        addLink('Create an order', 'client-order.html', 'fa-plus');
+    } else if (role === 'courier') {
+        addLink('My route', 'courier-route.html', 'fa-route');
+        addLink('My vehicles', 'courier-vehicles.html', 'fa-truck');
+    } else if (role === 'staff') {
+        addLink('Reviews', 'staff-approvals.html', 'fa-clipboard-check');
+        addLink('Notifications', 'staff-notifications.html', 'fa-bell');
+    } else if (role === 'admin') {
+        addLink('Users and staff', 'admin-users.html', 'fa-users');
+    }
+    menu.appendChild(document.createElement('div')).className = 'dropdown-divider';
+    addLink('My profile', 'profile.html', 'fa-user-edit');
+    menu.appendChild(document.createElement('div')).className = 'dropdown-divider';
+
+    logoutButton.className = 'dropdown-item cms-account-logout';
+    logoutButton.type = 'button';
+    logoutButton.textContent = 'Sign out';
+    const logoutIcon = document.createElement('i');
+    logoutIcon.className = 'fa fa-sign-out-alt mr-2';
+    logoutIcon.setAttribute('aria-hidden', 'true');
+    logoutButton.prepend(logoutIcon);
+    menu.appendChild(logoutButton);
+
+    dropdown.appendChild(menu);
+    return dropdown;
+}
+
+// Keep the account dropdown label synchronized after a profile name is changed.
+function cmsUpdateAccountDisplayName(displayName, role) {
+    const toggle = document.querySelector('.cms-account-toggle');
+    if (toggle) {
+        const icon = document.createElement('i');
+        icon.className = 'fa fa-user-circle mr-2';
+        icon.setAttribute('aria-hidden', 'true');
+        toggle.replaceChildren(icon, document.createTextNode(displayName));
+    }
+    const header = document.querySelector('.cms-account-menu-header');
+    if (header) header.textContent = displayName + ' · ' + cmsRoles[role].label;
+}
 
 // Load and validate saved applications, seeding browser storage on first use.
 function cmsLoadStaffApplications() {
@@ -1430,13 +1624,14 @@ function cmsGetRole() {
     if (!Object.prototype.hasOwnProperty.call(cmsRoles, role)) {
         sessionStorage.removeItem(cmsRoleKey);
         sessionStorage.removeItem(cmsEmailKey);
+        sessionStorage.removeItem(cmsNameKey);
         return null;
     }
     return role;
 }
 
 // Validate a role, enforce Staff approval, and store the temporary demo identity.
-function cmsSetRole(role, email) {
+function cmsSetRole(role, email, displayName) {
     if (!Object.prototype.hasOwnProperty.call(cmsRoles, role)) {
         cmsToast('Choose a valid account type.');
         return false;
@@ -1447,6 +1642,7 @@ function cmsSetRole(role, email) {
     }
     sessionStorage.setItem(cmsRoleKey, role);
     sessionStorage.setItem(cmsEmailKey, email.trim());
+    sessionStorage.setItem(cmsNameKey, displayName || cmsResolveDisplayName(role, email));
     return true;
 }
 
@@ -1476,6 +1672,7 @@ function cmsInitRoleAccess() {
         if (cmsStaffApplicationStatus(email) !== 'approved') {
             sessionStorage.removeItem(cmsRoleKey);
             sessionStorage.removeItem(cmsEmailKey);
+            sessionStorage.removeItem(cmsNameKey);
             role = null;
             if (cmsRoles.staff.pages.includes(page)) {
                 window.location.replace('login.html?role=staff');
@@ -1498,6 +1695,11 @@ function cmsInitRoleAccess() {
         return false;
     }
 
+    if (page === 'profile.html' && !role) {
+        window.location.replace('login.html');
+        return false;
+    }
+
     if ((page === 'login.html' || page === 'register.html') && role) {
         window.location.replace(cmsRoleHome(role));
         return false;
@@ -1508,6 +1710,7 @@ function cmsInitRoleAccess() {
         button.addEventListener('click', () => {
             sessionStorage.removeItem(cmsRoleKey);
             sessionStorage.removeItem(cmsEmailKey);
+            sessionStorage.removeItem(cmsNameKey);
             window.location.assign('index.html');
         });
     });
@@ -1515,8 +1718,16 @@ function cmsInitRoleAccess() {
     document.querySelectorAll('[data-demo-user]').forEach(label => {
         label.classList.toggle('d-none', !role);
         if (role) {
-            const email = sessionStorage.getItem(cmsEmailKey);
-            label.textContent = email ? email + ' · ' + cmsRoles[role].label : cmsRoles[role].label;
+            const email = sessionStorage.getItem(cmsEmailKey) || '';
+            const displayName = sessionStorage.getItem(cmsNameKey) ||
+                cmsResolveDisplayName(role, email);
+            sessionStorage.setItem(cmsNameKey, displayName);
+            const logoutButton = document.querySelector('[data-demo-logout]');
+            if (logoutButton) {
+                label.replaceWith(cmsCreateAccountMenu(role, displayName, logoutButton));
+            } else {
+                label.textContent = displayName;
+            }
         }
     });
     document.querySelectorAll('[data-demo-logout]').forEach(button => {
@@ -1557,6 +1768,14 @@ function cmsInitRoleAccess() {
         });
     }
 
+    window.addEventListener('storage', event => {
+        if (event.key !== cmsProfilesKey || !role) return;
+        const email = sessionStorage.getItem(cmsEmailKey) || '';
+        const displayName = cmsResolveDisplayName(role, email);
+        sessionStorage.setItem(cmsNameKey, displayName);
+        cmsUpdateAccountDisplayName(displayName, role);
+    });
+
     if (protectedRole) {
         const hero = document.querySelector('.cms-page-hero .container');
         if (hero) {
@@ -1565,7 +1784,7 @@ function cmsInitRoleAccess() {
             // Client orders and Courier route changes persist only in this browser as demo data.
             notice.textContent = ['courier.html','courier-route.html','client-order.html','client-orders.html'].includes(page)
                 ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
-                : 'Preview mode: this page uses sample data, and your changes are not saved.';
+                : 'Preview mode: this page uses sample data and is not connected to a production service.';
             hero.appendChild(notice);
         }
     }
@@ -2374,7 +2593,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 registerForm.classList.add('d-none');
                 return;
             }
-            if (cmsSetRole(role, email)) window.location.assign(cmsRoleHome(role));
+            const profile = {
+                name: registerForm.elements.name.value.trim(),
+                username: registerForm.elements.username.value.trim(),
+                email,
+                phone: registerForm.elements.phone.value.trim(),
+                role
+            };
+            if (!cmsSaveProfile(profile)) return;
+            if (cmsSetRole(role, email, profile.name)) window.location.assign(cmsRoleHome(role));
+        });
+    }
+
+    const accountProfileForm = document.getElementById('accountProfileForm');
+    if (accountProfileForm) {
+        const role = cmsGetRole();
+        const email = sessionStorage.getItem(cmsEmailKey) || '';
+        const profile = cmsGetProfile(role, email);
+        accountProfileForm.elements.name.value = profile.name;
+        accountProfileForm.elements.username.value = profile.username;
+        accountProfileForm.elements.email.value = profile.email;
+        accountProfileForm.elements.phone.value = profile.phone;
+        document.getElementById('accountProfileRole').textContent = cmsRoles[role].label;
+        accountProfileForm.addEventListener('submit', event => {
+            event.preventDefault();
+            if (!cmsValidate(accountProfileForm)) return;
+            const updatedProfile = {
+                ...profile,
+                name: accountProfileForm.elements.name.value.trim(),
+                username: accountProfileForm.elements.username.value.trim(),
+                phone: accountProfileForm.elements.phone.value.trim()
+            };
+            if (!updatedProfile.name || !updatedProfile.username) {
+                cmsToast('Name and username are required.');
+                return;
+            }
+            if (!cmsSaveProfile(updatedProfile)) return;
+            profile.name = updatedProfile.name;
+            profile.username = updatedProfile.username;
+            profile.phone = updatedProfile.phone;
+            sessionStorage.setItem(cmsNameKey, updatedProfile.name);
+            cmsUpdateAccountDisplayName(updatedProfile.name, role);
+            cmsToast('Profile updated in this browser demo.');
         });
     }
 
@@ -2572,11 +2832,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Admin profile
     const profileForm = document.getElementById('adminProfileForm');
-    // Validate profile fields and acknowledge the preview-only update.
+    if (profileForm) {
+        const email = sessionStorage.getItem(cmsEmailKey) || '';
+        const profile = cmsGetProfile('admin', email);
+        profileForm.querySelector('#adminProfileName').value = profile.name;
+        profileForm.querySelector('#adminProfileEmail').value = profile.email;
+        profileForm.querySelector('#adminProfilePhone').value = profile.phone;
+    }
+    // Save administrator account details to the same local profile used by the account menu.
     profileForm?.addEventListener('submit', e => {
         e.preventDefault();
         if (!cmsValidate(profileForm)) return;
-        cmsToast('Account details updated in this preview. No data has been saved.');
+        const previousEmail = sessionStorage.getItem(cmsEmailKey) || '';
+        const updatedProfile = {
+            ...cmsGetProfile('admin', previousEmail),
+            name: profileForm.querySelector('#adminProfileName').value.trim(),
+            email: profileForm.querySelector('#adminProfileEmail').value.trim(),
+            phone: profileForm.querySelector('#adminProfilePhone').value.trim()
+        };
+        if (!cmsSaveProfile(updatedProfile, previousEmail)) return;
+        sessionStorage.setItem(cmsEmailKey, updatedProfile.email);
+        sessionStorage.setItem(cmsNameKey, updatedProfile.name);
+        cmsUpdateAccountDisplayName(updatedProfile.name, 'admin');
+        cmsToast('Account details updated in this browser demo.');
     });
 });
 
