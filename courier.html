@@ -25,9 +25,22 @@
     <a href="index.html" class="navbar-brand ml-lg-3">
       <img class="cms-brand-logo" src="img/logo.jpeg" alt="Movio — Delivering what moves you">
     </a>
-    <div class="ml-auto d-flex align-items-center">
-      <span class="cms-owner mr-2" data-demo-user><i class="fa fa-user"></i>Courier</span>
-      <button type="button" class="btn btn-outline-primary btn-sm" data-demo-logout>Sign out</button>
+    <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-between px-lg-3" id="navbarCollapse">
+      <div class="navbar-nav m-auto py-0">
+        <a href="index.html" class="nav-item nav-link">Home</a>
+        <a href="about.html" class="nav-item nav-link">About Us</a>
+        <a href="team.html" class="nav-item nav-link">Team</a>
+        <a href="workspace.html" class="nav-item nav-link active" data-workspace-link>My Workspace</a>
+      </div>
+      <div class="d-flex align-items-center">
+        <a href="login.html" class="btn btn-outline-primary py-2 px-3 mr-2">Login</a>
+        <a href="register.html" class="btn btn-primary py-2 px-3">Register</a>
+        <span class="align-self-center mr-3 d-none" data-demo-user></span>
+        <button type="button" class="btn btn-outline-primary d-none" data-demo-logout>Sign out</button>
+      </div>
     </div>
   </nav>
 </div>
@@ -69,13 +82,15 @@
                - Starting execution locks route membership; a new route is available only after this one ends. -->
           <div class="cms-panel-title"><div><h4 id="courierRouteTitle">Current route</h4><small id="courierRouteReference">Route #R-88</small></div><span id="courierRouteStatus" class="cms-badge cms-badge-warning">In preparation</span></div>
           <div id="courierRouteDetails" class="cms-meta-grid">
-            <div><span class="cms-meta-label">Assigned vehicle</span><span class="cms-meta-value">48-AB-22</span></div>
-            <div><span class="cms-meta-label">Vehicle type</span><span class="cms-meta-value">Van</span></div>
+            <div><label for="courierRouteVehicle" class="cms-meta-label">Assigned vehicle</label><select id="courierRouteVehicle" class="form-control"></select></div>
+            <div><span class="cms-meta-label">Vehicle type</span><span id="courierRouteVehicleType" class="cms-meta-value">Van</span></div>
             <div><span class="cms-meta-label">Orders on route</span><span id="courierRouteOrderReferences" class="cms-meta-value">#1042 · #1043</span></div>
             <div><span class="cms-meta-label">Route rule</span><span id="courierRouteRule" class="cms-meta-value">Orders can still be added</span></div>
           </div>
-          <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Select pending orders below to create the next route.</p>
+          <div id="courierRouteCapacityNotice" class="cms-alert cms-alert-info mt-3 mb-0" role="status" aria-live="polite"></div>
+          <p id="courierNoRouteMessage" class="text-muted d-none">There is no active route. Create a route, then add pending orders from the list below.</p>
           <hr>
+          <button id="createCourierRoute" type="button" class="btn btn-outline-primary btn-block py-3 d-none">Create new route</button>
           <button id="startCourierRoute" type="button" class="btn btn-primary btn-block py-3">Start route</button>
           <a href="courier-route.html" class="btn btn-outline-primary btn-block py-3">View route and deliveries</a>
           <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block py-3">Manage vehicles</a>
@@ -106,12 +121,11 @@
           <!-- Pending-order logic:
             - This list contains pending orders and cancelled orders returned from this courier's route.
                - While a route is in preparation, an order can be added and becomes Initiated.
-               - With no active route, selected pending orders create the next route.
+               - With no active route, create a route first, then add pending orders to it.
             - Cancelled orders remain visible but cannot be added to a later route automatically.
             - During route execution, pending orders remain available for a later route. -->
           <div class="cms-panel-title"><div><h4>Orders list</h4><small>Pending orders and cancellations returned from a route</small></div></div>
           <div id="courierPendingOrders" aria-live="polite"></div>
-          <button id="createCourierRoute" type="button" class="btn btn-primary mt-3 d-none">Create route from selected orders</button>
         </div>
       </div>
     </div>
