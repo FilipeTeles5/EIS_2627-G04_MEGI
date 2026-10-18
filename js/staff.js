@@ -137,6 +137,52 @@ function staffDecideCourier(userId, action) {
 
 // ---------- Vehicle reviews ----------
 
+// Documents expiring within this number of days are flagged as "expiring soon".
+const staffExpiryWarningDays = 30;
+
+// Return how many whole days remain until a YYYY-MM-DD date (negative if it has passed).
+function staffDaysUntil(value) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const millisecondsPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((staffParseDate(value) - today) / millisecondsPerDay);
+}
+
+// Classify an insurance or inspection expiry date as missing, expired, expiring or valid.
+function staffDocumentStatus(expiryDate) {
+    if (!expiryDate) {
+        return { key: 'missing', label: 'Missing', style: 'cms-badge-danger' };
+    }
+    const days = staffDaysUntil(expiryDate);
+    if (days < 0) {
+        return { key: 'expired', label: 'Expired', style: 'cms-badge-danger' };
+    }
+    if (days <= staffExpiryWarningDays) {
+        const label = days === 0 ? 'Expires today' : 'Expires in ' + days + (days === 1 ? ' day' : ' days');
+        return { key: 'expiring', label: label, style: 'cms-badge-warning' };
+    }
+    return { key: 'valid', label: 'Valid', style: 'cms-badge-success' };
+}
+
+// Build a table cell with the document alert badge and the expiry date underneath.
+function staffDocumentCell(expiryDate) {
+    const cell = document.createElement('td');
+    const status = staffDocumentStatus(expiryDate);
+
+    const badge = document.createElement('span');
+    badge.className = 'cms-badge ' + status.style;
+    badge.textContent = status.label;
+    cell.appendChild(badge);
+
+    if (expiryDate) {
+        const date = document.createElement('small');
+        date.className = 'd-block text-muted mt-1';
+        date.textContent = staffFormatFullDate(expiryDate);
+        cell.appendChild(date);
+    }
+    return cell;
+}
+
 // Return the type name (Bike, Moto, Van, Truck) for a vehicle_type_id.
 function staffVehicleTypeName(typeId) {
     const type = movioData.vehicleTypes.find(item => item.vehicle_type_id === typeId);
@@ -164,8 +210,8 @@ function staffRenderVehicleReviews() {
         const row = document.createElement('tr');
         row.appendChild(staffCell(vehicle.license_plate + ' - ' + vehicle.model));
         row.appendChild(staffCell(staffVehicleTypeName(vehicle.vehicle_type_id)));
-        row.appendChild(staffCell(staffFormatFullDate(vehicle.insurance_expiry_date)));
-        row.appendChild(staffCell(staffFormatFullDate(vehicle.inspection_expiry_date)));
+        row.appendChild(staffDocumentCell(vehicle.insurance_expiry_date));
+        row.appendChild(staffDocumentCell(vehicle.inspection_expiry_date));
         staffAppendDecisionCells(row, vehicle.approval_status, vehicle.vehicle_id);
         body.appendChild(row);
     });
