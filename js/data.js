@@ -30,15 +30,17 @@ const movioData = {
         { user_id: 4, username: 'ralves', name: 'Rui Alves', email: 'rui@example.com', phone: '+351 913 222 101', nif: '245118321', role: 'courier', approval_status: 'pending', created_at: movioDateFromToday(-2) },
         { user_id: 5, username: 'slima', name: 'Sofia Lima', email: 'sofia@example.com', phone: '+351 913 222 102', nif: '233670810', role: 'courier', approval_status: 'pending', created_at: movioDateFromToday(-3) },
         { user_id: 6, username: 'jpereira', name: 'Joao Pereira', email: 'joao.pereira@example.com', phone: '+351 913 222 103', nif: '219004556', role: 'courier', approval_status: 'approved', created_at: '2026-09-12' },
-        { user_id: 7, username: 'mcosta', name: 'Marta Costa', email: 'marta.costa@example.com', phone: '+351 913 222 104', nif: '256771230', role: 'courier', approval_status: 'approved', created_at: '2026-09-15' },
+        { user_id: 7, username: 'martacosta', name: 'Marta Costa', email: 'marta.costa@example.com', phone: '+351 913 222 104', nif: '256771230', role: 'courier', approval_status: 'approved', created_at: '2026-09-15' },
         { user_id: 8, username: 'tsilva', name: 'Tiago Silva', email: 'tiago.silva@example.com', phone: '+351 913 222 105', nif: '262119874', role: 'courier', approval_status: 'rejected', created_at: '2026-09-20' },
         { user_id: 9, username: 'imartins', name: 'Ines Martins', email: 'ines.martins@example.com', phone: '+351 914 111 201', nif: '240998123', role: 'client', approval_status: 'approved', created_at: '2026-09-10' },
         { user_id: 10, username: 'bferreira', name: 'Bruno Ferreira', email: 'bruno.ferreira@example.com', phone: '+351 914 111 202', nif: '251334870', role: 'client', approval_status: 'approved', created_at: '2026-09-18' },
         { user_id: 11, username: 'csousa', name: 'Catarina Sousa', email: 'catarina.sousa@example.com', phone: '+351 914 111 203', nif: '227640115', role: 'client', approval_status: 'approved', created_at: '2026-09-25' },
         { user_id: 12, username: 'lgomes', name: 'Luis Gomes', email: 'luis.gomes@example.com', phone: '+351 914 111 204', nif: '239871006', role: 'client', approval_status: 'approved', created_at: '2026-10-02' },
-        { user_id: 13, username: 'carlasousa', name: 'Carla Sousa', email: 'carla@example.com', phone: '+351 912 345 003', nif: '226514309', role: 'staff', approval_status: 'approved', created_at: '2026-09-10' }
-    
-    ],    // VEHICLE entity. user_id is the courier that owns the vehicle.
+        { user_id: 13, username: 'carlasousa', name: 'Carla Sousa', email: 'carla@example.com', phone: '+351 912 345 003', nif: '226514309', role: 'staff', approval_status: 'approved', created_at: '2026-09-10' },
+        { user_id: 14, username: 'ana.silva', name: 'Ana Silva', email: 'ana@example.com', phone: '+351 914 111 205', nif: '238115407', role: 'client', approval_status: 'approved', created_at: '2026-09-21' },
+        { user_id: 15, username: 'mcosta', name: 'Miguel Costa', email: 'miguel@example.com', phone: '+351 913 222 106', nif: '244870312', role: 'courier', approval_status: 'approved', created_at: '2026-09-19' }    
+    ],    
+    // VEHICLE entity. user_id is the courier that owns the vehicle.
     // documents_updated_at marks a new certificate upload (triggers an "updated" alert for Staff).
     vehicles: [
         { vehicle_id: 1, user_id: 6, vehicle_type_id: 3, license_plate: '72-ZP-11', model: 'Renault Master', max_weight_kg: 1200, max_vol_m3: 10.8, insurance_expiry_date: movioDateFromToday(200), inspection_expiry_date: movioDateFromToday(150), insurance_expiry_doc: 'insurance_72ZP11.pdf', inspection_expiry_doc: 'inspection_72ZP11.pdf', approval_status: 'pending', documents_updated_at: null, created_at: movioDateFromToday(-1) },

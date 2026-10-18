@@ -106,5 +106,61 @@ function adminRenderDashboard() {
     });
 }
 
+// ---------- User accounts directory ----------
+
+// Badge style and text for each approval status in the user directory.
+const adminAccountStatus = {
+    approved: { label: 'Approved', style: 'cms-badge-success' },
+    pending: { label: 'Pending', style: 'cms-badge-warning' },
+    rejected: { label: 'Rejected', style: 'cms-badge-danger' }
+};
+
+// Format a YYYY-MM-DD date as a short label such as "21 Sep".
+function adminFormatDate(value) {
+    const parts = value.split('-');
+    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+}
+
+// Render one row per user from js/data.js at the top of the directory.
+// Staff applicant rows added by js/cms.js are kept below, so both lists work together.
+function adminRenderUserAccounts() {
+    const body = document.getElementById('adminUserAccounts');
+    if (!body) {
+        return;
+    }
+    body.querySelectorAll('[data-movio-account]').forEach(row => row.remove());
+
+    const firstApplicantRow = body.firstChild;
+    movioData.users.forEach(user => {
+        const row = document.createElement('tr');
+        row.dataset.movioAccount = 'true';
+
+        const role = user.role.charAt(0).toUpperCase() + user.role.slice(1);
+        [user.name, user.username, role, user.email].forEach(value => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        const status = adminAccountStatus[user.approval_status] || adminAccountStatus.pending;
+        const statusCell = document.createElement('td');
+        const badge = document.createElement('span');
+        badge.className = 'cms-badge ' + status.style;
+        badge.textContent = status.label;
+        statusCell.appendChild(badge);
+        row.appendChild(statusCell);
+
+        const createdCell = document.createElement('td');
+        createdCell.textContent = adminFormatDate(user.created_at);
+        row.appendChild(createdCell);
+
+        body.insertBefore(row, firstApplicantRow);
+    });
+}
+
 // Start the page once the HTML is loaded.
-document.addEventListener('DOMContentLoaded', adminRenderDashboard);
+document.addEventListener('DOMContentLoaded', () => {
+    adminRenderDashboard();
+    adminRenderUserAccounts();
+});
