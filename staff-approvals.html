@@ -53,9 +53,7 @@
     <div class="cms-panel p-4 mb-4">
       <div class="cms-panel-title"><div><h4>Vehicles awaiting review</h4><small>Check insurance and inspection documents before approval</small></div></div>
       <!-- Vehicles awaiting document review and approval decisions. -->
-      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Insurance</th><th>Inspection</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>72-ZP-11 · Renault Master</td><td>Van</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected.">Reject</button></td></tr>
-        <tr><td>19-CC-04 · Yamaha NMAX</td><td>Motorcycle</td><td><span class="cms-badge cms-badge-danger">Expired</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approval recorded.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected because documentation is invalid.">Reject</button></td></tr>
+      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Insurance expiry</th><th>Inspection expiry</th><th>Status</th><th>Decision</th></tr></thead><tbody id="vehicleReviewsBody">
       </tbody></table></div>
     </div>
 
