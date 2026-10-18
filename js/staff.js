@@ -560,6 +560,73 @@ function staffMarkAllNotificationsRead() {
     staffRenderNotifications();
     cmsToast('All notifications marked as read.');
 }
+
+// ---------- Staff dashboard ----------
+
+// Number of alerts shown on the dashboard; the full list is on the Notifications page.
+const staffDashboardAlertLimit = 3;
+
+// Fill the four KPI cards and the latest alerts from the same data used by the other Staff pages.
+function staffRenderDashboard() {
+    const alertsList = document.getElementById('dashboardAlertsList');
+    if (!alertsList) {
+        return;
+    }
+
+    const pendingCouriers = movioData.users.filter(user =>
+        user.role === 'courier' && user.approval_status === 'pending'
+    ).length;
+    const pendingVehicles = movioData.vehicles.filter(vehicle =>
+        vehicle.approval_status === 'pending'
+    ).length;
+
+    // Count each expired or missing document, ignoring vehicles that were rejected.
+    let invalidDocuments = 0;
+    movioData.vehicles.forEach(vehicle => {
+        if (vehicle.approval_status === 'rejected') {
+            return;
+        }
+        [vehicle.insurance_expiry_date, vehicle.inspection_expiry_date].forEach(date => {
+            const key = staffDocumentStatus(date).key;
+            if (key === 'expired' || key === 'missing') {
+                invalidDocuments++;
+            }
+        });
+    });
+
+    const notifications = staffBuildNotifications();
+    const unread = notifications.filter(item => !staffReadNotificationIds.includes(item.id));
+
+    document.getElementById('kpiPendingCouriers').textContent = pendingCouriers;
+    document.getElementById('kpiPendingVehicles').textContent = pendingVehicles;
+    document.getElementById('kpiInvalidDocuments').textContent = invalidDocuments;
+    document.getElementById('kpiUnreadNotifications').textContent = unread.length;
+
+    alertsList.innerHTML = '';
+    if (unread.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = 'No alerts. All vehicle documents are valid.';
+        alertsList.appendChild(empty);
+        return;
+    }
+
+    // Reuse the shared cms-alert styles: red for danger, default for warning, green for updates.
+    const alertStyles = { danger: 'cms-alert cms-alert-danger', warning: 'cms-alert', success: 'cms-alert cms-alert-success' };
+
+    unread.slice(0, staffDashboardAlertLimit).forEach((item, index, shown) => {
+        const alert = document.createElement('div');
+        alert.className = alertStyles[item.severity] + (index === shown.length - 1 ? ' mb-0' : '');
+        const title = document.createElement('strong');
+        title.textContent = item.title;
+        const details = document.createElement('small');
+        details.textContent = item.message + ' (' + staffFormatDate(item.date) + ')';
+        alert.appendChild(title);
+        alert.appendChild(document.createElement('br'));
+        alert.appendChild(details);
+        alertsList.appendChild(alert);
+    });
+}
 // ---------- Page start ----------
 
 // Send clicks on Approve or Reject buttons inside a table body to the given handler.
@@ -584,6 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     staffRenderVehicleReviews();
     staffRenderDecisionHistory();
     staffRenderNotifications();
+    staffRenderDashboard();
     staffBindDecisionButtons('courierApplicationsBody', staffDecideCourier);
     staffBindDecisionButtons('vehicleReviewsBody', staffDecideVehicle);
 
