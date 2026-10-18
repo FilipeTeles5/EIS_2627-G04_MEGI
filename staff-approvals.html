@@ -46,9 +46,7 @@
     <div class="cms-panel p-4 mb-4">
       <div class="cms-panel-title"><div><h4>Courier applications</h4><small>Applications awaiting review</small></div></div>
       <!-- Courier applications awaiting staff review and approval decisions. -->
-      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>NIF</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>Rui Alves</td><td>rui@example.com</td><td>245***321</td><td>03 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
-        <tr><td>Sofia Lima</td><td>sofia@example.com</td><td>233***810</td><td>02 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
+      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>NIF</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody id="courierApplicationsBody">
       </tbody></table></div>
     </div>
 
@@ -113,5 +111,7 @@
 <script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cms.js"></script>
+<script src="js/data.js"></script>
+<script src="js/staff.js"></script>
 </body>
 </html>
