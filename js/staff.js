@@ -77,15 +77,28 @@ function staffEmptyRow(body, message, columns) {
 }
 
 // Build the status cell and the decision cell shared by both review tables.
-function staffAppendDecisionCells(row, status, id) {
+// When blockReason is given, the Approve button is disabled and the reason is shown.
+function staffAppendDecisionCells(row, status, id, blockReason) {
     const statusCell = document.createElement('td');
     statusCell.appendChild(staffStatusBadge(status));
     row.appendChild(statusCell);
 
     const decisionCell = document.createElement('td');
     if (status === 'pending') {
-        decisionCell.appendChild(staffDecisionButton('approve', id));
+        const approveButton = staffDecisionButton('approve', id);
+        if (blockReason) {
+            approveButton.disabled = true;
+            approveButton.title = blockReason;
+        }
+        decisionCell.appendChild(approveButton);
         decisionCell.appendChild(staffDecisionButton('reject', id));
+
+        if (blockReason) {
+            const note = document.createElement('small');
+            note.className = 'd-block text-danger mt-1';
+            note.textContent = blockReason;
+            decisionCell.appendChild(note);
+        }
     } else {
         decisionCell.textContent = '-';
     }
@@ -183,6 +196,25 @@ function staffDocumentCell(expiryDate) {
     return cell;
 }
 
+// Return the reason a vehicle cannot be approved, or an empty string if it can.
+// Business rule: a vehicle needs valid insurance and inspection before it can be used.
+function staffVehicleApprovalBlock(vehicle) {
+    const problems = [];
+    const insurance = staffDocumentStatus(vehicle.insurance_expiry_date).key;
+    const inspection = staffDocumentStatus(vehicle.inspection_expiry_date).key;
+
+    if (insurance === 'expired' || insurance === 'missing') {
+        problems.push('insurance ' + insurance);
+    }
+    if (inspection === 'expired' || inspection === 'missing') {
+        problems.push('inspection ' + inspection);
+    }
+    if (problems.length === 0) {
+        return '';
+    }
+    return 'Cannot approve: ' + problems.join(', ') + '.';
+}
+
 // Return the type name (Bike, Moto, Van, Truck) for a vehicle_type_id.
 function staffVehicleTypeName(typeId) {
     const type = movioData.vehicleTypes.find(item => item.vehicle_type_id === typeId);
@@ -212,7 +244,7 @@ function staffRenderVehicleReviews() {
         row.appendChild(staffCell(staffVehicleTypeName(vehicle.vehicle_type_id)));
         row.appendChild(staffDocumentCell(vehicle.insurance_expiry_date));
         row.appendChild(staffDocumentCell(vehicle.inspection_expiry_date));
-        staffAppendDecisionCells(row, vehicle.approval_status, vehicle.vehicle_id);
+        staffAppendDecisionCells(row, vehicle.approval_status, vehicle.vehicle_id, staffVehicleApprovalBlock(vehicle));
         body.appendChild(row);
     });
 }
@@ -221,6 +253,12 @@ function staffRenderVehicleReviews() {
 function staffDecideVehicle(vehicleId, action) {
     const vehicle = movioData.vehicles.find(item => item.vehicle_id === vehicleId);
     if (!vehicle || vehicle.approval_status !== 'pending') {
+        return;
+    }
+    // Check the rule again here, so approval is refused even if the button is enabled by hand.
+    const blockReason = staffVehicleApprovalBlock(vehicle);
+    if (action === 'approve' && blockReason) {
+        cmsToast(blockReason);
         return;
     }
     vehicle.approval_status = action === 'approve' ? 'approved' : 'rejected';
