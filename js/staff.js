@@ -414,7 +414,152 @@ function staffSubmitRejectReason(event) {
     staffPendingReject = null;
     $('#rejectReasonModal').modal('hide');
 }
+// ---------- Staff notifications ----------
 
+// Ids of notifications marked as read during this visit, for example 'vehicle-2-insurance'.
+const staffReadNotificationIds = [];
+
+// Order used to show the most urgent notifications first.
+const staffSeverityOrder = { danger: 0, warning: 1, success: 2 };
+
+// Build the notification list from the vehicle data (NOTIFICATION entity in the ER).
+// Rules: expired or missing document = danger, expiring soon = warning, new upload = success.
+function staffBuildNotifications() {
+    const notifications = [];
+
+    movioData.vehicles.forEach(vehicle => {
+        // Rejected vehicles are no longer in service, so they do not generate alerts.
+        if (vehicle.approval_status === 'rejected') {
+            return;
+        }
+        const vehicleLabel = vehicle.license_plate + ' - ' + vehicle.model;
+        const documents = [
+            { key: 'insurance', name: 'Insurance', date: vehicle.insurance_expiry_date },
+            { key: 'inspection', name: 'Inspection', date: vehicle.inspection_expiry_date }
+        ];
+
+        documents.forEach(doc => {
+            const status = staffDocumentStatus(doc.date);
+            if (status.key === 'expired' || status.key === 'missing') {
+                notifications.push({
+                    id: 'vehicle-' + vehicle.vehicle_id + '-' + doc.key,
+                    severity: 'danger',
+                    title: doc.name + ' ' + status.key + ' - Vehicle ' + vehicleLabel,
+                    message: 'Do not assign this vehicle until a valid ' + doc.key + ' certificate is provided.',
+                    date: doc.date || vehicle.created_at
+                });
+            }
+            if (status.key === 'expiring') {
+                notifications.push({
+                    id: 'vehicle-' + vehicle.vehicle_id + '-' + doc.key,
+                    severity: 'warning',
+                    title: doc.name + ' expiring soon - Vehicle ' + vehicleLabel,
+                    message: status.label + '. Ask the courier to upload a renewed certificate.',
+                    date: movioDateFromToday(0)
+                });
+            }
+        });
+
+        if (vehicle.documents_updated_at) {
+            notifications.push({
+                id: 'vehicle-' + vehicle.vehicle_id + '-upload',
+                severity: 'success',
+                title: 'New certificate uploaded - Vehicle ' + vehicleLabel,
+                message: 'The courier uploaded updated documents. Review them in Courier and vehicle reviews.',
+                date: vehicle.documents_updated_at
+            });
+        }
+    });
+
+    // Unread first, then the most urgent, then the most recent.
+    return notifications.sort((a, b) => {
+        const readA = staffReadNotificationIds.includes(a.id) ? 1 : 0;
+        const readB = staffReadNotificationIds.includes(b.id) ? 1 : 0;
+        return readA - readB ||
+            staffSeverityOrder[a.severity] - staffSeverityOrder[b.severity] ||
+            b.date.localeCompare(a.date);
+    });
+}
+
+// Render the notification cards and the unread counter.
+function staffRenderNotifications() {
+    const list = document.getElementById('staffNotificationsList');
+    if (!list) {
+        return;
+    }
+    list.innerHTML = '';
+
+    const notifications = staffBuildNotifications();
+    const unreadCount = notifications.filter(item => !staffReadNotificationIds.includes(item.id)).length;
+    document.getElementById('staffNotificationsSummary').textContent =
+        unreadCount + (unreadCount === 1 ? ' unread alert' : ' unread alerts');
+    document.getElementById('markAllNotificationsRead').disabled = unreadCount === 0;
+
+    if (notifications.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'text-muted mb-0';
+        empty.textContent = 'No alerts. All vehicle documents are valid.';
+        list.appendChild(empty);
+        return;
+    }
+
+    const severityLabels = { danger: 'Urgent', warning: 'Attention', success: 'Update' };
+
+    notifications.forEach(item => {
+        const isRead = staffReadNotificationIds.includes(item.id);
+        const card = document.createElement('div');
+        card.className = 'cms-notification ' + (isRead ? 'read' : 'unread');
+
+        const header = document.createElement('div');
+        header.className = 'd-flex justify-content-between flex-wrap';
+        const title = document.createElement('strong');
+        const badge = document.createElement('span');
+        badge.className = 'cms-badge cms-badge-' + item.severity + ' mr-2';
+        badge.textContent = severityLabels[item.severity];
+        title.appendChild(badge);
+        title.appendChild(document.createTextNode(item.title));
+        const date = document.createElement('small');
+        date.textContent = staffFormatDate(item.date);
+        header.appendChild(title);
+        header.appendChild(date);
+        card.appendChild(header);
+
+        const message = document.createElement('p');
+        message.className = isRead ? 'mb-0 mt-2' : 'mb-2 mt-2';
+        message.textContent = item.message;
+        card.appendChild(message);
+
+        if (!isRead) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm btn-outline-primary';
+            button.textContent = 'Mark as read';
+            button.dataset.notificationId = item.id;
+            card.appendChild(button);
+        }
+        list.appendChild(card);
+    });
+}
+
+// Mark one notification as read and refresh the list.
+function staffMarkNotificationRead(id) {
+    if (!staffReadNotificationIds.includes(id)) {
+        staffReadNotificationIds.push(id);
+    }
+    staffRenderNotifications();
+    cmsToast('Notification marked as read.');
+}
+
+// Mark every current notification as read.
+function staffMarkAllNotificationsRead() {
+    staffBuildNotifications().forEach(item => {
+        if (!staffReadNotificationIds.includes(item.id)) {
+            staffReadNotificationIds.push(item.id);
+        }
+    });
+    staffRenderNotifications();
+    cmsToast('All notifications marked as read.');
+}
 // ---------- Page start ----------
 
 // Send clicks on Approve or Reject buttons inside a table body to the given handler.
@@ -438,6 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     staffRenderCourierApplications();
     staffRenderVehicleReviews();
     staffRenderDecisionHistory();
+    staffRenderNotifications();
     staffBindDecisionButtons('courierApplicationsBody', staffDecideCourier);
     staffBindDecisionButtons('vehicleReviewsBody', staffDecideVehicle);
 
@@ -450,5 +596,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 event.target.classList.remove('is-invalid');
             }
         });
+    }
+
+    const notificationsList = document.getElementById('staffNotificationsList');
+    if (notificationsList) {
+        // One listener handles the "Mark as read" button of every card.
+        notificationsList.addEventListener('click', event => {
+            const button = event.target.closest('button[data-notification-id]');
+            if (button) {
+                staffMarkNotificationRead(button.dataset.notificationId);
+            }
+        });
+        document.getElementById('markAllNotificationsRead').addEventListener('click', staffMarkAllNotificationsRead);
     }
 });
