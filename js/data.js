@@ -35,10 +35,10 @@ const movioData = {
         { user_id: 9, username: 'imartins', name: 'Ines Martins', email: 'ines.martins@example.com', phone: '+351 914 111 201', nif: '240998123', role: 'client', approval_status: 'approved', created_at: '2026-09-10' },
         { user_id: 10, username: 'bferreira', name: 'Bruno Ferreira', email: 'bruno.ferreira@example.com', phone: '+351 914 111 202', nif: '251334870', role: 'client', approval_status: 'approved', created_at: '2026-09-18' },
         { user_id: 11, username: 'csousa', name: 'Catarina Sousa', email: 'catarina.sousa@example.com', phone: '+351 914 111 203', nif: '227640115', role: 'client', approval_status: 'approved', created_at: '2026-09-25' },
-        { user_id: 12, username: 'lgomes', name: 'Luis Gomes', email: 'luis.gomes@example.com', phone: '+351 914 111 204', nif: '239871006', role: 'client', approval_status: 'approved', created_at: '2026-10-02' }
-    ],
-
-    // VEHICLE entity. user_id is the courier that owns the vehicle.
+        { user_id: 12, username: 'lgomes', name: 'Luis Gomes', email: 'luis.gomes@example.com', phone: '+351 914 111 204', nif: '239871006', role: 'client', approval_status: 'approved', created_at: '2026-10-02' },
+        { user_id: 13, username: 'carlasousa', name: 'Carla Sousa', email: 'carla@example.com', phone: '+351 912 345 003', nif: '226514309', role: 'staff', approval_status: 'approved', created_at: '2026-09-10' }
+    
+    ],    // VEHICLE entity. user_id is the courier that owns the vehicle.
     // documents_updated_at marks a new certificate upload (triggers an "updated" alert for Staff).
     vehicles: [
         { vehicle_id: 1, user_id: 6, vehicle_type_id: 3, license_plate: '72-ZP-11', model: 'Renault Master', max_weight_kg: 1200, max_vol_m3: 10.8, insurance_expiry_date: movioDateFromToday(200), inspection_expiry_date: movioDateFromToday(150), insurance_expiry_doc: 'insurance_72ZP11.pdf', inspection_expiry_doc: 'inspection_72ZP11.pdf', approval_status: 'pending', documents_updated_at: null, created_at: movioDateFromToday(-1) },

@@ -60,9 +60,7 @@
     <div class="cms-panel p-4">
       <div class="cms-panel-title"><div><h4>Previous vehicle decisions</h4><small>Review the outcome of earlier applications</small></div></div>
       <!-- Record of previous vehicle approval decisions and review comments. -->
-      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Reference</th><th>Vehicle</th><th>Reviewed by</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody>
-        <tr><td>#A-410</td><td>48-AB-22</td><td>Staff #12</td><td>01 Oct</td><td><span class="cms-badge cms-badge-success">Approved</span></td><td>Insurance and inspection documents are valid.</td></tr>
-        <tr><td>#A-405</td><td>34-KL-27</td><td>Staff #08</td><td>29 Sep</td><td><span class="cms-badge cms-badge-danger">Rejected</span></td><td>Insurance certificate was missing.</td></tr>
+      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Reference</th><th>Vehicle</th><th>Reviewed by</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody id="decisionHistoryBody">
       </tbody></table></div>
     </div>
   </div>
@@ -100,8 +98,36 @@
 </footer>
 <a href="#" class="btn btn-lg btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
+<!-- Modal that asks Staff for a mandatory reason before rejecting a courier or a vehicle. -->
+<div class="modal fade" id="rejectReasonModal" tabindex="-1" role="dialog" aria-labelledby="rejectReasonModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form id="rejectReasonForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title" id="rejectReasonModalTitle">Reject application</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3" id="rejectReasonTarget"></p>
+          <div class="form-group mb-0">
+            <label for="rejectReasonInput">Reason for rejection</label>
+            <textarea id="rejectReasonInput" name="comment" class="form-control" rows="3" required minlength="10" placeholder="Explain what is missing or invalid"></textarea>
+            <div class="invalid-feedback">Enter a reason with at least 10 characters.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Confirm rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <!-- Live message area used for brief page notifications. -->
 <div id="cmsToast"></div>
+
 <!-- Shared JavaScript dependencies and Movio page behavior. -->
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>

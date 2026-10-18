@@ -136,16 +136,27 @@ function staffRenderCourierApplications() {
     });
 }
 
-// Apply an approve or reject decision to one pending courier and refresh the table.
+// Handle a click on Approve or Reject for one pending courier.
+// Reject first asks for a mandatory reason in the modal.
 function staffDecideCourier(userId, action) {
     const user = movioData.users.find(item => item.user_id === userId);
     if (!user || user.approval_status !== 'pending') {
         return;
     }
-    user.approval_status = action === 'approve' ? 'approved' : 'rejected';
-    staffReviewedCourierIds.push(userId);
+    if (action === 'reject') {
+        staffOpenRejectModal('courier', userId, 'Courier: ' + user.name + ' (' + user.email + ')');
+        return;
+    }
+    staffApplyCourierDecision(user, 'approved', '');
+}
+
+// Save the courier decision, keep the row visible and refresh the table.
+function staffApplyCourierDecision(user, status, comment) {
+    user.approval_status = status;
+    user.review_comment = comment;
+    staffReviewedCourierIds.push(user.user_id);
     staffRenderCourierApplications();
-    cmsToast(user.name + (action === 'approve' ? ' approved as courier.' : ' rejected as courier.'));
+    cmsToast(user.name + (status === 'approved' ? ' approved as courier.' : ' rejected as courier.'));
 }
 
 // ---------- Vehicle reviews ----------
@@ -249,22 +260,159 @@ function staffRenderVehicleReviews() {
     });
 }
 
-// Apply an approve or reject decision to one pending vehicle and refresh the table.
+// Handle a click on Approve or Reject for one pending vehicle.
+// Approve is refused when documents are invalid; Reject asks for a mandatory reason.
 function staffDecideVehicle(vehicleId, action) {
     const vehicle = movioData.vehicles.find(item => item.vehicle_id === vehicleId);
     if (!vehicle || vehicle.approval_status !== 'pending') {
         return;
     }
+    if (action === 'reject') {
+        staffOpenRejectModal('vehicle', vehicleId, 'Vehicle: ' + vehicle.license_plate + ' - ' + vehicle.model);
+        return;
+    }
     // Check the rule again here, so approval is refused even if the button is enabled by hand.
     const blockReason = staffVehicleApprovalBlock(vehicle);
-    if (action === 'approve' && blockReason) {
+    if (blockReason) {
         cmsToast(blockReason);
         return;
     }
-    vehicle.approval_status = action === 'approve' ? 'approved' : 'rejected';
-    staffReviewedVehicleIds.push(vehicleId);
+    staffApplyVehicleDecision(vehicle, 'approved', 'Insurance and inspection documents checked and valid.');
+}
+
+// Save the vehicle decision, record it in the audit history and refresh both tables.
+function staffApplyVehicleDecision(vehicle, status, comment) {
+    vehicle.approval_status = status;
+    staffAddVehicleAudit(vehicle.vehicle_id, status, comment);
+    staffReviewedVehicleIds.push(vehicle.vehicle_id);
     staffRenderVehicleReviews();
-    cmsToast(vehicle.license_plate + (action === 'approve' ? ' approved.' : ' rejected.'));
+    staffRenderDecisionHistory();
+    cmsToast(vehicle.license_plate + (status === 'approved' ? ' approved.' : ' rejected.'));
+}
+
+// ---------- Decision history (VEHICLE_AUDIT) ----------
+
+// Identify the signed-in Staff member from the demo session kept by js/cms.js.
+function staffCurrentReviewer() {
+    let email = '';
+    let name = '';
+    try {
+        email = sessionStorage.getItem('movioDemoEmail') || '';
+        name = sessionStorage.getItem('movioDemoName') || '';
+    } catch (error) {
+        // Session storage can be blocked by the browser; the reviewer is then shown as "Staff".
+    }
+    const user = movioData.users.find(item =>
+        item.role === 'staff' && item.email.toLowerCase() === email.toLowerCase()
+    );
+    return {
+        user_id: user ? user.user_id : null,
+        name: user ? user.name : (name || 'Staff')
+    };
+}
+
+// Add one decision to the audit history: who decided, when, what and why.
+function staffAddVehicleAudit(vehicleId, decision, comment) {
+    const reviewer = staffCurrentReviewer();
+    const lastId = movioData.vehicleAudit.reduce((max, item) => Math.max(max, item.audit_id), 0);
+    movioData.vehicleAudit.push({
+        audit_id: lastId + 1,
+        vehicle_id: vehicleId,
+        staff_user_id: reviewer.user_id,
+        reviewer_name: reviewer.name,
+        decision: decision,
+        comment: comment,
+        decided_at: movioDateFromToday(0)
+    });
+}
+
+// Return the name shown in the "Reviewed by" column for an audit record.
+function staffReviewerName(record) {
+    const user = movioData.users.find(item => item.user_id === record.staff_user_id);
+    if (user) {
+        return user.name;
+    }
+    return record.reviewer_name || 'Staff';
+}
+
+// Render the audit history, newest decision first.
+function staffRenderDecisionHistory() {
+    const body = document.getElementById('decisionHistoryBody');
+    if (!body) {
+        return;
+    }
+    body.innerHTML = '';
+
+    const records = movioData.vehicleAudit.slice().sort((a, b) =>
+        b.decided_at.localeCompare(a.decided_at) || b.audit_id - a.audit_id
+    );
+
+    if (records.length === 0) {
+        staffEmptyRow(body, 'No vehicle decisions recorded yet.', 6);
+        return;
+    }
+
+    records.forEach(record => {
+        const vehicle = movioData.vehicles.find(item => item.vehicle_id === record.vehicle_id);
+        const row = document.createElement('tr');
+        row.appendChild(staffCell('#A-' + record.audit_id));
+        row.appendChild(staffCell(vehicle ? vehicle.license_plate : '-'));
+        row.appendChild(staffCell(staffReviewerName(record)));
+        row.appendChild(staffCell(staffFormatDate(record.decided_at)));
+        const decisionCell = document.createElement('td');
+        decisionCell.appendChild(staffStatusBadge(record.decision));
+        row.appendChild(decisionCell);
+        row.appendChild(staffCell(record.comment));
+        body.appendChild(row);
+    });
+}
+
+// ---------- Rejection reason modal ----------
+
+// Minimum length so the reason is a real explanation and not a single word.
+const staffRejectReasonMinLength = 10;
+
+// The record waiting for a rejection reason: { type: 'courier' or 'vehicle', id: number }.
+let staffPendingReject = null;
+
+// Open the modal for one courier or vehicle and clear any previous reason.
+function staffOpenRejectModal(type, id, description) {
+    staffPendingReject = { type: type, id: id };
+    const input = document.getElementById('rejectReasonInput');
+    input.value = '';
+    input.classList.remove('is-invalid');
+    document.getElementById('rejectReasonTarget').textContent = description;
+    $('#rejectReasonModal').modal('show');
+}
+
+// Validate the reason and apply the rejection to the courier or vehicle waiting for it.
+function staffSubmitRejectReason(event) {
+    event.preventDefault();
+    const input = document.getElementById('rejectReasonInput');
+    const reason = input.value.trim();
+
+    if (reason.length < staffRejectReasonMinLength) {
+        input.classList.add('is-invalid');
+        input.focus();
+        return;
+    }
+    input.classList.remove('is-invalid');
+
+    if (staffPendingReject && staffPendingReject.type === 'courier') {
+        const user = movioData.users.find(item => item.user_id === staffPendingReject.id);
+        if (user && user.approval_status === 'pending') {
+            staffApplyCourierDecision(user, 'rejected', reason);
+        }
+    }
+    if (staffPendingReject && staffPendingReject.type === 'vehicle') {
+        const vehicle = movioData.vehicles.find(item => item.vehicle_id === staffPendingReject.id);
+        if (vehicle && vehicle.approval_status === 'pending') {
+            staffApplyVehicleDecision(vehicle, 'rejected', reason);
+        }
+    }
+
+    staffPendingReject = null;
+    $('#rejectReasonModal').modal('hide');
 }
 
 // ---------- Page start ----------
@@ -289,6 +437,18 @@ function staffBindDecisionButtons(bodyId, handler) {
 document.addEventListener('DOMContentLoaded', () => {
     staffRenderCourierApplications();
     staffRenderVehicleReviews();
+    staffRenderDecisionHistory();
     staffBindDecisionButtons('courierApplicationsBody', staffDecideCourier);
     staffBindDecisionButtons('vehicleReviewsBody', staffDecideVehicle);
+
+    const rejectForm = document.getElementById('rejectReasonForm');
+    if (rejectForm) {
+        rejectForm.addEventListener('submit', staffSubmitRejectReason);
+        // Remove the error message as soon as the reason becomes long enough.
+        document.getElementById('rejectReasonInput').addEventListener('input', event => {
+            if (event.target.value.trim().length >= staffRejectReasonMinLength) {
+                event.target.classList.remove('is-invalid');
+            }
+        });
+    }
 });
