@@ -1058,6 +1058,24 @@ function cmsReadCoordinate(form, name, min, max) {
     return Number.isFinite(n) && n >= min && n <= max ? n : null;
 }
 
+// Show pickup and delivery markers connected by a visual line.
+function cmsShowOrderLocations(map, layers, pickup, delivery) {
+    layers.clearLayers();
+    L.marker(pickup).addTo(layers).bindPopup('Pickup location');
+    L.marker(delivery).addTo(layers).bindPopup('Delivery location');
+    L.polyline([pickup, delivery], { color: '#FF4800', weight: 5, opacity: .85 }).addTo(layers);
+    map.invalidateSize({pan:false});
+    map.fitBounds([pickup, delivery], {padding:[30, 30]});
+}
+
+// Show the illustrative FEUP marker before order coordinates are previewed.
+function cmsShowOrderExampleLocation(map, layers, location) {
+    layers.clearLayers();
+    L.marker(location).addTo(layers).bindPopup('FEUP');
+    map.setView(location, 14);
+    map.invalidateSize({pan:false});
+}
+
 // Preview pickup and delivery coordinates as markers connected by a visual line.
 function cmsPreviewOrderLocations(form, map, layers) {
     if (!form || !map || !layers || !window.L) return;
@@ -1072,12 +1090,7 @@ function cmsPreviewOrderLocations(form, map, layers) {
     ];
     if ([...pickup, ...delivery].some(value => value === null)) return;
 
-    layers.clearLayers();
-    L.marker(pickup).addTo(layers).bindPopup('Pickup location');
-    L.marker(delivery).addTo(layers).bindPopup('Delivery location');
-    L.polyline([pickup, delivery], { color: '#FF4800', weight: 5, opacity: .85 }).addTo(layers);
-    map.invalidateSize({pan:false});
-    map.fitBounds([pickup, delivery], {padding:[30, 30]});
+    cmsShowOrderLocations(map, layers, pickup, delivery);
 
     document.getElementById('clientOrderMap')
         ?.closest('.cms-panel')
@@ -2673,10 +2686,14 @@ document.addEventListener('DOMContentLoaded', () => {
     cmsInitClientDashboard();
 
     // Client order creation
-    // Initialize the order form map without markers until the user previews entered coordinates.
+    // Show the illustrative FEUP marker until the user previews entered coordinates.
     if (document.getElementById('clientOrderMap')) {
         const orderMap = cmsCreateMap('clientOrderMap', [], {zoom:14});
         const previewLayers = orderMap && window.L ? L.layerGroup().addTo(orderMap) : null;
+        const examplePickup = [41.1779, -8.5980];
+        if (orderMap && previewLayers) {
+            cmsShowOrderExampleLocation(orderMap, previewLayers, examplePickup);
+        }
         const orderForm = document.getElementById('createOrderForm');
         if (orderForm) cmsBindOrderFormValidation(orderForm);
         function resetOrderForm() {
@@ -2689,10 +2706,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             cmsUpdateProductTotals();
 
-            if (previewLayers) previewLayers.clearLayers();
-            if (orderMap) {
-                orderMap.setView([41.1779, -8.5980], 14);
-                orderMap.invalidateSize({pan:false});
+            if (orderMap && previewLayers) {
+                cmsShowOrderExampleLocation(orderMap, previewLayers, examplePickup);
             }
         }
         // Validate every product and location field before persisting the demo order.

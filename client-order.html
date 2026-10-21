@@ -100,8 +100,8 @@
             <!-- GPS coordinates defining the destination of the delivery. -->
             <h6 class="mb-3 mt-2">Delivery location</h6>
             <div class="form-row">
-              <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1779" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
-              <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.5980" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
+              <div class="form-group col-md-6"><label>Latitude</label><input required name="destLat" type="number" min="-90" max="90" step="any" placeholder="e.g. 41.1579" class="form-control"><div class="invalid-feedback">Latitude must be between -90 and 90.</div></div>
+              <div class="form-group col-md-6"><label>Longitude</label><input required name="destLng" type="number" min="-180" max="180" step="any" placeholder="e.g. -8.6291" class="form-control"><div class="invalid-feedback">Longitude must be between -180 and 180.</div></div>
             </div>
             <!-- Order actions for previewing the selected locations and submitting the delivery request. -->
             <div class="d-flex flex-wrap justify-content-between">
@@ -113,7 +113,7 @@
       </div>
       <div class="col-lg-5 mb-4">
         <div class="cms-panel p-4">
-          <div class="cms-panel-title"><div><h4>Location Preview</h4><small>Preview the pickup and delivery locations</small></div></div>
+          <div class="cms-panel-title"><div><h4>Location Preview</h4><small>Example locations are illustrative until you preview your coordinates</small></div></div>
           <!-- Map preview of the selected pickup and delivery locations. -->
           <div id="clientOrderMap" class="cms-map"></div>
         </div>
