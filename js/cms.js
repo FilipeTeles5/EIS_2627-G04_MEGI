@@ -53,6 +53,45 @@ function cmsValidate(form) {
     return form.checkValidity() && controls.every(cmsIsControlValid);
 }
 
+function cmsIsValidPortugueseNif(value) {
+    if (!/^[1235689][0-9]{8}$/.test(value)) return false;
+    const weightedSum = [...value.slice(0, 8)].reduce(
+        (sum, digit, index) => sum + Number(digit) * (9 - index),
+        0
+    );
+    const checkDigit = 11 - (weightedSum % 11);
+    return Number(value[8]) === (checkDigit >= 10 ? 0 : checkDigit);
+}
+
+function cmsBindOrderReferenceValidation(form) {
+    const input = form.elements.order;
+    const feedback = document.getElementById(input.getAttribute('aria-describedby'));
+    const validate = () => {
+        const valid = input.value.trim() !== '' && input.validity.valid;
+        input.classList.toggle('is-invalid', !valid);
+        input.setAttribute('aria-invalid', String(!valid));
+        if (feedback) {
+            feedback.textContent = valid
+                ? ''
+                : input.value.trim()
+                    ? 'Use digits only, optionally prefixed with #.'
+                    : 'Enter an order reference.';
+            feedback.classList.toggle('d-block', !valid);
+        }
+        return valid;
+    };
+
+    form.addEventListener('submit', event => {
+        if (validate()) return;
+        event.preventDefault();
+        form.dataset.validationAttempted = 'true';
+        input.focus();
+    });
+    input.addEventListener('input', () => {
+        if (form.dataset.validationAttempted === 'true') validate();
+    });
+}
+
 // Validate one form control and keep its Bootstrap error state synchronized.
 function cmsValidateOrderField(field) {
     const valid = field.value.trim() !== '' &&
@@ -2580,6 +2619,9 @@ function cmsInitCourierRoute() {
 
 // Initialize access control, account flows, counters, and page-specific preview controls.
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#trackingForm, #trackingSearchForm')
+        .forEach(cmsBindOrderReferenceValidation);
+
     document.querySelectorAll('input[type="tel"][inputmode="numeric"]').forEach(field => {
         const feedback = field.closest('.form-group')?.querySelector('.invalid-feedback');
         const defaultFeedback = feedback?.textContent || '';
@@ -2634,6 +2676,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const roleSelect = document.getElementById('registerRole');
         const roleHint = document.getElementById('registerRoleHint');
         const submitButton = registerForm.querySelector('button[type="submit"]');
+        const nifInput = registerForm.elements.nif;
+        const validateNif = () => {
+            const value = nifInput.value.trim();
+            nifInput.setCustomValidity(
+                value && !cmsIsValidPortugueseNif(value)
+                    ? 'Enter a valid 9-digit Portuguese NIF.'
+                    : ''
+            );
+        };
+        nifInput.addEventListener('input', validateNif);
+        validateNif();
         // Keep the registration guidance and submit label aligned with the chosen role.
         const updateRoleHint = () => {
             if (roleHint && roleSelect) {
@@ -2914,9 +2967,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Vehicle registration
     const vehicleForm = document.getElementById('vehicleForm');
+    const setVehicleExpiryDateMinimums = () => {
+        const today = new Date();
+        const todayValue = [
+            today.getFullYear(),
+            String(today.getMonth() + 1).padStart(2, '0'),
+            String(today.getDate()).padStart(2, '0')
+        ].join('-');
+        ['insurance_expiry_date', 'inspection_expiry_date'].forEach(name => {
+            vehicleForm.elements[name].min = todayValue;
+        });
+    };
+    if (vehicleForm) setVehicleExpiryDateMinimums();
     // Validate the vehicle form and show its preview-only review confirmation.
     vehicleForm?.addEventListener('submit', e => {
         e.preventDefault();
+        setVehicleExpiryDateMinimums();
         if (!cmsValidate(vehicleForm)) return;
         cmsToast('Vehicle details submitted for review in this preview. No data has been saved.');
     });

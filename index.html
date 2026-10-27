@@ -52,11 +52,12 @@
       <a href="login.html" class="btn btn-light py-3 px-4">Login</a>
     </div>
     <!-- Order reference search that opens the public tracking page. -->
-    <form id="trackingForm" class="mx-auto" style="width:100%;max-width:620px;" action="tracking.html" method="get">
+    <form id="trackingForm" class="mx-auto" style="width:100%;max-width:620px;" action="tracking.html" method="get" novalidate>
       <div class="input-group">
-        <input id="trackingId" name="order" type="text" class="form-control border-light" style="padding:30px;" placeholder="Enter an order reference, e.g. 1042" aria-label="Order reference" pattern="#?[0-9]+" title="Enter the digits in your order reference, for example 1042." required>
+        <input id="trackingId" name="order" type="text" class="form-control border-light" style="padding:30px;" placeholder="Enter an order reference, e.g. 1042" aria-label="Order reference" aria-describedby="trackingIdError" pattern="#?[0-9]+" required>
         <div class="input-group-append"><button id="trackButton" class="btn btn-primary px-3" type="submit">Track an order</button></div>
       </div>
+      <div id="trackingIdError" class="invalid-feedback" role="alert"></div>
       <small class="d-block text-white-50 mt-2">Tracking details shown here are sample data.</small>
     </form>
   </div>

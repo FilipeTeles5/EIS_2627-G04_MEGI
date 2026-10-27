@@ -61,7 +61,7 @@
           <div class="form-group col-md-6"><label>Phone</label><input required type="tel" inputmode="numeric" pattern="[0-9]{9,15}" title="Enter 9 to 15 digits only." class="form-control p-4" name="phone"><div class="invalid-feedback">Enter a phone number using 9 to 15 digits only.</div></div>
         </div>
         <div class="form-row">
-          <div class="form-group col-md-6"><label>Tax ID (NIF)</label><input required pattern="[0-9]{9}" class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a 9-digit tax ID.</div></div>
+          <div class="form-group col-md-6"><label>Tax ID (NIF)</label><input required pattern="[0-9]{9}" title="Enter a valid 9-digit Portuguese NIF." class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a valid 9-digit Portuguese NIF.</div></div>
           <div class="form-group col-md-6"><label for="registerRole">Account role</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option><option value="staff">Apply for Staff</option></select></div>
         </div>
         <div class="form-group"><label>Password</label><input required minlength="6" type="password" class="form-control p-4" name="password"><div class="invalid-feedback">Use at least 6 characters.</div></div>

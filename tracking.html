@@ -55,12 +55,13 @@
     </div>
 
     <!-- Search form for looking up a delivery by order reference. -->
-    <form action="tracking.html" method="get" class="cms-tracking-search mb-4">
+    <form id="trackingSearchForm" action="tracking.html" method="get" class="cms-tracking-search mb-4" novalidate>
       <label for="trackingSearch" class="mb-2">Track another order</label>
       <div class="input-group">
-        <input id="trackingSearch" name="order" type="text" class="form-control" placeholder="Order reference, e.g. 1042" aria-label="Order reference" pattern="#?[0-9]+" title="Enter the digits in your order reference, for example 1042." required>
+        <input id="trackingSearch" name="order" type="text" class="form-control" placeholder="Order reference, e.g. 1042" aria-label="Order reference" aria-describedby="trackingSearchError" pattern="#?[0-9]+" required>
         <div class="input-group-append"><button class="btn btn-primary px-4" type="submit">View order</button></div>
       </div>
+      <div id="trackingSearchError" class="invalid-feedback" role="alert"></div>
     </form>
 
     <!-- Feedback shown when the requested order cannot be found. -->
