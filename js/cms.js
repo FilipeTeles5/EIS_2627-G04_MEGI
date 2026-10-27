@@ -12,10 +12,45 @@ function cmsToast(message) {
     window.cmsToastTimer = setTimeout(() => t.style.display = 'none', 2600);
 }
 
-// Apply browser-native form validation styling and report whether the form passes.
+function cmsIsControlValid(field) {
+    if (!field.willValidate) return true;
+    let requiredValueMissing = false;
+    if (field.required) {
+        if (field.type === 'file') {
+            requiredValueMissing = !field.files?.length;
+        } else if (field.type === 'radio') {
+            const controls = field.form ? [...field.form.elements] : [field];
+            requiredValueMissing = !controls.some(control =>
+                control.type === 'radio' &&
+                (!field.name || control.name === field.name) &&
+                control.checked
+            );
+        } else if (field.type === 'checkbox') {
+            requiredValueMissing = !field.checked;
+        } else {
+            requiredValueMissing = String(field.value).trim() === '';
+        }
+    }
+    return !requiredValueMissing && field.validity.valid;
+}
+
+// Apply browser-native form validation styling and reject whitespace-only required values.
 function cmsValidate(form) {
+    const controls = [...form.elements]
+        .filter(field => field.matches('input, select, textarea') && field.willValidate);
     form.classList.add('was-validated');
-    return form.checkValidity();
+    controls.forEach(field => field.classList.toggle('is-invalid', !cmsIsControlValid(field)));
+    if (form.dataset.cmsValidationBound !== 'true') {
+        ['input', 'change'].forEach(eventName => {
+            form.addEventListener(eventName, event => {
+                const field = event.target;
+                if (!field.matches?.('input, select, textarea') || !field.willValidate) return;
+                field.classList.toggle('is-invalid', !cmsIsControlValid(field));
+            });
+        });
+        form.dataset.cmsValidationBound = 'true';
+    }
+    return form.checkValidity() && controls.every(cmsIsControlValid);
 }
 
 // Validate one form control and keep its Bootstrap error state synchronized.
@@ -729,20 +764,32 @@ function cmsInitClientOrders() {
     trackInput?.addEventListener('input', () => {
         trackInput.classList.remove('is-invalid');
         trackError?.classList.remove('d-block');
+        if (trackError) trackError.textContent = "We couldn't find an order with that number.";
     });
     document.getElementById('trackOrderForm')?.addEventListener('submit', event => {
         event.preventDefault();
+        if (!trackInput) return;
+        if (!trackInput.reportValidity()) {
+            trackInput.classList.add('is-invalid');
+            if (trackError) {
+                trackError.textContent = trackInput.validity.valueMissing
+                    ? 'Enter an order number.'
+                    : 'Enter a numeric order number, optionally prefixed with #.';
+                trackError.classList.add('d-block');
+            }
+            return;
+        }
         const orderNumber = cmsNormalizeClientOrderNumber(trackInput?.value);
         const orders = cmsLoadDemoOrders();
         if (!orders) return;
         const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
         const order = sortedOrders.find(item => item.id === orderNumber);
         if (!order) {
-            trackInput?.classList.add('is-invalid');
+            trackInput.classList.add('is-invalid');
             trackError?.classList.add('d-block');
             return;
         }
-        trackInput?.classList.remove('is-invalid');
+        trackInput.classList.remove('is-invalid');
         trackError?.classList.remove('d-block');
         cmsClientOrdersSelectedId = order.id;
         cmsRenderClientOrderDetails(order, sortedOrders);
@@ -1070,7 +1117,19 @@ function cmsPreviewOrderLocations(form, map, layers) {
         cmsReadCoordinate(form, 'destLat', -90, 90),
         cmsReadCoordinate(form, 'destLng', -180, 180)
     ];
-    if ([...pickup, ...delivery].some(value => value === null)) return;
+    if ([...pickup, ...delivery].some(value => value === null)) {
+        const coordinateFields = ['originLat', 'originLng', 'destLat', 'destLng']
+            .map(name => form.elements[name]);
+        coordinateFields.forEach(cmsValidateOrderField);
+        document.getElementById('orderFormAlert')?.classList.remove('d-none');
+        const firstInvalid = coordinateFields.find(field => !field.validity.valid);
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({behavior:'smooth', block:'center'});
+            firstInvalid.focus({preventScroll:true});
+        }
+        cmsToast('Enter valid pickup and delivery coordinates before previewing the locations.');
+        return;
+    }
 
     layers.clearLayers();
     L.marker(pickup).addTo(layers).bindPopup('Pickup location');
@@ -2289,6 +2348,23 @@ function cmsInitCourierRoute() {
 
 // Initialize access control, account flows, counters, and page-specific preview controls.
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('input[type="tel"][inputmode="numeric"]').forEach(field => {
+        const feedback = field.closest('.form-group')?.querySelector('.invalid-feedback');
+        const defaultFeedback = feedback?.textContent || '';
+        field.addEventListener('input', () => {
+            const digits = field.value.replace(/[^0-9]/g, '');
+            const removedCharacters = digits !== field.value;
+            if (removedCharacters) field.value = digits;
+            field.setCustomValidity(removedCharacters ? 'Use digits only.' : '');
+            if (feedback) {
+                feedback.textContent = removedCharacters
+                    ? 'Phone numbers must contain 9 to 15 digits only.'
+                    : defaultFeedback;
+            }
+            field.classList.toggle('is-invalid', !field.checkValidity());
+        });
+    });
+
     if (!cmsInitRoleAccess()) return;
 
     // Public login/register flows

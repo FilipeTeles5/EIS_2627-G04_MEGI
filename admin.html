@@ -78,7 +78,7 @@
         <div class="form-row">
           <div class="form-group col-md-4"><label>Name</label><input required class="form-control" value="Admin Demo"><div class="invalid-feedback">Enter a name.</div></div>
             <div class="form-group col-md-4"><label>Email</label><input required type="email" class="form-control" value="admin@example.com"><div class="invalid-feedback">Enter a valid email address.</div></div>
-            <div class="form-group col-md-4"><label>Phone</label><input required class="form-control" value="+351 910 000 000"><div class="invalid-feedback">Enter a phone number.</div></div>
+            <div class="form-group col-md-4"><label>Phone</label><input required type="tel" inputmode="numeric" pattern="[0-9]{9,15}" title="Enter 9 to 15 digits only." class="form-control" value="351910000000"><div class="invalid-feedback">Enter a phone number using 9 to 15 digits only.</div></div>
         </div>
         <button class="btn btn-primary px-4" type="submit">Save account details</button>
       </form>

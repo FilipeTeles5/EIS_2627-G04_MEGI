@@ -64,7 +64,7 @@
         <div class="form-row align-items-end">
           <div class="form-group col-md mb-2 mb-md-0">
             <label for="trackOrderNumber">Order number</label>
-            <input id="trackOrderNumber" class="form-control" type="text" placeholder="e.g. 1042" autocomplete="off">
+            <input id="trackOrderNumber" class="form-control" type="text" placeholder="e.g. 1042" autocomplete="off" pattern="#?[0-9]+" title="Enter the digits in the order number, optionally prefixed with #." required>
             <div id="trackOrderError" class="invalid-feedback">We couldn't find an order with that number.</div>
           </div>
           <div class="form-group col-md-auto mb-0">
