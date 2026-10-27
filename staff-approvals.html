@@ -46,27 +46,21 @@
     <div class="cms-panel p-4 mb-4">
       <div class="cms-panel-title"><div><h4>Courier applications</h4><small>Applications awaiting review</small></div></div>
       <!-- Courier applications awaiting staff review and approval decisions. -->
-      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>NIF</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>Rui Alves</td><td>rui@example.com</td><td>245***321</td><td>03 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
-        <tr><td>Sofia Lima</td><td>sofia@example.com</td><td>233***810</td><td>02 Oct</td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Courier approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Courier rejected.">Reject</button></td></tr>
+      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Name</th><th>Email</th><th>NIF</th><th>Created</th><th>Status</th><th>Decision</th></tr></thead><tbody id="courierApplicationsBody">
       </tbody></table></div>
     </div>
 
     <div class="cms-panel p-4 mb-4">
       <div class="cms-panel-title"><div><h4>Vehicles awaiting review</h4><small>Check insurance and inspection documents before approval</small></div></div>
       <!-- Vehicles awaiting document review and approval decisions. -->
-      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Insurance</th><th>Inspection</th><th>Status</th><th>Decision</th></tr></thead><tbody>
-        <tr><td>72-ZP-11 · Renault Master</td><td>Van</td><td><span class="cms-badge cms-badge-success">Valid</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approved.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected.">Reject</button></td></tr>
-        <tr><td>19-CC-04 · Yamaha NMAX</td><td>Motorcycle</td><td><span class="cms-badge cms-badge-danger">Expired</span></td><td><span class="cms-badge cms-badge-success">Valid</span></td><td class="decision-cell"><span class="cms-badge cms-badge-warning">Pending</span></td><td><button class="btn btn-sm btn-success mr-1" data-approve="Vehicle approval recorded.">Approve</button><button class="btn btn-sm btn-danger" data-reject="Vehicle rejected because documentation is invalid.">Reject</button></td></tr>
+      <div class="table-responsive"><table class="table cms-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Insurance expiry</th><th>Inspection expiry</th><th>Status</th><th>Decision</th></tr></thead><tbody id="vehicleReviewsBody">
       </tbody></table></div>
     </div>
 
     <div class="cms-panel p-4">
       <div class="cms-panel-title"><div><h4>Previous vehicle decisions</h4><small>Review the outcome of earlier applications</small></div></div>
       <!-- Record of previous vehicle approval decisions and review comments. -->
-      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Reference</th><th>Vehicle</th><th>Reviewed by</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody>
-        <tr><td>#A-410</td><td>48-AB-22</td><td>Staff #12</td><td>01 Oct</td><td><span class="cms-badge cms-badge-success">Approved</span></td><td>Insurance and inspection documents are valid.</td></tr>
-        <tr><td>#A-405</td><td>34-KL-27</td><td>Staff #08</td><td>29 Sep</td><td><span class="cms-badge cms-badge-danger">Rejected</span></td><td>Insurance certificate was missing.</td></tr>
+      <div class="table-responsive"><table class="table cms-table mb-0"><thead><tr><th>Reference</th><th>Vehicle</th><th>Reviewed by</th><th>Date</th><th>Decision</th><th>Comments</th></tr></thead><tbody id="decisionHistoryBody">
       </tbody></table></div>
     </div>
   </div>
@@ -104,8 +98,36 @@
 </footer>
 <a href="#" class="btn btn-lg btn-primary back-to-top"><i class="fa fa-angle-double-up"></i></a>
 
+<!-- Modal that asks Staff for a mandatory reason before rejecting a courier or a vehicle. -->
+<div class="modal fade" id="rejectReasonModal" tabindex="-1" role="dialog" aria-labelledby="rejectReasonModalTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <form id="rejectReasonForm" novalidate>
+        <div class="modal-header">
+          <h5 class="modal-title" id="rejectReasonModalTitle">Reject application</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3" id="rejectReasonTarget"></p>
+          <div class="form-group mb-0">
+            <label for="rejectReasonInput">Reason for rejection</label>
+            <textarea id="rejectReasonInput" name="comment" class="form-control" rows="3" required minlength="10" placeholder="Explain what is missing or invalid"></textarea>
+            <div class="invalid-feedback">Enter a reason with at least 10 characters.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-dark" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Confirm rejection</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 <!-- Live message area used for brief page notifications. -->
 <div id="cmsToast"></div>
+
 <!-- Shared JavaScript dependencies and Movio page behavior. -->
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
@@ -113,5 +135,7 @@
 <script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cms.js"></script>
+<script src="js/data.js"></script>
+<script src="js/staff.js"></script>
 </body>
 </html>
