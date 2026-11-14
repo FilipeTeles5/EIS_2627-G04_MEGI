@@ -300,6 +300,7 @@ function cmsSyncCourierOrders(operations) {
         if (order.courier) sharedOrder.courier = order.courier;
         if (order.vehicle) sharedOrder.vehicle = order.vehicle;
         if (order.proofFile) sharedOrder.proofFile = order.proofFile;
+        if (order.proofType) sharedOrder.proofType = order.proofType;
         if (order.completedOn) sharedOrder.completedOn = order.completedOn;
         if (order.completedAt) sharedOrder.completedAt = order.completedAt;
     });
@@ -1287,16 +1288,22 @@ function cmsInitSignature() {
 
     const ctx = canvas.getContext('2d');
     let drawing = false;
+    let lastPosition = null;
+    canvas.dataset.signatureDrawn = 'false';
 
     // Match the canvas backing resolution to its displayed size and device scale.
     function resize() {
         const r = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-        canvas.width = Math.max(1, r.width * ratio);
-        canvas.height = Math.max(1, r.height * ratio);
+        const width = Math.max(1, r.width * ratio);
+        const height = Math.max(1, r.height * ratio);
+        if (canvas.width === width && canvas.height === height) return;
+        canvas.width = width;
+        canvas.height = height;
         ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
         ctx.lineWidth = 2;
         ctx.lineCap = 'round';
+        canvas.dataset.signatureDrawn = 'false';
     }
     resize();
 
@@ -1308,21 +1315,36 @@ function cmsInitSignature() {
     }
     // Begin a new signature stroke at the pointer's current position.
     function start(e) {
+        resize();
         drawing = true;
-        const p = pos(e);
+        lastPosition = pos(e);
         ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
+        ctx.moveTo(lastPosition.x, lastPosition.y);
     }
     // Extend and render the active stroke while the pointer moves.
     function move(e) {
         if (!drawing) return;
         e.preventDefault();
         const p = pos(e);
+        if (p.x === lastPosition.x && p.y === lastPosition.y) return;
         ctx.lineTo(p.x, p.y);
         ctx.stroke();
+        canvas.dataset.signatureDrawn = 'true';
+        lastPosition = p;
     }
     // End the active stroke when the pointer is released.
-    function stop() { drawing = false; }
+    function stop() {
+        drawing = false;
+        lastPosition = null;
+    }
+
+    function clear() {
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+        canvas.dataset.signatureDrawn = 'false';
+    }
 
     // Begin a signature stroke when the mouse button is pressed on the canvas.
     canvas.addEventListener('mousedown', start);
@@ -1336,11 +1358,14 @@ function cmsInitSignature() {
     canvas.addEventListener('touchmove', move, {passive:false});
     // Stop drawing when the finger is lifted from the canvas.
     canvas.addEventListener('touchend', stop);
+    window.addEventListener('resize', resize);
 
     // Clear the signature canvas when the user selects its clear control.
     document.getElementById('clearSignature')?.addEventListener('click', () => {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+        clear();
     });
+
+    canvas.clearSignature = clear;
 }
 
 // Map each demo role to its landing page and the pages protected by that role.
@@ -1926,12 +1951,21 @@ function cmsCourierVehicle(vehicleId) {
         cmsAvailableCourierVehicles()[0];
 }
 
-function cmsCourierRouteVolume(operations, route) {
-    return route.orderIds.reduce((total, orderId) => {
+function cmsCourierRouteCapacity(operations, route) {
+    return route.orderIds.reduce((totals, orderId) => {
         const order = operations.orders.find(item => item.id === orderId);
-        return total + (order?.products || []).reduce((orderTotal, product) =>
-            orderTotal + (Number.isFinite(product.volume_m3) ? product.volume_m3 : 0), 0);
-    }, 0);
+        (order?.products || []).forEach(product => {
+            const weight = Number(product.weight_kg);
+            const volume = Number(product.volume_m3);
+            totals.weight += Number.isFinite(weight) ? weight : 0;
+            totals.volume += Number.isFinite(volume) ? volume : 0;
+        });
+        return totals;
+    }, {weight:0, volume:0});
+}
+
+function cmsFormatCourierWeight(weight) {
+    return Number(weight.toFixed(2)).toLocaleString('en-US');
 }
 
 function cmsFormatCourierVolume(volume) {
@@ -2171,19 +2205,25 @@ function cmsRenderCourierDashboard() {
         routeVehicle.value = assignedVehicle.id;
         routeVehicleType.textContent = assignedVehicle.type;
         routeVehicle.disabled = !preparing;
-        const totalVolume = cmsCourierRouteVolume(operations, route);
-        const capacitySufficient = totalVolume <= assignedVehicle.maxVolumeM3;
+        const totals = cmsCourierRouteCapacity(operations, route);
+        const weightExceeded = totals.weight > assignedVehicle.maxWeightKg;
+        const volumeExceeded = totals.volume > assignedVehicle.maxVolumeM3;
+        const capacitySufficient = !weightExceeded && !volumeExceeded;
         capacityNotice.className = 'cms-alert mt-3 mb-0 ' +
             (capacitySufficient ? 'cms-alert-success' : 'cms-alert-danger');
         capacityNotice.textContent = capacitySufficient
-            ? 'Vehicle capacity is sufficient: the route products use ' +
-                cmsFormatCourierVolume(totalVolume) + ' m³ of ' +
+            ? 'Vehicle capacity is sufficient: ' + cmsFormatCourierWeight(totals.weight) +
+                ' / ' + cmsFormatCourierWeight(assignedVehicle.maxWeightKg) + ' kg; ' +
+                cmsFormatCourierVolume(totals.volume) + ' / ' +
                 cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³.'
-            : 'Vehicle capacity exceeded: the route products use ' +
-                cmsFormatCourierVolume(totalVolume) + ' m³, but this vehicle supports only ' +
-                cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³.';
+            : 'Vehicle capacity exceeded: weight ' + cmsFormatCourierWeight(totals.weight) +
+                ' / ' + cmsFormatCourierWeight(assignedVehicle.maxWeightKg) + ' kg (' +
+                (weightExceeded ? 'weight limit exceeded' : 'within limit') + '); volume ' +
+                cmsFormatCourierVolume(totals.volume) + ' / ' +
+                cmsFormatCourierVolume(assignedVehicle.maxVolumeM3) + ' m³ (' +
+                (volumeExceeded ? 'volume limit exceeded' : 'within limit') + ').';
         startRouteButton.classList.toggle('d-none', !preparing);
-        startRouteButton.disabled = routeOrders.length === 0;
+        startRouteButton.disabled = routeOrders.length === 0 || !capacitySufficient;
         createRouteButton.classList.add('d-none');
     } else {
         routeTitle.textContent = 'No active route';
@@ -2381,11 +2421,18 @@ function cmsInitCourierDashboard() {
         const route = operations && cmsCurrentCourierRoute(operations);
         if (!operations || !route || route.status !== 'planning' || !route.orderIds.length) return;
         const vehicle = cmsCourierVehicle(route.vehicleId);
-        const totalVolume = cmsCourierRouteVolume(operations, route);
-        if (totalVolume > vehicle.maxVolumeM3) {
-            cmsToast('Cannot start route: its products need ' + cmsFormatCourierVolume(totalVolume) +
-                ' m³, exceeding vehicle ' + vehicle.id + ' capacity of ' +
-                cmsFormatCourierVolume(vehicle.maxVolumeM3) + ' m³.');
+        const totals = cmsCourierRouteCapacity(operations, route);
+        const exceededLimits = [];
+        if (totals.weight > vehicle.maxWeightKg) {
+            exceededLimits.push('weight ' + cmsFormatCourierWeight(totals.weight) + ' kg exceeds ' +
+                vehicle.id + ' limit of ' + cmsFormatCourierWeight(vehicle.maxWeightKg) + ' kg');
+        }
+        if (totals.volume > vehicle.maxVolumeM3) {
+            exceededLimits.push('volume ' + cmsFormatCourierVolume(totals.volume) + ' m³ exceeds ' +
+                vehicle.id + ' limit of ' + cmsFormatCourierVolume(vehicle.maxVolumeM3) + ' m³');
+        }
+        if (exceededLimits.length) {
+            cmsToast('Cannot start route: ' + exceededLimits.join('; ') + '.');
             return;
         }
         route.status = 'active';
@@ -2405,8 +2452,8 @@ function cmsInitCourierDashboard() {
  * Active route interaction logic:
  * - The first non-final order in the active route is the order available for interaction.
  * - Order transitions and cancellation are stored in the same courier-scoped browser data as the dashboard.
- * - The order remains In Progress until a file is submitted as its simulated proof of delivery.
- * - Submitting any selected file completes that order and immediately selects the next non-final order.
+ * - The order remains In Progress until a photo or drawn signature is submitted as proof of delivery.
+ * - Submitting either proof completes the order and immediately selects the next non-final order.
  * - When every route order is Completed or Cancelled, the route closes and the dashboard can create another.
  */
 function cmsCurrentCourierRouteOrder(operations, route) {
@@ -2450,15 +2497,32 @@ function cmsRenderCourierRoute(operations) {
 
     if (displayRoute) {
         const vehicle = cmsCourierVehicle(displayRoute.vehicleId);
+        const totals = cmsCourierRouteCapacity(operations, displayRoute);
         const assignedVehicle = document.getElementById('courierAssignedVehicle');
         document.getElementById('courierAssignedVehicleRegistration').textContent = vehicle.id;
         assignedVehicle.textContent = vehicle.id + ' · ' + vehicle.model;
-        document.getElementById('courierVehicleMaxWeight').textContent = vehicle.maxWeightKg.toLocaleString('en-US');
-        document.getElementById('courierVehicleMaxVolume').textContent = vehicle.maxVolumeM3.toFixed(1);
+        document.getElementById('courierVehicleUsedWeight').textContent = cmsFormatCourierWeight(totals.weight);
+        document.getElementById('courierVehicleMaxWeight').textContent = cmsFormatCourierWeight(vehicle.maxWeightKg);
+        document.getElementById('courierVehicleUsedVolume').textContent = cmsFormatCourierVolume(totals.volume);
+        document.getElementById('courierVehicleMaxVolume').textContent = cmsFormatCourierVolume(vehicle.maxVolumeM3);
         document.getElementById('courierVehicleWeightCapacity').style.width =
-            Math.min(100, 86 / vehicle.maxWeightKg * 100) + '%';
+            Math.min(100, totals.weight / vehicle.maxWeightKg * 100) + '%';
         document.getElementById('courierVehicleVolumeCapacity').style.width =
-            Math.min(100, 1.4 / vehicle.maxVolumeM3 * 100) + '%';
+            Math.min(100, totals.volume / vehicle.maxVolumeM3 * 100) + '%';
+        const weightExceeded = totals.weight > vehicle.maxWeightKg;
+        const volumeExceeded = totals.volume > vehicle.maxVolumeM3;
+        const capacityNotice = document.getElementById('courierVehicleCapacityNotice');
+        capacityNotice.className = 'cms-alert mb-0 ' +
+            (weightExceeded || volumeExceeded ? 'cms-alert-danger' : 'cms-alert-success');
+        document.getElementById('courierVehicleCapacityTitle').textContent =
+            weightExceeded || volumeExceeded ? 'Vehicle capacity exceeded' : 'Vehicle capacity is suitable';
+        document.getElementById('courierVehicleCapacityDetails').textContent =
+            (weightExceeded ? 'Weight limit exceeded. ' : '') +
+            (volumeExceeded ? 'Volume limit exceeded. ' : '') +
+            'Route uses ' + cmsFormatCourierWeight(totals.weight) + ' of ' +
+            cmsFormatCourierWeight(vehicle.maxWeightKg) + ' kg and ' +
+            cmsFormatCourierVolume(totals.volume) + ' of ' +
+            cmsFormatCourierVolume(vehicle.maxVolumeM3) + ' m³.';
     }
 
     const routeOrderList = document.getElementById('courierRouteOrderList');
@@ -2484,7 +2548,9 @@ function cmsRenderCourierRoute(operations) {
         if (order.proofFile) {
             const proof = document.createElement('small');
             proof.className = 'd-block text-muted';
-            proof.textContent = 'Proof file: ' + order.proofFile;
+            proof.textContent = order.proofType === 'signature'
+                ? 'Proof: Digital signature'
+                : 'Proof file: ' + order.proofFile;
             card.appendChild(proof);
         }
         routeOrderList.appendChild(card);
@@ -2562,7 +2628,7 @@ function cmsInitCourierRoute() {
             order.proofRequired = true;
             if (!cmsSaveCourierOperations(currentOperations)) return;
             cmsRenderCourierRoute(currentOperations);
-            cmsToast('Select a file to complete order #' + order.id + '.');
+            cmsToast('Choose a photo or draw a signature to complete order #' + order.id + '.');
         }
     });
 
@@ -2585,8 +2651,11 @@ function cmsInitCourierRoute() {
     document.getElementById('submitProof')?.addEventListener('click', () => {
         const fileInput = document.getElementById('deliveryPhoto');
         const file = fileInput?.files?.[0];
-        if (!file) {
-            cmsToast('Choose a file before completing this order.');
+        const hasPhoto = Boolean(file && file.type.startsWith('image/'));
+        const canvas = document.getElementById('signaturePad');
+        const hasSignature = canvas?.dataset.signatureDrawn === 'true';
+        if (!hasPhoto && !hasSignature) {
+            cmsToast('Choose a valid photo or draw a signature before completing this order.');
             return;
         }
         const currentOperations = cmsLoadCourierOperations();
@@ -2597,13 +2666,15 @@ function cmsInitCourierRoute() {
             return;
         }
         order.status = 'completed';
-        order.proofFile = file.name;
+        order.proofType = hasPhoto ? 'photo' : 'signature';
+        order.proofFile = hasPhoto ? file.name : 'Digital signature';
         order.completedAt = new Date().toISOString();
         order.completedOn = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'});
         delete order.proofRequired;
         if (!cmsSaveCourierOperations(currentOperations)) return;
         cmsCloseFinishedCourierRoutes(currentOperations);
         fileInput.value = '';
+        canvas?.clearSignature?.();
         cmsRenderCourierRoute(currentOperations);
         cmsToast('Order #' + order.id + ' completed.');
     });
@@ -2927,7 +2998,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ], {zoom:14});
     }
 
-    // Courier active-route order handling and file-based proof simulation.
+    // Courier active-route order handling and photo-or-signature proof simulation.
     cmsInitCourierRoute();
     cmsInitClientOrders();
     cmsInitSignature();

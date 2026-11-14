@@ -73,9 +73,9 @@
           <!-- The selected vehicle is displayed read-only here; it can be changed from the dashboard while the route is being prepared. -->
           <div class="cms-panel-title"><div><h4>Assigned vehicle</h4><small>Registration <span id="courierAssignedVehicleRegistration">48-AB-22</span></small></div><span class="cms-badge cms-badge-success">Approved</span></div>
           <div class="form-group mb-4"><span class="cms-meta-label">Vehicle assigned to this route</span><strong id="courierAssignedVehicle" class="d-block">48-AB-22 · Mercedes Sprinter</strong></div>
-          <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small>86 kg</small><small><span id="courierVehicleMaxWeight">1,250</span> kg max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleWeightCapacity" style="width:7%"></span></div>
-          <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small>1.4 m³</small><small><span id="courierVehicleMaxVolume">10.5</span> m³ max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleVolumeCapacity" style="width:13%"></span></div>
-          <div class="cms-alert-success cms-alert mb-0"><strong>Vehicle capacity is suitable</strong><br><small>The parcels on this route fit within the vehicle's weight and volume limits.</small></div>
+          <span class="cms-meta-label">Capacity used — weight</span><div class="d-flex justify-content-between"><small><span id="courierVehicleUsedWeight">0</span> kg</small><small><span id="courierVehicleMaxWeight">0</span> kg max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleWeightCapacity"></span></div>
+          <span class="cms-meta-label">Capacity used — volume</span><div class="d-flex justify-content-between"><small><span id="courierVehicleUsedVolume">0</span> m³</small><small><span id="courierVehicleMaxVolume">0</span> m³ max</small></div><div class="cms-capacity mb-3"><span id="courierVehicleVolumeCapacity"></span></div>
+          <div id="courierVehicleCapacityNotice" class="cms-alert-success cms-alert mb-0"><strong id="courierVehicleCapacityTitle">Vehicle capacity is suitable</strong><br><small id="courierVehicleCapacityDetails">Capacity is calculated from this route's products.</small></div>
           <a href="courier-vehicles.html" class="btn btn-outline-dark btn-block mt-3"><i class="fa fa-truck mr-2"></i>Manage vehicles</a>
         </div>
       </div>
@@ -91,7 +91,7 @@
           <!-- Active-order logic:
                - The first non-final order on the active route is the one the courier can interact with.
                - Status changes and cancellation apply to that order and are saved in this browser.
-               - A completed order requires file submission before the next route order becomes active. -->
+               - A completed order requires a photo or drawn signature before the next route order becomes active. -->
           <div class="cms-panel-title"><div><h4 id="currentOrderTitle">Current order #1042</h4><small>Update delivery progress</small></div><span id="orderStatus" data-status="Initiated" class="cms-badge cms-badge-warning">Initiated</span></div>
           <div class="cms-meta-grid mb-4">
             <div><span class="cms-meta-label">Pickup</span><span id="currentOrderPickup" class="cms-meta-value">FEUP</span></div>
@@ -113,7 +113,7 @@
           <ul id="courierOrderTimeline" class="cms-timeline">
             <li class="current"><strong>Order placed</strong><small>Ready for delivery</small></li>
             <li><strong>In progress</strong><small>Delivery underway</small></li>
-            <li><strong>Completed</strong><small>Submit a file to finish this delivery</small></li>
+            <li><strong>Completed</strong><small>Add a photo or draw a signature to finish this delivery</small></li>
           </ul>
         </div>
       </div>
@@ -127,24 +127,24 @@
     </div>
 
     <!-- e-POD simulation logic:
-         - The active order must have a selected file before it can become Completed.
-         - Any file type is accepted in this frontend demo; file contents are not uploaded to a server.
-         - Submitting the file completes this order and activates the next non-final order on the route. -->
+         - The active order needs a selected photo or a drawn signature before it can become Completed.
+         - File contents are not uploaded to a server.
+         - Submitting either proof completes this order and activates the next non-final order on the route. -->
     <div id="proofPanel" class="cms-panel p-4 d-none">
-      <div class="cms-panel-title"><div><h4>Confirm the delivery</h4><small>Attach a proof file; a recipient signature is optional</small></div></div>
+      <div class="cms-panel-title"><div><h4>Confirm the delivery</h4><small>Choose a delivery photo or draw a recipient signature</small></div></div>
       <div class="row">
         <div class="col-lg-6 mb-4 mb-lg-0">
-          <label for="deliveryPhoto">Proof file</label>
-          <div class="cms-file-box"><input id="deliveryPhoto" type="file" class="form-control-file" aria-describedby="deliveryFileHelp"></div>
-          <small id="deliveryFileHelp" class="form-text text-muted">Any file can be used for this demo.</small>
+          <label for="deliveryPhoto">Delivery photo</label>
+          <div class="cms-file-box"><input id="deliveryPhoto" type="file" accept="image/*" class="form-control-file" aria-describedby="deliveryFileHelp"></div>
+          <small id="deliveryFileHelp" class="form-text text-muted">Select a photo, or use the signature pad instead.</small>
         </div>
         <div class="col-lg-6">
-          <label>Recipient signature</label>
+          <label for="signaturePad">Recipient signature (alternative)</label>
           <canvas id="signaturePad" class="cms-signature"></canvas>
           <div class="mt-2"><button id="clearSignature" type="button" class="btn btn-outline-dark btn-sm">Clear signature</button></div>
         </div>
       </div>
-      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Submit file and continue</button>
+      <button id="submitProof" type="button" class="btn btn-primary mt-4 px-4">Submit proof and continue</button>
     </div>
   </div>
 </section>
