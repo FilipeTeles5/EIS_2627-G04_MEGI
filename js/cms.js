@@ -1295,8 +1295,8 @@ function cmsInitSignature() {
     function resize() {
         const r = canvas.getBoundingClientRect();
         const ratio = window.devicePixelRatio || 1;
-        const width = Math.max(1, r.width * ratio);
-        const height = Math.max(1, r.height * ratio);
+        const width = Math.max(1, Math.round(r.width * ratio));
+        const height = Math.max(1, Math.round(r.height * ratio));
         if (canvas.width === width && canvas.height === height) return;
         canvas.width = width;
         canvas.height = height;
@@ -2463,6 +2463,16 @@ function cmsCurrentCourierRouteOrder(operations, route) {
         .find(order => order && !['completed','cancelled'].includes(order.status)) || null;
 }
 
+function cmsClearCourierProof() {
+    const fileInput = document.getElementById('deliveryPhoto');
+    const canvas = document.getElementById('signaturePad');
+    if (fileInput) fileInput.value = '';
+    if (canvas) {
+        canvas.clearSignature?.();
+        canvas.dataset.signatureDrawn = 'false';
+    }
+}
+
 // Render the current route, its order list, and controls for its first unfinished order.
 function cmsRenderCourierRoute(operations) {
     const activeRoute = cmsCurrentCourierRoute(operations);
@@ -2482,6 +2492,10 @@ function cmsRenderCourierRoute(operations) {
     const proofPanel = document.getElementById('proofPanel');
     const advance = document.getElementById('advanceStatus');
     const cancel = document.getElementById('cancelDelivery');
+    const previousOrderId = proofPanel.dataset.currentOrderId || '';
+    const currentOrderId = currentOrder ? currentOrder.id : '';
+    if (previousOrderId && previousOrderId !== currentOrderId) cmsClearCourierProof();
+    proofPanel.dataset.currentOrderId = currentOrderId;
 
     title.textContent = activeRoute ? 'Active Route #' + activeRoute.id : 'No active route';
     stops.textContent = displayRoute
@@ -2644,6 +2658,7 @@ function cmsInitCourierRoute() {
         delete order.proofRequired;
         if (!cmsSaveCourierOperations(currentOperations)) return;
         cmsCloseFinishedCourierRoutes(currentOperations);
+        cmsClearCourierProof();
         cmsRenderCourierRoute(currentOperations);
         cmsToast('Order #' + order.id + ' was cancelled and returned to your order list.');
     });
