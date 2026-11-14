@@ -1,13 +1,16 @@
+/* Inter font for the whole site (loaded here so no HTML page needs to change). */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
 /* ============================================================
    Movio application styles
-   Visual language inspired by the FASTER template.
+   Slate and orange identity taken from the Movio logo.
    Bootstrap base styles are provided by css/style.css.
    ============================================================ */
 
 /* Shared palette for CMS surfaces, text, borders, and status states. */
 :root {
-    --cms-primary: #FF4800;
-    --cms-dark: #1F1F2E;
+    --cms-primary: #2E4057;
+    --cms-dark: #1B2733;
     --cms-secondary: #F2F2F4;
     --cms-border: #e4e4e9;
     --cms-text: #5f6067;
@@ -15,6 +18,9 @@
     --cms-warning: #f0ad00;
     --cms-danger: #dc3545;
     --cms-info: #17a2b8;
+    --cms-accent: #FF4800;
+    --cms-accent-dark: #B83400;
+    --cms-font: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
 /* Base page background, top-bar note, and landing-hero copy and surfaces. */
@@ -30,12 +36,12 @@ body { background: #fff; }
 
 .jumbotron {
     background:
-      linear-gradient(rgba(31,31,46,.82), rgba(31,31,46,.82)),
+      linear-gradient(rgba(27, 39, 51, .82), rgba(27, 39, 51, .82)),
       url("../img/header.jpg") center center / cover no-repeat;
 }
 .cms-page-hero {
     background:
-      linear-gradient(rgba(31,31,46,.88), rgba(31,31,46,.88)),
+      linear-gradient(rgba(27, 39, 51, .88), rgba(27, 39, 51, .88)),
       url("../img/header.jpg") center center / cover no-repeat;
     padding: 3.8rem 0;
 }
@@ -74,10 +80,10 @@ body { background: #fff; }
 .cms-panel {
     background: #fff;
     border: 1px solid var(--cms-border);
-    box-shadow: 0 8px 24px rgba(31,31,46,.055);
+    box-shadow: 0 8px 24px rgba(27, 39, 51, .055);
 }
 .cms-card { height: 100%; transition: transform .2s ease, box-shadow .2s ease; }
-.cms-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(31,31,46,.09); }
+.cms-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(27, 39, 51, .09); }
 
 .cms-panel-title {
     display: flex;
@@ -267,8 +273,8 @@ body { background: #fff; }
     color: #909197;
 }
 .cms-entity-note {
-    background: #fff3ee;
-    color: #9d3410;
+    background: #F1F2F4;
+    color: #1F2B3B;
     padding: .45rem .65rem;
     font-size: .78rem;
     display: inline-block;
@@ -344,7 +350,7 @@ body { background: #fff; }
 }
 .cms-footer-cta:hover {
     transform: translateY(-1px);
-    background: #e94000;
+    background: #2A3A4F;
     color: #fff;
     text-decoration: none;
 }
@@ -401,7 +407,7 @@ body { background: #fff; }
 .cms-account-menu {
     min-width: 220px;
     padding: .5rem 0;
-    box-shadow: 0 12px 28px rgba(31,31,46,.16);
+    box-shadow: 0 12px 28px rgba(27, 39, 51, .16);
     border-color: var(--cms-border);
 }
 .cms-account-menu-header {
@@ -418,7 +424,7 @@ body { background: #fff; }
 }
 .cms-account-logout:hover,
 .cms-account-logout:focus {
-    background: #fff0ea;
+    background: #EEEFF1;
     color: var(--cms-primary);
 }
 .cms-profile-role {
@@ -466,7 +472,7 @@ body { background: #fff; }
     color: var(--cms-info);
 }
 .cms-tracking-location-icon.destination {
-    background: #fff0ea;
+    background: #EEEFF1;
     color: var(--cms-primary);
 }
 .cms-tracking-location strong {
@@ -510,3 +516,43 @@ body { background: #fff; }
     .cms-role-nav .container { padding-left: 1rem; padding-right: 1rem; }
     .cms-page-hero { padding: 2.7rem 0; }
 }
+
+
+/* ============================================================
+   Movio visual identity
+   Slate from the logo lettering for interface elements, and
+   the logo orange as an accent on dark surfaces and details.
+   ============================================================ */
+body,
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6,
+.btn, .navbar, .form-control, .table {
+    font-family: var(--cms-font);
+}
+h1, h2, h3, .h1, .h2, .h3 { letter-spacing: -0.01em; }
+.btn { border-radius: 6px; font-weight: 600; }
+.cms-panel, .cms-card, .cms-notification, .form-control { border-radius: 8px; }
+
+/* Orange accent where slate would disappear on dark backgrounds. */
+.jumbotron .text-primary,
+.cms-page-hero .text-primary { color: var(--cms-accent) !important; }
+.jumbotron .btn-primary,
+.cms-page-hero .btn-primary {
+    background-color: var(--cms-accent);
+    border-color: var(--cms-accent);
+}
+.jumbotron .btn-primary:hover,
+.cms-page-hero .btn-primary:hover {
+    background-color: var(--cms-accent-dark);
+    border-color: var(--cms-accent-dark);
+}
+.cms-role-nav a:hover,
+.cms-role-nav a.active { background: var(--cms-accent); }
+.cms-footer-links i { color: var(--cms-accent); }
+.cms-footer-cta { background: var(--cms-accent); }
+.cms-footer-cta:hover { background: var(--cms-accent-dark); }
+
+/* Small orange details on light surfaces. */
+h6.text-primary.text-uppercase,
+.cms-section-title { color: var(--cms-accent-dark) !important; }
+.cms-kpi { border-left-color: var(--cms-accent); }
