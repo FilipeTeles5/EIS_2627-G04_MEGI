@@ -50,18 +50,13 @@
   <div class="container">
     <div class="cms-panel cms-login-card p-4 p-md-5">
       <div class="text-center mb-4"><h6 class="text-primary text-uppercase font-weight-bold">Account access</h6><h2>Sign in to Movio</h2></div>
-      <!-- Sign-in form for selecting an account role and authenticating a demo user. -->
+      <!-- Sign-in form for a database-backed Movio account. -->
       <form id="loginForm" novalidate>
-        <div class="form-group"><label for="loginEmail">Email</label><input id="loginEmail" name="email" required type="email" class="form-control p-4" placeholder="name@example.com"><div class="invalid-feedback">Enter a valid email address.</div></div>
-        <div class="form-group"><label for="loginPassword">Password</label><input id="loginPassword" name="password" required type="password" class="form-control p-4" placeholder="Password"><div class="invalid-feedback">Password is required.</div></div>
-        <div class="form-group"><label for="roleSelect">Account role</label>
-          <select id="roleSelect" class="form-control">
-            <option value="client">Client</option><option value="courier">Courier</option><option value="staff">Staff</option><option value="admin">Admin</option>
-          </select>
-        </div>
+        <div class="form-group"><label for="loginEmail">Email</label><input id="loginEmail" name="email" autocomplete="username" required type="email" class="form-control p-4" placeholder="name@example.com"><div class="invalid-feedback">Enter a valid email address.</div></div>
+        <div class="form-group"><label for="loginPassword">Password</label><input id="loginPassword" name="password" autocomplete="current-password" required type="password" class="form-control p-4" placeholder="Password"><div class="invalid-feedback">Password is required.</div></div>
         <button class="btn btn-primary btn-block py-3" type="submit">Login</button>
       </form>
-      <p class="small text-muted mt-3 mb-0">Demo mode: Client, Courier and Admin profiles accept any valid email and non-empty password. Staff access requires an approved Staff application in this browser.</p>
+      <p class="small text-muted mt-3 mb-0">Your account type is assigned by Movio. Staff accounts can sign in after an Admin approves the application.</p>
       <p class="text-center mt-4 mb-0">No account? <a href="register.html">Register here</a>.</p>
     </div>
   </div>

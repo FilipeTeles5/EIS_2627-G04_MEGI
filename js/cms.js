@@ -1655,98 +1655,107 @@ function cmsStaffStatusBadge(status) {
     return badge;
 }
 
-// Render application decisions and mirror eligible demo accounts in the admin table.
-function cmsRenderStaffApplications() {
-    const table = document.getElementById('staffApplicationsTable');
-    const applications = cmsLoadStaffApplications();
-    if (!table || !applications) return;
-
-    table.replaceChildren();
-    const pendingCount = applications.filter(application => application.status === 'pending').length;
+function cmsRenderAdminUsers(users) {
+    const applicationTable = document.getElementById('staffApplicationsTable');
+    const staffApplications = users.filter(user => user.role === 'staff');
+    const pendingCount = staffApplications.filter(user => user.approved_status === 'pending').length;
     const countLabel = document.getElementById('staffApplicationsCount');
-    if (countLabel) countLabel.textContent = pendingCount + (pendingCount === 1
-        ? ' application awaiting your decision'
-        : ' applications awaiting your decision');
+    if (countLabel) {
+        countLabel.textContent = pendingCount + (pendingCount === 1
+            ? ' application awaiting your decision'
+            : ' applications awaiting your decision');
+    }
     const dashboardCount = document.getElementById('pendingStaffApplicationCount');
     if (dashboardCount) dashboardCount.textContent = pendingCount;
+    const accountCount = document.getElementById('kpiUserAccounts');
+    if (accountCount) accountCount.textContent = users.length;
+    const clientCount = document.getElementById('kpiClients');
+    if (clientCount) clientCount.textContent = users.filter(user => user.role === 'client').length;
+    const courierCount = document.getElementById('kpiCouriers');
+    if (courierCount) {
+        courierCount.textContent = users.filter(user =>
+            user.role === 'courier' && user.approved_status === 'approved'
+        ).length;
+    }
+    const staffCount = document.getElementById('kpiStaff');
+    if (staffCount) {
+        staffCount.textContent = users.filter(user =>
+            user.role === 'staff' && user.approved_status === 'approved'
+        ).length;
+    }
+
+    if (applicationTable) {
+        applicationTable.replaceChildren();
+        staffApplications.forEach(user => {
+            const row = document.createElement('tr');
+            [user.name, user.email, user.phone || 'Not provided', String(user.created_at).slice(0, 10)]
+                .forEach(value => {
+                    const cell = document.createElement('td');
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                });
+
+            const statusCell = document.createElement('td');
+            statusCell.className = 'decision-cell';
+            statusCell.appendChild(cmsStaffStatusBadge(user.approved_status));
+            row.appendChild(statusCell);
+
+            const decisionCell = document.createElement('td');
+            if (user.approved_status === 'pending') {
+                ['approved', 'rejected'].forEach(decision => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = decision === 'approved'
+                        ? 'btn btn-sm btn-success mr-1'
+                        : 'btn btn-sm btn-danger';
+                    button.dataset.staffDecision = decision;
+                    button.dataset.userId = user.user_id;
+                    button.textContent = decision === 'approved' ? 'Approve' : 'Reject';
+                    decisionCell.appendChild(button);
+                });
+            } else {
+                decisionCell.textContent = '—';
+            }
+            row.appendChild(decisionCell);
+            applicationTable.appendChild(row);
+        });
+    }
 
     const accounts = document.getElementById('adminUserAccounts');
-    if (accounts) accounts.querySelectorAll('[data-demo-staff-account]').forEach(row => row.remove());
-
-    applications.forEach(application => {
-        const row = document.createElement('tr');
-        [application.name, application.email, application.phone || 'Not provided', application.created || 'Today'].forEach(value => {
-            const cell = document.createElement('td');
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
-
-        const statusCell = document.createElement('td');
-        statusCell.className = 'decision-cell';
-        statusCell.appendChild(cmsStaffStatusBadge(application.status));
-        row.appendChild(statusCell);
-
-        const decisionCell = document.createElement('td');
-        if (application.status === 'pending') {
-            ['approve', 'reject'].forEach(action => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = action === 'approve'
-                    ? 'btn btn-sm btn-success mr-1'
-                    : 'btn btn-sm btn-danger';
-                button.dataset.staffAction = action;
-                button.dataset.email = application.email;
-                button.textContent = action === 'approve' ? 'Approve' : 'Reject';
-                decisionCell.appendChild(button);
-            });
-        } else {
-            decisionCell.textContent = '—';
-        }
-        row.appendChild(decisionCell);
-        table.appendChild(row);
-
-        if (accounts && application.email.toLowerCase() !== 'carla@example.com') {
-            const accountRow = document.createElement('tr');
-            accountRow.dataset.demoStaffAccount = 'true';
+    if (accounts) {
+        accounts.replaceChildren();
+        users.forEach(user => {
+            const row = document.createElement('tr');
             [
-                application.name,
-                application.username || '—',
-                application.status === 'approved' ? 'Staff' : 'Staff applicant',
-                application.email
+                user.name,
+                user.username,
+                user.role === 'staff' && user.approved_status !== 'approved'
+                    ? 'Staff applicant'
+                    : cmsRoles[user.role]?.label || user.role,
+                user.email
             ].forEach(value => {
                 const cell = document.createElement('td');
                 cell.textContent = value;
-                accountRow.appendChild(cell);
+                row.appendChild(cell);
             });
-            const accountStatus = document.createElement('td');
-            accountStatus.appendChild(cmsStaffStatusBadge(application.status));
-            accountRow.appendChild(accountStatus);
+
+            const statusCell = document.createElement('td');
+            statusCell.appendChild(cmsStaffStatusBadge(user.approved_status));
+            row.appendChild(statusCell);
             const createdCell = document.createElement('td');
-            createdCell.textContent = application.created || 'Today';
-            accountRow.appendChild(createdCell);
-            accounts.appendChild(accountRow);
-        }
-    });
+            createdCell.textContent = String(user.created_at).slice(0, 10);
+            row.appendChild(createdCell);
+            accounts.appendChild(row);
+        });
+    }
 }
 
-// Record an approval or rejection only while the application is still pending.
-function cmsUpdateStaffApplication(email, status) {
-    const applications = cmsLoadStaffApplications();
-    if (!applications) return false;
-    const application = applications.find(item =>
-        item.email.toLowerCase() === email.trim().toLowerCase()
-    );
-    if (!application || application.status !== 'pending') {
-        cmsToast('This Staff application is no longer awaiting a decision.');
-        return false;
+async function cmsRefreshAdminUsers() {
+    const response = await cmsAuthRequest('api/admin/users.php', 'GET');
+    if (!Array.isArray(response.users)) {
+        throw new Error('The server returned an invalid user list.');
     }
-    application.status = status;
-    if (!cmsSaveStaffApplications(applications)) return false;
-    cmsRenderStaffApplications();
-    cmsToast(status === 'approved'
-        ? 'Staff application approved. The applicant can now sign in as Staff.'
-        : 'Staff application rejected. Staff access has not been granted.');
-    return true;
+    cmsRenderAdminUsers(response.users);
 }
 
 // Normalize the current URL's final path segment for page access checks.
@@ -1766,14 +1775,45 @@ function cmsGetRole() {
     return role;
 }
 
-// Validate a role, enforce Staff approval, and store the temporary demo identity.
-function cmsSetRole(role, email, displayName) {
-    if (!Object.prototype.hasOwnProperty.call(cmsRoles, role)) {
-        cmsToast('Choose a valid account type.');
-        return false;
+async function cmsAuthRequest(url, method = 'POST', payload = null) {
+    const options = {
+        method,
+        credentials: 'same-origin',
+        headers: {Accept: 'application/json'}
+    };
+    if (payload !== null) {
+        options.headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(payload);
     }
-    if (role === 'staff' && cmsStaffApplicationStatus(email) !== 'approved') {
-        cmsToast('Staff access is available only after an Admin approves your application.');
+
+    const response = await fetch(url, options);
+    let result;
+    try {
+        result = await response.json();
+    } catch (error) {
+        throw new Error('The server returned an invalid response.');
+    }
+    if (!response.ok) {
+        const requestError = new Error(result.error || 'The request could not be completed.');
+        requestError.status = response.status;
+        throw requestError;
+    }
+    return result;
+}
+
+function cmsClearRoleSession() {
+    sessionStorage.removeItem(cmsRoleKey);
+    sessionStorage.removeItem(cmsEmailKey);
+    sessionStorage.removeItem(cmsNameKey);
+}
+
+// Cache the server-authorized identity for display; protected APIs authorize from PHP session.
+function cmsSetRole(role, email, displayName) {
+    if (
+        !Object.prototype.hasOwnProperty.call(cmsRoles, role) ||
+        typeof email !== 'string' || typeof displayName !== 'string'
+    ) {
+        cmsToast('The server returned an unsupported account type.');
         return false;
     }
     sessionStorage.setItem(cmsRoleKey, role);
@@ -1799,21 +1839,24 @@ function cmsShowRegisterMessage(message) {
     notice.classList.remove('d-none');
 }
 
-// Enforce role-based page access and update navigation for the current session.
-function cmsInitRoleAccess() {
-    let role = cmsGetRole();
+// Restore the identity from the PHP session before applying page-level navigation.
+async function cmsInitRoleAccess() {
     const page = cmsPageName();
-    if (role === 'staff') {
-        const email = sessionStorage.getItem(cmsEmailKey) || '';
-        if (cmsStaffApplicationStatus(email) !== 'approved') {
-            sessionStorage.removeItem(cmsRoleKey);
-            sessionStorage.removeItem(cmsEmailKey);
-            sessionStorage.removeItem(cmsNameKey);
-            role = null;
-            if (cmsRoles.staff.pages.includes(page)) {
-                window.location.replace('login.html?role=staff');
-                return false;
-            }
+    let role = null;
+    try {
+        const response = await cmsAuthRequest('api/auth/session.php', 'GET');
+        const user = response.user;
+        if (!user) {
+            cmsClearRoleSession();
+        } else if (!cmsSetRole(user.role, user.email, user.name)) {
+            cmsClearRoleSession();
+        } else {
+            role = user.role;
+        }
+    } catch (error) {
+        cmsClearRoleSession();
+        if (error.status !== 401) {
+            console.error('Could not restore the authenticated session.', error);
         }
     }
     const protectedRole = Object.keys(cmsRoles).find(key =>
@@ -1821,8 +1864,7 @@ function cmsInitRoleAccess() {
     );
 
     if (protectedRole && (!role || role !== protectedRole)) {
-        const query = role ? '' : '?role=' + protectedRole;
-        window.location.replace('login.html' + query);
+        window.location.replace('login.html');
         return false;
     }
 
@@ -1842,12 +1884,17 @@ function cmsInitRoleAccess() {
     }
 
     document.querySelectorAll('[data-demo-logout]').forEach(button => {
-        // Clear the temporary session and return to the public home page on logout.
-        button.addEventListener('click', () => {
-            sessionStorage.removeItem(cmsRoleKey);
-            sessionStorage.removeItem(cmsEmailKey);
-            sessionStorage.removeItem(cmsNameKey);
-            window.location.assign('index.html');
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            try {
+                await cmsAuthRequest('api/auth/logout.php');
+                cmsClearRoleSession();
+                window.location.assign('index.html');
+            } catch (error) {
+                console.error('Could not sign out.', error);
+                cmsToast(error.message || 'Could not sign out. Please try again.');
+                button.disabled = false;
+            }
         });
     });
 
@@ -1912,15 +1959,22 @@ function cmsInitRoleAccess() {
         cmsUpdateAccountDisplayName(displayName, role);
     });
 
-    if (protectedRole) {
+    const previewPages = [
+        'client.html', 'client-order.html', 'client-orders.html',
+        'courier.html', 'courier-route.html', 'courier-vehicles.html',
+        'staff.html', 'staff-approvals.html', 'staff-notifications.html',
+        'profile.html'
+    ];
+    if (previewPages.includes(page) || page === 'admin.html') {
         const hero = document.querySelector('.cms-page-hero .container');
         if (hero) {
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
-            // Client orders and Courier route changes persist only in this browser as demo data.
-            notice.textContent = ['courier.html','courier-route.html','client-order.html','client-orders.html'].includes(page)
-                ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
-                : 'Preview mode: this page uses sample data and is not connected to a production service.';
+            notice.textContent = page === 'admin.html'
+                ? 'Preview mode: delivery activity uses sample data; pricing and account metrics are connected to the database.'
+                : ['courier.html', 'courier-route.html', 'client-order.html', 'client-orders.html'].includes(page)
+                    ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
+                    : 'Preview mode: this page uses sample data and is not connected to the backend.';
             hero.appendChild(notice);
         }
     }
@@ -2704,7 +2758,7 @@ function cmsInitCourierRoute() {
 }
 
 // Initialize access control, account flows, counters, and page-specific preview controls.
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('#trackingForm, #trackingSearchForm')
         .forEach(cmsBindOrderReferenceValidation);
 
@@ -2725,35 +2779,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    if (!cmsInitRoleAccess()) return;
+    if (!await cmsInitRoleAccess()) return;
 
     // Public login/register flows
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
-        const roleSelect = document.getElementById('roleSelect');
-        const requestedRole = new URLSearchParams(window.location.search).get('role');
-        if (roleSelect && Object.prototype.hasOwnProperty.call(cmsRoles, requestedRole)) {
-            roleSelect.value = requestedRole;
-        }
-        // Validate credentials and require an approved application for Staff sign-in.
-        loginForm.addEventListener('submit', e => {
+        const submitButton = loginForm.querySelector('button[type="submit"]');
+        loginForm.addEventListener('submit', async e => {
             e.preventDefault();
             if (!cmsValidate(loginForm)) return;
-            const role = roleSelect.value;
             const email = loginForm.elements.email.value.trim();
-            if (role === 'staff') {
-                const status = cmsStaffApplicationStatus(email);
-                if (status === null) return;
-                if (status !== 'approved') {
-                    cmsToast(status === 'pending'
-                        ? 'Your Staff application is awaiting Admin approval.'
-                        : status === 'rejected'
-                            ? 'Your Staff application was rejected. Staff access is unavailable.'
-                            : 'No Staff application was found for this email. Apply through Register first.');
-                    return;
-                }
+            const password = loginForm.elements.password.value;
+            if (submitButton) submitButton.disabled = true;
+            try {
+                const response = await cmsAuthRequest('api/auth/login.php', 'POST', {email, password});
+                const user = response.user;
+                if (!user || !cmsSetRole(user.role, user.email, user.name)) return;
+                window.location.assign(cmsRoleHome(user.role));
+            } catch (error) {
+                console.error('Could not sign in.', error);
+                cmsToast(error.message || 'Could not sign in. Please try again.');
+            } finally {
+                if (submitButton) submitButton.disabled = false;
             }
-            if (cmsSetRole(role, email)) window.location.assign(cmsRoleHome(role));
         });
     }
 
@@ -2773,63 +2821,58 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         nifInput.addEventListener('input', validateNif);
         validateNif();
-        // Keep the registration guidance and submit label aligned with the chosen role.
         const updateRoleHint = () => {
             if (roleHint && roleSelect) {
                 const applyingForStaff = roleSelect.value === 'staff';
                 roleHint.textContent = applyingForStaff
-                    ? 'Staff registration submits an application. An Admin must approve it before Staff sign-in is available.'
-                    : 'Client and Courier registrations open a temporary demo session.';
+                    ? 'Staff registration submits a database application. An Admin must approve it before sign-in.'
+                    : 'Client and Courier accounts are created in the database and signed in automatically.';
                 if (submitButton) {
                     submitButton.textContent = applyingForStaff ? 'Submit Staff Application' : 'Create Account';
                 }
             }
         };
-        // Update the registration guidance immediately when the role selection changes.
         roleSelect?.addEventListener('change', updateRoleHint);
         updateRoleHint();
-        // Validate new accounts, submit Staff applications, or start client/courier sessions.
-        registerForm.addEventListener('submit', e => {
+        registerForm.addEventListener('submit', async e => {
             e.preventDefault();
             if (!cmsValidate(registerForm)) return;
             const role = registerForm.elements['role'].value;
-            const email = registerForm.elements.email.value.trim();
-            if (role === 'staff') {
-                const applications = cmsLoadStaffApplications();
-                if (!applications) return;
-                const existing = applications.find(application =>
-                    application.email.toLowerCase() === email.toLowerCase()
-                );
-                if (existing) {
-                    cmsToast(existing.status === 'pending'
-                        ? 'A Staff application for this email is already awaiting review.'
-                        : existing.status === 'approved'
-                            ? 'This email already has approved Staff access.'
-                            : 'A previous application for this email was rejected. Contact an Admin for help.');
-                    return;
-                }
-                applications.push({
-                    name: registerForm.elements.name.value.trim(),
-                    username: registerForm.elements.username.value.trim(),
-                    email: email.toLowerCase(),
-                    phone: registerForm.elements.phone.value.trim(),
-                    created: new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'short'}),
-                    status: 'pending'
-                });
-                if (!cmsSaveStaffApplications(applications)) return;
-                cmsShowRegisterMessage('Your Staff application has been submitted and is awaiting Admin approval.');
-                registerForm.classList.add('d-none');
-                return;
-            }
             const profile = {
                 name: registerForm.elements.name.value.trim(),
                 username: registerForm.elements.username.value.trim(),
-                email,
+                email: registerForm.elements.email.value.trim(),
                 phone: registerForm.elements.phone.value.trim(),
-                role
+                nif: registerForm.elements.nif.value.trim(),
+                role,
+                password: registerForm.elements.password.value
             };
-            if (!cmsSaveProfile(profile)) return;
-            if (cmsSetRole(role, email, profile.name)) window.location.assign(cmsRoleHome(role));
+            if (submitButton) submitButton.disabled = true;
+            try {
+                const response = await cmsAuthRequest('api/auth/register.php', 'POST', profile);
+                if (response.pending) {
+                    cmsShowRegisterMessage(response.message);
+                    registerForm.classList.add('d-none');
+                    return;
+                }
+                const user = response.user;
+                const savedProfile = {
+                    name: user.name,
+                    username: user.username,
+                    email: user.email,
+                    phone: profile.phone,
+                    role: user.role
+                };
+                cmsSaveProfile(savedProfile);
+                if (cmsSetRole(user.role, user.email, user.name)) {
+                    window.location.assign(cmsRoleHome(user.role));
+                }
+            } catch (error) {
+                console.error('Could not create the account.', error);
+                cmsToast(error.message || 'Could not create the account. Please try again.');
+            } finally {
+                if (submitButton) submitButton.disabled = false;
+            }
         });
     }
 
@@ -2868,32 +2911,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const staffApplicationsTable = document.getElementById('staffApplicationsTable');
     if (staffApplicationsTable) {
-        cmsRenderStaffApplications();
-        // Delegate decision-button clicks from the rendered applications table.
-        staffApplicationsTable.addEventListener('click', event => {
-            const button = event.target.closest('[data-staff-action]');
+        staffApplicationsTable.addEventListener('click', async event => {
+            const button = event.target.closest('[data-staff-decision]');
             if (!button) return;
-            cmsUpdateStaffApplication(
-                button.dataset.email,
-                button.dataset.staffAction === 'approve' ? 'approved' : 'rejected'
-            );
+            button.disabled = true;
+            try {
+                await cmsAuthRequest('api/admin/users.php', 'PUT', {
+                    user_id: Number(button.dataset.userId),
+                    decision: button.dataset.staffDecision
+                });
+                await cmsRefreshAdminUsers();
+                cmsToast(button.dataset.staffDecision === 'approved'
+                    ? 'Staff application approved.'
+                    : 'Staff application rejected.');
+            } catch (error) {
+                console.error('Could not update the Staff application.', error);
+                cmsToast(error.message || 'Could not update the Staff application.');
+                button.disabled = false;
+            }
         });
-        // Refresh the application table when another tab changes its saved records.
-        window.addEventListener('storage', event => {
-            if (event.key === cmsStaffApplicationsKey) cmsRenderStaffApplications();
-        });
-    } else if (document.getElementById('pendingStaffApplicationCount')) {
-        const count = document.getElementById('pendingStaffApplicationCount');
-        // Recompute the dashboard's pending count from the saved application list.
-        const updatePendingCount = () => {
-            const applications = cmsLoadStaffApplications();
-            if (!applications || !count) return;
-            count.textContent = applications.filter(application => application.status === 'pending').length;
-        };
-        updatePendingCount();
-        // Keep the dashboard count synchronized with changes made in another tab.
-        window.addEventListener('storage', event => {
-            if (event.key === cmsStaffApplicationsKey) updatePendingCount();
+    }
+    if (staffApplicationsTable || document.getElementById('pendingStaffApplicationCount')) {
+        cmsRefreshAdminUsers().catch(error => {
+            console.error('Could not load user accounts.', error);
+            cmsToast(error.message || 'Could not load user accounts.');
         });
     }
 

@@ -1,5 +1,5 @@
 // Admin dashboard: KPIs and delivery overview.
-// Sprint 1 prototype: users and routes come from js/data.js, orders from the shared demo orders in js/cms.js.
+// Delivery metrics use the Sprint 1 route data and shared browser-demo orders.
 
 // Order statuses shown in the delivery overview, in workflow order.
 const adminOrderStatuses = [
@@ -9,31 +9,6 @@ const adminOrderStatuses = [
     { key: 'completed', label: 'Completed' },
     { key: 'cancelled', label: 'Cancelled' }
 ];
-
-// Count users with a given role and, optionally, a given approval status.
-function adminCountUsers(role, status) {
-    return movioData.users.filter(user =>
-        user.role === role && (!status || user.approval_status === status)
-    ).length;
-}
-
-// Count approved Staff from the sample data plus Staff approved by the Admin in this browser.
-// Staff applications are managed by js/cms.js; emails are compared so nobody is counted twice.
-function adminCountApprovedStaff() {
-    const emails = movioData.users
-        .filter(user => user.role === 'staff' && user.approval_status === 'approved')
-        .map(user => user.email.toLowerCase());
-
-    if (typeof cmsLoadStaffApplications === 'function') {
-        (cmsLoadStaffApplications() || []).forEach(application => {
-            const email = application.email.toLowerCase();
-            if (application.status === 'approved' && !emails.includes(email)) {
-                emails.push(email);
-            }
-        });
-    }
-    return emails.length;
-}
 
 // Return the shared demo orders created by the Client and Courier pages, or an empty list.
 function adminLoadOrders() {
@@ -70,7 +45,7 @@ function adminOverviewRow(label, count, total, isLast) {
     return row;
 }
 
-// Fill the KPI cards, the user account total and the delivery overview.
+// Fill sample delivery KPIs and the delivery overview.
 function adminRenderDashboard() {
     const overview = document.getElementById('deliveryOverview');
     if (!overview) {
@@ -81,12 +56,7 @@ function adminRenderDashboard() {
         route.status === 'Initiated' || route.status === 'In Progress'
     ).length;
 
-    document.getElementById('kpiClients').textContent = adminCountUsers('client');
-    document.getElementById('kpiCouriers').textContent = adminCountUsers('courier', 'approved');
-    document.getElementById('kpiStaff').textContent = adminCountApprovedStaff();
     document.getElementById('kpiActiveRoutes').textContent = activeRoutes;
-    document.getElementById('kpiUserAccounts').textContent = movioData.users.length;
-
     const orders = adminLoadOrders();
     document.getElementById('deliveryOverviewTotal').textContent =
         orders.length + (orders.length === 1 ? ' order' : ' orders') + ' by status';
@@ -106,61 +76,7 @@ function adminRenderDashboard() {
     });
 }
 
-// ---------- User accounts directory ----------
-
-// Badge style and text for each approval status in the user directory.
-const adminAccountStatus = {
-    approved: { label: 'Approved', style: 'cms-badge-success' },
-    pending: { label: 'Pending', style: 'cms-badge-warning' },
-    rejected: { label: 'Rejected', style: 'cms-badge-danger' }
-};
-
-// Format a YYYY-MM-DD date as a short label such as "21 Sep".
-function adminFormatDate(value) {
-    const parts = value.split('-');
-    const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-}
-
-// Render one row per user from js/data.js at the top of the directory.
-// Staff applicant rows added by js/cms.js are kept below, so both lists work together.
-function adminRenderUserAccounts() {
-    const body = document.getElementById('adminUserAccounts');
-    if (!body) {
-        return;
-    }
-    body.querySelectorAll('[data-movio-account]').forEach(row => row.remove());
-
-    const firstApplicantRow = body.firstChild;
-    movioData.users.forEach(user => {
-        const row = document.createElement('tr');
-        row.dataset.movioAccount = 'true';
-
-        const role = user.role.charAt(0).toUpperCase() + user.role.slice(1);
-        [user.name, user.username, role, user.email].forEach(value => {
-            const cell = document.createElement('td');
-            cell.textContent = value;
-            row.appendChild(cell);
-        });
-
-        const status = adminAccountStatus[user.approval_status] || adminAccountStatus.pending;
-        const statusCell = document.createElement('td');
-        const badge = document.createElement('span');
-        badge.className = 'cms-badge ' + status.style;
-        badge.textContent = status.label;
-        statusCell.appendChild(badge);
-        row.appendChild(statusCell);
-
-        const createdCell = document.createElement('td');
-        createdCell.textContent = adminFormatDate(user.created_at);
-        row.appendChild(createdCell);
-
-        body.insertBefore(row, firstApplicantRow);
-    });
-}
-
 // Start the page once the HTML is loaded.
 document.addEventListener('DOMContentLoaded', () => {
     adminRenderDashboard();
-    adminRenderUserAccounts();
 });

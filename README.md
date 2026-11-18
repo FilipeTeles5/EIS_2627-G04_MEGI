@@ -11,13 +11,11 @@ Movio brings customers, couriers and delivery teams together to manage the deliv
 - Staff: `staff.html`, `staff-approvals.html` and `staff-notifications.html`
 - Admin: `admin.html` and `admin-users.html`
 
-## Frontend demo
+## Frontend preview
 
-Choose an account type on the login page to open its dashboard. Client and Courier registration creates a temporary session. Staff registration submits an application for Admin review; a Staff session can only be opened after that application is approved. The account menu shows the user's name and provides role-specific shortcuts, workspace access, profile editing and sign out. Demo profiles, applications and their decisions are stored in the current browser's `localStorage`, while the active role, email and display name are kept in the current tab using `sessionStorage`; **Sign out** ends that session. Operational pages are grouped by role, and direct navigation to a page for another role redirects to the current role's dashboard.
+Login and registration use the PHP API and the MySQL/MariaDB `users` table. PHP keeps the authenticated `user_id` and `role` in a server-side session; the browser's `sessionStorage` only caches display details. Staff applications are saved with `approved_status = 'pending'`; an Admin can review them in **Users and staff**. Pending and rejected accounts cannot sign in.
 
-To try the Staff flow, register with **Apply for Staff**, sign in as Admin, open **Users and staff** from the Admin dashboard and approve the application. Sign out, then sign in using the applicant's email and the Staff role. Rejected and pending applicants cannot enter the Staff area.
-
-This is a frontend demonstration, not authentication or security. Client, Courier and Admin sign-in accept any valid email and non-empty password; Staff sign-in additionally checks the demo application status. Passwords and tax identifiers are not stored. Client demo orders and products are stored in the current browser's `localStorage`; Courier route state is stored there separately for each demo email and synchronized with the shared order preview. Vehicle registration and document uploads remain preview-only. Browser-side role checks and records can be changed or bypassed and must not protect real data. A production backend must authenticate users, authorize every request and enforce account approval and other business rules.
+To try the account flow, import the schema and seed, sign in with the demo Admin account below, and open **Users and staff** to review Staff applications. Client order previews, profile edits, Courier route state, vehicle registration and document uploads are still demonstration features stored in the browser; they are not all connected to backend records. Client-side page checks are for navigation only—the PHP APIs enforce roles for backend operations.
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 
@@ -34,7 +32,12 @@ The backend uses PHP with PDO and MySQL/MariaDB. Start Apache and MySQL in XAMPP
 - User: `root`
 - Password: empty
 
-Set `DB_HOST`, `DB_NAME`, `DB_USER` and `DB_PASS` in the PHP environment to override the local defaults. Do not commit real credentials. The seed data is illustrative; its user password hashes are intentionally random and cannot be used to sign in.
+Set `DB_HOST`, `DB_NAME`, `DB_USER` and `DB_PASS` in the PHP environment to override the local defaults. Do not commit real credentials. Approved seed accounts share this local-demo password:
+
+- Admin: `rita.ferreira@example.test`
+- Password: `MovioDemo2026!`
+
+The seed password is public and must only be used with the illustrative local database. Change it or remove the seed accounts before deploying outside the project demonstration.
 
 The seed accounts use fictional names, reserved `.test` email addresses, masked phone numbers and no NIFs. Vehicle registrations and proof-file paths are placeholders, not real documents or identifiers.
 
@@ -42,7 +45,9 @@ Courier order listings must use the `courier_available_orders` view (or apply it
 
 Serve the site through XAMPP Apache (or another PHP server) to use the live quote on `client-order.html`; opening the HTML directly with `file://` cannot call the PHP endpoint. PHP's cURL extension is required for OSRM routing. Set `OSRM_BASE_URL` to override the default public OSRM endpoint.
 
-The Admin pricing form uses `GET`/`PUT api/admin/pricing.php` and requires the PHP session fields `user_id` and `role` (`admin`). Client order creation and payment endpoints use the same session contract with role `client`. The login flow must establish these server-side session values before those operations are available.
+`POST api/auth/login.php` authenticates by email/password and sets the PHP session fields `user_id` and `role` from the database record. `POST api/auth/register.php` creates Client/Courier accounts and Staff applications; `GET api/auth/session.php` restores the current session and `POST api/auth/logout.php` ends it. New Staff applications must be approved in **Users and staff**. The account list and approvals use `GET`/`PUT api/admin/users.php`, restricted to Admin sessions.
+
+The Admin pricing form uses `GET`/`PUT api/admin/pricing.php` and requires the PHP session role `admin`. Client order creation and payment endpoints use the same session contract with role `client`.
 
 For MockGateway, create a generic gateway with request fields `amount` (decimal number), `currency`, `order_ref` and `success_redirect`. Configure the init response fields `txn_id`, `txn_status`, `payment_url`, `amount_charged`, `currency` and the verify response fields `txn_id`, `txn_status`, `amount_charged`, `currency`. Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment; never put the API key in Git or send it in chat. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
 

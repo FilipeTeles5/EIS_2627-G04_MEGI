@@ -43,7 +43,7 @@
 
 <!-- Page introduction identifying the current view and its purpose. -->
 <section class="cms-page-hero text-center">
-  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Create a Client or Courier demo account, or submit a Staff application for Admin review.</p></div>
+  <div class="container"><h1>Join Movio</h1><p class="mx-auto mb-0">Create a Client or Courier account, or submit a Staff application for Admin review.</p></div>
 </section>
 <!-- Main content section containing the primary information and actions for this page. -->
 <section class="container-fluid py-5">
@@ -53,24 +53,24 @@
       <!-- Registration form for client and courier accounts or a staff application. -->
       <form id="registerForm" class="needs-validation" novalidate>
         <div class="form-row">
-          <div class="form-group col-md-6"><label>Name</label><input required class="form-control p-4" name="name"><div class="invalid-feedback">Name is required.</div></div>
-          <div class="form-group col-md-6"><label>Username</label><input required class="form-control p-4" name="username"><div class="invalid-feedback">Username is required.</div></div>
+          <div class="form-group col-md-6"><label for="registerName">Name</label><input id="registerName" required maxlength="120" autocomplete="name" class="form-control p-4" name="name"><div class="invalid-feedback">Name is required.</div></div>
+          <div class="form-group col-md-6"><label for="registerUsername">Username</label><input id="registerUsername" required minlength="3" maxlength="80" pattern="[A-Za-z0-9._\-]{3,80}" autocomplete="username" title="Use 3 to 80 letters, numbers, dots, underscores or hyphens." class="form-control p-4" name="username"><div class="invalid-feedback">Use 3 to 80 letters, numbers, dots, underscores or hyphens.</div></div>
         </div>
         <div class="form-row">
-          <div class="form-group col-md-6"><label>Email</label><input required type="email" class="form-control p-4" name="email"><div class="invalid-feedback">Valid email required.</div></div>
-          <div class="form-group col-md-6"><label>Phone</label><input required type="tel" inputmode="numeric" pattern="[0-9]{9,15}" title="Enter 9 to 15 digits only." class="form-control p-4" name="phone"><div class="invalid-feedback">Enter a phone number using 9 to 15 digits only.</div></div>
+          <div class="form-group col-md-6"><label for="registerEmail">Email</label><input id="registerEmail" required maxlength="254" autocomplete="email" type="email" class="form-control p-4" name="email"><div class="invalid-feedback">Valid email required.</div></div>
+          <div class="form-group col-md-6"><label for="registerPhone">Phone</label><input id="registerPhone" required type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9]{9,15}" title="Enter 9 to 15 digits only." class="form-control p-4" name="phone"><div class="invalid-feedback">Enter a phone number using 9 to 15 digits only.</div></div>
         </div>
         <div class="form-row">
-          <div class="form-group col-md-6"><label>Tax ID (NIF)</label><input required pattern="[0-9]{9}" title="Enter a valid 9-digit Portuguese NIF." class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a valid 9-digit Portuguese NIF.</div></div>
+          <div class="form-group col-md-6"><label for="registerNif">Tax ID (NIF)</label><input id="registerNif" required inputmode="numeric" pattern="[0-9]{9}" title="Enter a valid 9-digit Portuguese NIF." class="form-control p-4" name="nif"><div class="invalid-feedback">Enter a valid 9-digit Portuguese NIF.</div></div>
           <div class="form-group col-md-6"><label for="registerRole">Account role</label><select id="registerRole" required class="form-control" name="role"><option value="client">Client</option><option value="courier">Courier</option><option value="staff">Apply for Staff</option></select></div>
         </div>
-        <div class="form-group"><label>Password</label><input required minlength="6" type="password" class="form-control p-4" name="password"><div class="invalid-feedback">Use at least 6 characters.</div></div>
-        <p id="registerRoleHint" class="small text-muted">Client and Courier registrations open a temporary demo session.</p>
+        <div class="form-group"><label for="registerPassword">Password</label><input id="registerPassword" required minlength="6" maxlength="72" autocomplete="new-password" type="password" class="form-control p-4" name="password"><div class="invalid-feedback">Use 6 to 72 characters.</div></div>
+        <p id="registerRoleHint" class="small text-muted">Client and Courier accounts are saved in the database. Staff applications require Admin approval.</p>
         <button class="btn btn-primary btn-block py-3" type="submit">Create Account</button>
       </form>
       <!-- Status message area for registration feedback. -->
       <div id="registerMessage" class="cms-alert cms-alert-success mt-3 d-none" role="status"></div>
-      <p class="small text-muted mt-3 mb-0">Demo mode: Staff applications and decisions are saved only in this browser for the demonstration. No real account or backend record is created.</p>
+      <p class="small text-muted mt-3 mb-0">Account details are saved in the Movio database. Staff applications remain pending until an Admin approves them.</p>
       <p class="text-center mt-4 mb-0">Already have an account? <a href="login.html">Sign in</a>.</p>
     </div>
   </div>
