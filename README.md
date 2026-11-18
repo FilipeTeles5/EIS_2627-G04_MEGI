@@ -36,6 +36,8 @@ The backend uses PHP with PDO and MySQL/MariaDB. Start Apache and MySQL in XAMPP
 
 Set `DB_HOST`, `DB_NAME`, `DB_USER` and `DB_PASS` in the PHP environment to override the local defaults. Do not commit real credentials. The seed data is illustrative; its user password hashes are intentionally random and cannot be used to sign in.
 
+The seed accounts use fictional names, reserved `.test` email addresses, masked phone numbers and no NIFs. Vehicle registrations and proof-file paths are placeholders, not real documents or identifiers.
+
 Courier order listings must use the `courier_available_orders` view (or apply its confirmed-payment condition) so pending or failed payments never expose an order to a courier. `POST api/pricing/quote.php` accepts pickup/delivery coordinates and product weights/volumes and returns a quote using the PDF formula: `Fee_base + (OSRM distance in km × Rate_km) + (max(total actual kg, total volume in m³ × 200) × Rate_kg)`. The seed rates match the PDF example; order totals and payment amounts are sample records.
 
 Serve the site through XAMPP Apache (or another PHP server) to use the live quote on `client-order.html`; opening the HTML directly with `file://` cannot call the PHP endpoint. PHP's cURL extension is required for OSRM routing. Set `OSRM_BASE_URL` to override the default public OSRM endpoint.
