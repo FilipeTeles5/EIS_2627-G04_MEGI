@@ -1972,7 +1972,9 @@ async function cmsInitRoleAccess() {
             notice.className = 'cms-demo-notice';
             notice.textContent = page === 'admin.html'
                 ? 'Preview mode: delivery activity uses sample data; pricing and account metrics are connected to the database.'
-                : ['courier.html', 'courier-route.html', 'client-order.html', 'client-orders.html'].includes(page)
+                : page === 'client-order.html'
+                    ? 'New orders are stored in the database; order history and courier workflow remain in preview mode.'
+                    : ['courier.html', 'courier-route.html', 'client-orders.html'].includes(page)
                     ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
                     : 'Preview mode: this page uses sample data and is not connected to the backend.';
             hero.appendChild(notice);
@@ -2965,10 +2967,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (orderMap && previewLayers) {
                 cmsShowOrderExampleLocation(orderMap, previewLayers, examplePickup);
             }
+            orderForm.dispatchEvent(new Event('input', {bubbles: true}));
         }
-        // Validate every product and location field before persisting the demo order.
-        orderForm?.addEventListener('submit', e => {
+        // Validate and create the order through the authenticated PHP API.
+        orderForm?.addEventListener('submit', async e => {
             e.preventDefault();
+            const submitButton = orderForm.querySelector('button[type="submit"]');
+            if (submitButton && submitButton.disabled) return;
             const invalidFields = cmsGetInvalidOrderFields(orderForm);
             const orderFormAlert = document.getElementById('orderFormAlert');
             if (invalidFields.length > 0) {
@@ -2991,32 +2996,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 cmsToast('Check the pickup and delivery coordinates. Latitude must be between -90 and 90; longitude between -180 and 180.');
                 return;
             }
-            const createdAt = new Date().toISOString();
             const products = [...orderForm.querySelectorAll('.cms-product-row')].map(row => ({
                 description:row.querySelector('.product-description').value.trim(),
                 category:row.querySelector('.product-category').value.trim(),
                 weight_kg:Number(row.querySelector('.product-weight').value),
-                volume_m3:Number(row.querySelector('.product-volume').value),
-                created_at:createdAt
+                volume_m3:Number(row.querySelector('.product-volume').value)
             }));
-            const orders = cmsLoadDemoOrders();
-            if (!orders) return;
-            const id = String(Date.now());
-            orders.push({
-                id,
-                status:'pending',
-                routeId:null,
-                pickup:olat + ', ' + olng,
-                destination:dlat + ', ' + dlng,
-                attempt:0,
-                products,
-                created_at:createdAt
-            });
-            if (!cmsSaveDemoOrders(orders)) return;
-            document.getElementById('orderCreatedModalMessage').textContent =
-                'Your order #' + id + ' has been created.';
-            resetOrderForm();
-            $('#orderCreatedModal').modal('show');
+            if (submitButton) submitButton.disabled = true;
+            try {
+                const result = await cmsAuthRequest('api/orders/create.php', 'POST', {
+                    origin_lat: olat,
+                    origin_long: olng,
+                    dest_lat: dlat,
+                    dest_long: dlng,
+                    products
+                });
+                const orderId = Number(result.order_id);
+                const totalPrice = Number(result.quote && result.quote.total_price);
+                if (!Number.isInteger(orderId) || orderId < 1 || !Number.isFinite(totalPrice)) {
+                    throw new Error('The server returned an invalid order confirmation.');
+                }
+
+                const formattedPrice = new Intl.NumberFormat('pt-PT', {
+                    style: 'currency',
+                    currency: result.currency || 'EUR'
+                }).format(totalPrice);
+                document.getElementById('orderCreatedModalMessage').textContent =
+                    'Your order #' + orderId + ' has been created. Total: ' + formattedPrice + '.';
+                resetOrderForm();
+                $('#orderCreatedModal').modal('show');
+            } catch (error) {
+                cmsToast('Could not create the order. ' + (error.message || 'Please try again.'));
+            } finally {
+                if (submitButton) submitButton.disabled = false;
+            }
         });
 
         // Preview both locations without treating the button as a form validation action.

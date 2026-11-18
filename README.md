@@ -15,7 +15,7 @@ Movio brings customers, couriers and delivery teams together to manage the deliv
 
 Login and registration use the PHP API and the MySQL/MariaDB `users` table. PHP keeps the authenticated `user_id` and `role` in a server-side session; the browser's `sessionStorage` only caches display details. Staff applications are saved with `approved_status = 'pending'`; an Admin can review them in **Users and staff**. Pending and rejected accounts cannot sign in.
 
-To try the account flow, import the schema and seed, sign in with the demo Admin account below, and open **Users and staff** to review Staff applications. Client order previews, profile edits, Courier route state, vehicle registration and document uploads are still demonstration features stored in the browser; they are not all connected to backend records. Client-side page checks are for navigation only—the PHP APIs enforce roles for backend operations.
+To try the account flow, import the schema and seed, sign in with the demo Admin account below, and open **Users and staff** to review Staff applications. Submitting `client-order.html` creates an order and its products through the PHP API; the Client order history, profile edits, Courier route state, vehicle registration and document uploads remain demonstration features stored in the browser. Client-side page checks are for navigation only—the PHP APIs enforce roles for backend operations.
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 
