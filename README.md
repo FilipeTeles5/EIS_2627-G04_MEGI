@@ -49,6 +49,42 @@ Serve the site through XAMPP Apache (or another PHP server) to use the live quot
 
 The Admin pricing form uses `GET`/`PUT api/admin/pricing.php` and requires the PHP session role `admin`. Client order creation (`POST api/orders/create.php`), order history (`GET api/orders/mine.php`) and payment endpoints use the same session contract with role `client`.
 
-For MockGateway, create a generic gateway with request fields `amount` (decimal number), `currency`, `order_ref` and `success_redirect`. Configure the init response fields `txn_id`, `txn_status`, `payment_url`, `amount_charged`, `currency` and the verify response fields `txn_id`, `txn_status`, `amount_charged`, `currency`. Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment; never put the API key in Git or send it in chat. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
+#### MockGateway test gateway
+
+The payment client uses MockGateway's generic gateway API: `POST /api/base/{slug}/init` and `GET /api/base/{slug}/verify/{payment_id}`. Create a custom gateway from scratch rather than a provider template, whose API paths and request formats differ. The [MockGateway creation guide](https://mockgateway.com/guide/create-payment-gateway) describes the setup; its **Integration** tab provides the gateway slug, test API key and base URL.
+
+Configure the gateway currency as `EUR` and its request fields as follows:
+
+- `amount`: numeric value that accepts decimals
+- `currency`: string with three characters
+- `order_ref`: string
+- `success_redirect`: URL
+
+Map `amount` as the gateway's amount field and `success_redirect` as its return URL field. Use these response templates so they match the PHP client:
+
+Init response:
+
+```json
+{
+  "txn_id": "{{payment_id}}",
+  "txn_status": "{{status}}",
+  "payment_url": "{{payment_url}}",
+  "amount_charged": "{{amount}}",
+  "currency": "{{currency}}"
+}
+```
+
+Verify response:
+
+```json
+{
+  "txn_id": "{{payment_id}}",
+  "txn_status": "{{status}}",
+  "amount_charged": "{{amount}}",
+  "currency": "{{currency}}"
+}
+```
+
+Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment used by Apache. The default API base is `https://mockgateway.com/api/base`; set `MOCKGATEWAY_BASE_URL` only if MockGateway gives you a different base URL. For XAMPP, keep these `SetEnv` values in local Apache configuration outside the repository. Never commit the API key or send it in chat. Test the hosted checkout with the success, failed and canceled outcomes; the return endpoint verifies the transaction with MockGateway before updating the database. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
 
 If you imported `database/schema.sql` before the `checkout_url` field was added to payments, run `database/migrations/001_add_payment_checkout_url.sql` once. Fresh installations should import only the current schema and seed files.
