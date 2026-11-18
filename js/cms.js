@@ -395,6 +395,7 @@ function cmsToggleCourierProductDisclosure(container, button) {
 let cmsClientOrdersCurrentPage = 1;
 const cmsClientOrdersPageSize = 10;
 let cmsClientOrdersSelectedId = null;
+let cmsClientOrders = [];
 
 function cmsSortClientOrdersByCreatedAt(orders) {
     return [...orders].sort((first, second) => {
@@ -490,6 +491,48 @@ function cmsRenderClientOrdersPagination(totalPages) {
     });
 }
 
+function cmsPaymentStatusDisplay(status) {
+    const statuses = {
+        confirmed: {label: 'Paid', style: 'cms-badge-success'},
+        pending: {label: 'Pending', style: 'cms-badge-warning'},
+        failed: {label: 'Failed', style: 'cms-badge-danger'},
+        cancelled: {label: 'Cancelled', style: 'cms-badge-danger'}
+    };
+    return statuses[status] || (status ? {
+        label: 'Unknown',
+        style: 'cms-badge-warning'
+    } : {
+        label: 'Unpaid',
+        style: 'cms-badge-warning'
+    });
+}
+
+function cmsPaymentStatusBadge(status) {
+    const display = cmsPaymentStatusDisplay(status);
+    const badge = document.createElement('span');
+    badge.className = 'cms-badge ' + display.style;
+    badge.textContent = display.label;
+    return badge;
+}
+
+function cmsFormatCurrency(value, currency) {
+    const amount = Number(value);
+    return Number.isFinite(amount)
+        ? new Intl.NumberFormat('pt-PT', {style: 'currency', currency}).format(amount)
+        : '—';
+}
+
+function cmsMockGatewayCheckoutUrl(value) {
+    if (typeof value !== 'string') {
+        throw new Error('The payment service returned no checkout URL.');
+    }
+    const checkoutUrl = new URL(value);
+    if (checkoutUrl.origin !== 'https://mockgateway.com') {
+        throw new Error('The payment service returned an untrusted checkout URL.');
+    }
+    return checkoutUrl;
+}
+
 function cmsRenderClientOrdersTable(orders) {
     const tableBody = document.getElementById('clientOrdersTableBody');
     if (!tableBody) return;
@@ -502,7 +545,7 @@ function cmsRenderClientOrdersTable(orders) {
     if (!orders.length) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
-        cell.colSpan = 8;
+        cell.colSpan = 10;
         cell.className = 'text-center py-4';
         cell.textContent = 'No orders match your filters.';
         row.appendChild(cell);
@@ -532,6 +575,12 @@ function cmsRenderClientOrdersTable(orders) {
         const statusCell = document.createElement('td');
         statusCell.appendChild(cmsCourierOrderBadge(order.status));
         row.appendChild(statusCell);
+        const paymentCell = document.createElement('td');
+        paymentCell.appendChild(cmsPaymentStatusBadge(order.paymentStatus));
+        row.appendChild(paymentCell);
+        const totalCell = document.createElement('td');
+        totalCell.textContent = cmsFormatCurrency(order.totalPrice, 'EUR');
+        row.appendChild(totalCell);
         const attemptsCell = document.createElement('td');
         attemptsCell.textContent = String(order.attempt || 0);
         row.appendChild(attemptsCell);
@@ -541,6 +590,16 @@ function cmsRenderClientOrdersTable(orders) {
         const actions = document.createElement('td');
         const actionGroup = document.createElement('div');
         actionGroup.className = 'd-flex flex-column align-items-start';
+        if (order.status === 'pending' && !order.routeId && order.paymentStatus !== 'confirmed') {
+            const payButton = document.createElement('button');
+            payButton.type = 'button';
+            payButton.className = 'btn btn-sm btn-primary mb-2';
+            payButton.dataset.payClientOrder = order.id;
+            payButton.textContent = order.paymentStatus === 'pending'
+                ? 'Continue payment'
+                : 'Pay now';
+            actionGroup.appendChild(payButton);
+        }
         const productsButton = document.createElement('button');
         productsButton.type = 'button';
         productsButton.className = 'btn btn-sm btn-outline-dark';
@@ -558,14 +617,6 @@ function cmsRenderClientOrdersTable(orders) {
         detailsButton.dataset.selectClientOrder = order.id;
         detailsButton.textContent = 'Details';
         secondaryActions.appendChild(detailsButton);
-        if (order.status === 'pending' && !order.routeId) {
-            const cancelButton = document.createElement('button');
-            cancelButton.type = 'button';
-            cancelButton.className = 'btn btn-sm btn-outline-danger';
-            cancelButton.dataset.cancelClientOrder = order.id;
-            cancelButton.textContent = 'Cancel';
-            secondaryActions.appendChild(cancelButton);
-        }
         actionGroup.appendChild(secondaryActions);
         actions.appendChild(actionGroup);
         row.appendChild(actions);
@@ -576,7 +627,7 @@ function cmsRenderClientOrdersTable(orders) {
         productsRow.dataset.clientProductsFor = order.id;
         productsRow.className = 'd-none';
         const productsCell = document.createElement('td');
-        productsCell.colSpan = 8;
+        productsCell.colSpan = 10;
         productsCell.appendChild(cmsBuildProductTable(order.products));
         productsRow.appendChild(productsCell);
         tableBody.appendChild(productsRow);
@@ -632,6 +683,8 @@ function cmsRenderClientOrderDetails(order, sortedOrders) {
     meta.className = 'cms-meta-grid mb-4';
     [
         ['Created', createdDate],
+        ['Total', cmsFormatCurrency(order.totalPrice, 'EUR')],
+        ['Payment status', cmsPaymentStatusDisplay(order.paymentStatus).label],
         ['Pickup location', cmsClientOrderValue(order.pickup, 'Not provided')],
         ['Delivery location', cmsClientOrderValue(order.destination, 'Not provided')],
         ['Courier', cmsClientOrderValue(order.courier, 'Not assigned')],
@@ -720,20 +773,67 @@ function cmsRenderClientOrderDetails(order, sortedOrders) {
 function cmsRenderClientOrders() {
     const details = document.getElementById('clientOrderDetails');
     if (!details) return;
-    const orders = cmsLoadDemoOrders();
-    if (!orders) return;
-    const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+    const sortedOrders = cmsSortClientOrdersByCreatedAt(cmsClientOrders);
     cmsRenderClientOrdersTable(cmsFilterClientOrders(sortedOrders));
     const selectedOrder = sortedOrders.find(order => order.id === cmsClientOrdersSelectedId) || null;
     cmsRenderClientOrderDetails(selectedOrder, sortedOrders);
 }
 
-// Persist a client cancellation while keeping the cancelled order visible in the order list.
-function cmsInitClientOrders() {
+async function cmsRefreshClientOrders() {
+    const result = await cmsAuthRequest('api/orders/mine.php', 'GET');
+    if (!Array.isArray(result.orders)) {
+        throw new Error('The server returned an invalid order list.');
+    }
+    cmsClientOrders = result.orders.map(order => {
+        if (!order || !Number.isInteger(Number(order.id)) || !Array.isArray(order.products)) {
+            throw new Error('The server returned an invalid order record.');
+        }
+        return {...order, id: String(order.id)};
+    });
+    cmsRenderClientOrders();
+}
+
+function cmsShowPaymentReturnNotice() {
+    const paymentStatus = new URLSearchParams(window.location.search).get('payment');
+    const messages = {
+        confirmed: 'Payment confirmed.',
+        failed: 'Payment failed. You can try again from My Orders.',
+        cancelled: 'Payment was cancelled. You can try again from My Orders.',
+        pending: 'Payment is still pending. Check its status in My Orders.',
+        verification_error: 'We could not verify the payment. Check its status in My Orders.'
+    };
+    if (paymentStatus && messages[paymentStatus]) {
+        cmsToast(messages[paymentStatus]);
+    }
+}
+
+async function cmsInitClientOrders() {
     const tableBody = document.getElementById('clientOrdersTableBody');
     if (!tableBody) return;
-    cmsRenderClientOrders();
-    tableBody.addEventListener('click', event => {
+    tableBody.addEventListener('click', async event => {
+        const payButton = event.target.closest('[data-pay-client-order]');
+        if (payButton) {
+            const orderId = Number(payButton.dataset.payClientOrder);
+            if (!Number.isInteger(orderId) || orderId < 1 || payButton.disabled) return;
+            payButton.disabled = true;
+            try {
+                const result = await cmsAuthRequest('api/payments/start.php', 'POST', {
+                    order_id: orderId
+                });
+                const checkoutUrl = cmsMockGatewayCheckoutUrl(result.checkout_url);
+                window.location.assign(checkoutUrl.href);
+            } catch (error) {
+                payButton.disabled = false;
+                cmsToast('Could not start payment. ' + (error.message || 'Please try again.'));
+                try {
+                    await cmsRefreshClientOrders();
+                } catch (refreshError) {
+                    cmsToast('Could not refresh your order payment status. Reload the page to try again.');
+                    console.error('Could not refresh client orders after a payment error.', refreshError);
+                }
+            }
+            return;
+        }
         const productsButton = event.target.closest('[data-toggle-client-products]');
         if (productsButton) {
             const productsRow = [...tableBody.querySelectorAll('[data-client-products-for]')]
@@ -747,35 +847,23 @@ function cmsInitClientOrders() {
         }
         const detailsButton = event.target.closest('[data-select-client-order]');
         if (detailsButton) {
-            const orders = cmsLoadDemoOrders();
-            if (!orders) return;
-            const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+            const sortedOrders = cmsSortClientOrdersByCreatedAt(cmsClientOrders);
             const order = sortedOrders.find(item => item.id === detailsButton.dataset.selectClientOrder);
             if (!order) return;
             cmsClientOrdersSelectedId = order.id;
             cmsRenderClientOrderDetails(order, sortedOrders);
             document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
-            return;
         }
-        const button = event.target.closest('[data-cancel-client-order]');
-        if (!button) return;
-        const orders = cmsLoadDemoOrders();
-        const order = orders && orders.find(item => item.id === button.dataset.cancelClientOrder);
-        if (!order || order.status !== 'pending' || order.routeId) return;
-        order.status = 'cancelled';
-        if (!cmsSaveDemoOrders(orders)) return;
-        cmsRenderClientOrders();
-        cmsToast('Order #' + order.id + ' was cancelled and remains in your order list.');
     });
     document.getElementById('clientOrdersPagination')?.addEventListener('click', event => {
         const button = event.target.closest('[data-client-orders-page]');
         if (!button || button.disabled) return;
         const page = Number(button.dataset.clientOrdersPage);
         if (!Number.isInteger(page)) return;
-        const orders = cmsLoadDemoOrders();
-        if (!orders) return;
         cmsClientOrdersCurrentPage = page;
-        cmsRenderClientOrdersTable(cmsFilterClientOrders(cmsSortClientOrdersByCreatedAt(orders)));
+        cmsRenderClientOrdersTable(cmsFilterClientOrders(
+            cmsSortClientOrdersByCreatedAt(cmsClientOrders)
+        ));
         document.getElementById('clientOrdersPanel')?.scrollIntoView({
             behavior:'smooth',
             block:'start'
@@ -820,9 +908,7 @@ function cmsInitClientOrders() {
             return;
         }
         const orderNumber = cmsNormalizeClientOrderNumber(trackInput?.value);
-        const orders = cmsLoadDemoOrders();
-        if (!orders) return;
-        const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+        const sortedOrders = cmsSortClientOrdersByCreatedAt(cmsClientOrders);
         const order = sortedOrders.find(item => item.id === orderNumber);
         if (!order) {
             trackInput.classList.add('is-invalid');
@@ -845,9 +931,7 @@ function cmsInitClientOrders() {
         }
         const navigationButton = event.target.closest('[data-client-order-navigation]');
         if (!navigationButton || navigationButton.disabled) return;
-        const orders = cmsLoadDemoOrders();
-        if (!orders) return;
-        const sortedOrders = cmsSortClientOrdersByCreatedAt(orders);
+        const sortedOrders = cmsSortClientOrdersByCreatedAt(cmsClientOrders);
         const currentIndex = sortedOrders.findIndex(order => order.id === cmsClientOrdersSelectedId);
         const offset = navigationButton.dataset.clientOrderNavigation === 'previous' ? -1 : 1;
         const nextOrder = sortedOrders[currentIndex + offset];
@@ -856,9 +940,20 @@ function cmsInitClientOrders() {
         cmsRenderClientOrderDetails(nextOrder, sortedOrders);
         document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
     });
-    window.addEventListener('storage', event => {
-        if (event.key === cmsDemoOrdersKey) cmsRenderClientOrders();
-    });
+    try {
+        await cmsRefreshClientOrders();
+    } catch (error) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 10;
+        cell.className = 'text-center py-4 text-danger';
+        cell.textContent = 'Could not load your orders.';
+        row.appendChild(cell);
+        tableBody.replaceChildren(row);
+        cmsToast('Could not load your orders. ' + (error.message || 'Please reload the page.'));
+        return;
+    }
+    cmsShowPaymentReturnNotice();
 }
 
 // Build a dashboard card from the shared client order record.
@@ -1974,7 +2069,9 @@ async function cmsInitRoleAccess() {
                 ? 'Preview mode: delivery activity uses sample data; pricing and account metrics are connected to the database.'
                 : page === 'client-order.html'
                     ? 'New orders are stored in the database; order history and courier workflow remain in preview mode.'
-                    : ['courier.html', 'courier-route.html', 'client-orders.html'].includes(page)
+                    : page === 'client-orders.html'
+                        ? 'Your orders and payment statuses are loaded from the database; courier workflow remains in preview mode.'
+                        : ['courier.html', 'courier-route.html'].includes(page)
                     ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
                     : 'Preview mode: this page uses sample data and is not connected to the backend.';
             hero.appendChild(notice);
@@ -3003,6 +3100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 volume_m3:Number(row.querySelector('.product-volume').value)
             }));
             if (submitButton) submitButton.disabled = true;
+            let createdOrderId = null;
             try {
                 const result = await cmsAuthRequest('api/orders/create.php', 'POST', {
                     origin_lat: olat,
@@ -3016,6 +3114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!Number.isInteger(orderId) || orderId < 1 || !Number.isFinite(totalPrice)) {
                     throw new Error('The server returned an invalid order confirmation.');
                 }
+                createdOrderId = orderId;
 
                 const formattedPrice = new Intl.NumberFormat('pt-PT', {
                     style: 'currency',
@@ -3024,9 +3123,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('orderCreatedModalMessage').textContent =
                     'Your order #' + orderId + ' has been created. Total: ' + formattedPrice + '.';
                 resetOrderForm();
-                $('#orderCreatedModal').modal('show');
+                try {
+                    const payment = await cmsAuthRequest('api/payments/start.php', 'POST', {
+                        order_id: orderId
+                    });
+                    const checkoutUrl = cmsMockGatewayCheckoutUrl(payment.checkout_url);
+                    window.location.assign(checkoutUrl.href);
+                } catch (paymentError) {
+                    document.getElementById('orderCreatedModalMessage').textContent =
+                        'Your order #' + orderId + ' was created, but payment could not be started. You can retry from My Orders.';
+                    cmsToast('Order #' + orderId + ' was created, but payment could not be started. ' +
+                        (paymentError.message || 'Please try again from My Orders.'));
+                    $('#orderCreatedModal').modal('show');
+                }
             } catch (error) {
-                cmsToast('Could not create the order. ' + (error.message || 'Please try again.'));
+                const message = createdOrderId
+                    ? 'Order #' + createdOrderId + ' was created, but its confirmation could not be completed. '
+                    : 'Could not create the order. ';
+                cmsToast(message + (error.message || 'Please try again.'));
             } finally {
                 if (submitButton) submitButton.disabled = false;
             }
@@ -3069,7 +3183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Courier active-route order handling and photo-or-signature proof simulation.
     cmsInitCourierRoute();
-    cmsInitClientOrders();
+    await cmsInitClientOrders();
     cmsInitSignature();
 
     // Generic approvals / rejections

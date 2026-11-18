@@ -109,10 +109,8 @@
       <div class="table-responsive">
         <!-- Order history with delivery status, attempts, and available actions. -->
         <table class="table cms-table">
-          <thead class="thead-light"><tr><th>Order</th><th>Created</th><th>Items</th><th>Route</th><th>Status</th><th>Delivery attempts</th><th>Delivery proof</th><th>Actions</th></tr></thead>
-          <!-- Order-list logic:
-               - Show every shared demo order, including orders returned after cancellation.
-               - Keep cancelled orders in the list with their terminal status; they are not route candidates. -->
+          <thead class="thead-light"><tr><th>Order</th><th>Created</th><th>Items</th><th>Route</th><th>Status</th><th>Payment</th><th>Total</th><th>Delivery attempts</th><th>Delivery proof</th><th>Actions</th></tr></thead>
+          <!-- Orders and payment statuses are loaded from the signed-in Client's database records. -->
           <tbody id="clientOrdersTableBody"></tbody>
         </table>
       </div>

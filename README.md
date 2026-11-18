@@ -15,7 +15,7 @@ Movio brings customers, couriers and delivery teams together to manage the deliv
 
 Login and registration use the PHP API and the MySQL/MariaDB `users` table. PHP keeps the authenticated `user_id` and `role` in a server-side session; the browser's `sessionStorage` only caches display details. Staff applications are saved with `approved_status = 'pending'`; an Admin can review them in **Users and staff**. Pending and rejected accounts cannot sign in.
 
-To try the account flow, import the schema and seed, sign in with the demo Admin account below, and open **Users and staff** to review Staff applications. Submitting `client-order.html` creates an order and its products through the PHP API; the Client order history, profile edits, Courier route state, vehicle registration and document uploads remain demonstration features stored in the browser. Client-side page checks are for navigation only—the PHP APIs enforce roles for backend operations.
+To try the account flow, import the schema and seed, sign in with the demo Admin account below, and open **Users and staff** to review Staff applications. Submitting `client-order.html` creates an order and its products through the PHP API, then starts the MockGateway checkout. **My Orders** loads the signed-in Client's orders and latest payment statuses from the database; profile edits, the Client dashboard preview, Courier route state, vehicle registration and document uploads remain demonstration features stored in the browser. If checkout cannot be started, the order remains pending and can be retried from **My Orders**. Client-side page checks are for navigation only—the PHP APIs enforce roles for backend operations.
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 
@@ -47,7 +47,7 @@ Serve the site through XAMPP Apache (or another PHP server) to use the live quot
 
 `POST api/auth/login.php` authenticates by email/password and sets the PHP session fields `user_id` and `role` from the database record. `POST api/auth/register.php` creates Client/Courier accounts and Staff applications; `GET api/auth/session.php` restores the current session and `POST api/auth/logout.php` ends it. New Staff applications must be approved in **Users and staff**. The account list and approvals use `GET`/`PUT api/admin/users.php`, restricted to Admin sessions.
 
-The Admin pricing form uses `GET`/`PUT api/admin/pricing.php` and requires the PHP session role `admin`. Client order creation and payment endpoints use the same session contract with role `client`.
+The Admin pricing form uses `GET`/`PUT api/admin/pricing.php` and requires the PHP session role `admin`. Client order creation (`POST api/orders/create.php`), order history (`GET api/orders/mine.php`) and payment endpoints use the same session contract with role `client`.
 
 For MockGateway, create a generic gateway with request fields `amount` (decimal number), `currency`, `order_ref` and `success_redirect`. Configure the init response fields `txn_id`, `txn_status`, `payment_url`, `amount_charged`, `currency` and the verify response fields `txn_id`, `txn_status`, `amount_charged`, `currency`. Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment; never put the API key in Git or send it in chat. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
 
