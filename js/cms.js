@@ -2071,8 +2071,10 @@ async function cmsInitRoleAccess() {
                     ? 'New orders are stored in the database; order history and courier workflow remain in preview mode.'
                     : page === 'client-orders.html'
                         ? 'Your orders and payment statuses are loaded from the database; courier workflow remains in preview mode.'
-                        : ['courier.html', 'courier-route.html'].includes(page)
-                    ? 'Preview mode: sample orders are used, and order changes are saved in this browser only.'
+                        : page === 'courier.html'
+                            ? 'Available paid orders and their assignment are stored in the database; route progress and history remain browser previews.'
+                            : page === 'courier-route.html'
+                                ? 'Preview mode: route progress and proof-of-delivery interactions use sample data stored in this browser.'
                     : 'Preview mode: this page uses sample data and is not connected to the backend.';
             hero.appendChild(notice);
         }
@@ -2598,6 +2600,124 @@ function cmsInitCourierDashboard() {
     const storageKey = cmsCourierOperationsStorageKey();
     window.addEventListener('storage', event => {
         if (event.key === storageKey) cmsRenderCourierDashboard();
+    });
+}
+
+function cmsCourierAssignmentBlockMessage(reason) {
+    const messages = {
+        active_route: 'Finish your active database route before assigning more orders.',
+        multiple_planning_routes: 'More than one route is being prepared. Contact an Admin.',
+        no_approved_vehicle: 'You need an approved vehicle to receive orders.'
+    };
+    return messages[reason] || 'Orders cannot currently be assigned to this Courier.';
+}
+
+async function cmsRefreshCourierAvailableOrders() {
+    const list = document.getElementById('courierAvailableOrders');
+    const notice = document.getElementById('courierAvailableOrdersNotice');
+    if (!list || !notice) return;
+    list.replaceChildren();
+    const loading = document.createElement('p');
+    loading.className = 'text-muted mb-0';
+    loading.textContent = 'Loading confirmed, unassigned orders...';
+    list.appendChild(loading);
+
+    try {
+        const result = await cmsAuthRequest('api/courier/orders.php', 'GET');
+        if (!Array.isArray(result.orders) || typeof result.can_assign !== 'boolean') {
+            throw new Error('The server returned an invalid Courier order list.');
+        }
+
+        if (result.assignment_block_reason) {
+            notice.textContent = cmsCourierAssignmentBlockMessage(result.assignment_block_reason);
+        } else if (result.current_route?.status === 'planning') {
+            notice.textContent = 'New orders will be added to planning route #' +
+                result.current_route.route_id + '.';
+        } else {
+            notice.textContent = 'Assigning an order will create a planning route using your first approved vehicle.';
+        }
+
+        list.replaceChildren();
+        if (!result.orders.length) {
+            const empty = document.createElement('p');
+            empty.className = 'text-muted mb-0';
+            empty.textContent = 'There are no paid, unassigned orders available.';
+            list.appendChild(empty);
+        }
+
+        result.orders.forEach(order => {
+            const card = document.createElement('div');
+            card.className = 'cms-order-card mb-3';
+            const header = document.createElement('div');
+            header.className = 'd-flex justify-content-between align-items-center';
+            const reference = document.createElement('strong');
+            reference.textContent = '#' + order.id;
+            const badges = document.createElement('div');
+            badges.className = 'd-flex align-items-center';
+            badges.append(cmsCourierOrderBadge('pending'));
+            const paymentBadge = document.createElement('span');
+            paymentBadge.className = 'cms-badge cms-badge-success ml-2';
+            paymentBadge.textContent = 'Payment confirmed';
+            badges.appendChild(paymentBadge);
+            header.append(reference, badges);
+
+            const detail = document.createElement('small');
+            detail.className = 'd-block mt-2';
+            detail.textContent = (order.clientName || 'Client') + ' · ' +
+                order.pickup + ' → ' + order.destination + ' · ' +
+                cmsFormatCurrency(order.totalPrice, 'EUR');
+            card.append(header, detail);
+            cmsAppendCourierProductDisclosure(card, order, 'available');
+
+            if (result.can_assign) {
+                const actionContainer = document.createElement('div');
+                actionContainer.className = 'text-right mt-2';
+                const assignButton = document.createElement('button');
+                assignButton.type = 'button';
+                assignButton.className = 'btn btn-sm btn-outline-primary';
+                assignButton.dataset.assignPaidCourierOrder = order.id;
+                assignButton.textContent = 'Assign to route';
+                actionContainer.appendChild(assignButton);
+                card.appendChild(actionContainer);
+            }
+            list.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Could not load paid Courier orders.', error);
+        notice.textContent = 'Could not load paid orders.';
+        list.replaceChildren();
+        const message = document.createElement('p');
+        message.className = 'text-danger mb-0';
+        message.textContent = error.message || 'Please refresh the page and try again.';
+        list.appendChild(message);
+    }
+}
+
+function cmsInitCourierAvailableOrders() {
+    const list = document.getElementById('courierAvailableOrders');
+    if (!list) return;
+    cmsRefreshCourierAvailableOrders();
+    list.addEventListener('click', async event => {
+        const productToggle = event.target.closest('[data-courier-product-toggle]');
+        if (productToggle) {
+            cmsToggleCourierProductDisclosure(list, productToggle);
+            return;
+        }
+        const button = event.target.closest('[data-assign-paid-courier-order]');
+        if (!button) return;
+        button.disabled = true;
+        try {
+            const result = await cmsAuthRequest('api/courier/orders.php', 'POST', {
+                order_id: Number(button.dataset.assignPaidCourierOrder)
+            });
+            cmsToast('Order #' + result.order_id + ' assigned to database route #' +
+                result.route_id + '.');
+            await cmsRefreshCourierAvailableOrders();
+        } catch (error) {
+            console.error('Could not assign the paid order.', error);
+            cmsToast(error.message || 'Could not assign the order. Refresh the list and try again.');
+            button.disabled = false;
+        }
     });
 }
 
@@ -3169,6 +3289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Courier dashboard
     // Render this courier's route and orders, then show the sprint's single FEUP marker.
     cmsInitCourierDashboard();
+    cmsInitCourierAvailableOrders();
     if (document.getElementById('courierDashboardMap')) {
         cmsCreateMap('courierDashboardMap', [
             {coords:[41.1779,-8.5980], label:'FEUP'}

@@ -53,7 +53,7 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>Courier Dashboard</h1>
-    <p class="mb-0">Review your assigned route, delivery stops and vehicle details.</p>
+    <p class="mb-0">View paid orders available for assignment. Route execution and delivery history are still browser previews.</p>
     
   </div>
 </section>
@@ -112,23 +112,19 @@
     <div class="row">
       <div class="col-lg-6 mb-4">
         <div class="cms-panel p-4 h-100">
-          <div class="cms-panel-title"><div><h4>Orders on this route</h4><small>Encomendas já associadas à rota atual</small></div></div>
+          <div class="cms-panel-title"><div><h4>Route preview orders</h4><small>Browser demonstration data</small></div></div>
           <div id="courierRouteOrders" aria-live="polite"></div>
         </div>
       </div>
       <div class="col-lg-6 mb-4">
         <div class="cms-panel p-4 h-100">
-          <!-- Pending-order logic:
-            - This list contains pending orders and cancelled orders returned from this courier's route.
-               - While a route is in preparation, an order can be added and becomes Initiated.
-               - With no active route, create a route first, then add pending orders to it.
-            - Cancelled orders remain visible but cannot be added to a later route automatically.
-            - During route execution, pending orders remain available for a later route. -->
-          <div class="cms-panel-title"><div><h4>Orders list</h4><small>Pending orders and cancellations returned from a route</small></div></div>
-          <div id="courierPendingOrders" aria-live="polite"></div>
+          <div class="cms-panel-title"><div><h4>Available paid orders</h4><small>Only confirmed payments without an assigned route</small></div></div>
+          <div id="courierAvailableOrdersNotice" class="cms-alert cms-alert-info" role="status" aria-live="polite">Checking route availability...</div>
+          <div id="courierAvailableOrders" aria-live="polite"><p class="text-muted mb-0">Loading confirmed, unassigned orders...</p></div>
         </div>
       </div>
     </div>
+    <div class="d-none" aria-hidden="true"><div id="courierPendingOrders"></div></div>
 
     <!-- Completed-order logic:
          - Completed orders are shown in a history separate from the active route and pending queue.
