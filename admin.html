@@ -69,6 +69,32 @@
       </div>
     </div>
 
+    <div class="row mt-3">
+      <div class="col-lg-8 mb-4">
+        <div class="cms-panel p-4">
+          <div class="cms-panel-title"><div><h4>Pricing configuration</h4><small>Set the rates used for new delivery quotes</small></div></div>
+          <form id="pricingConfigForm" novalidate>
+            <div class="form-row">
+              <div class="form-group col-md-4">
+                <label for="pricingFeeBase">Base fee (€)</label>
+                <input id="pricingFeeBase" name="fee_base" class="form-control" type="number" min="0" step="0.01" required>
+              </div>
+              <div class="form-group col-md-4">
+                <label for="pricingRateKm">Rate per km (€/km)</label>
+                <input id="pricingRateKm" name="rate_km" class="form-control" type="number" min="0" step="0.0001" required>
+              </div>
+              <div class="form-group col-md-4">
+                <label for="pricingRateKg">Rate per kg (€/kg)</label>
+                <input id="pricingRateKg" name="rate_kg" class="form-control" type="number" min="0" step="0.0001" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save pricing</button>
+            <p id="pricingConfigStatus" class="mb-0 mt-3" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -115,5 +141,6 @@
 <script src="js/cms.js"></script>
 <script src="js/data.js"></script>
 <script src="js/admin.js"></script>
+<script src="js/pricing-admin.js"></script>
 </body>
 </html>

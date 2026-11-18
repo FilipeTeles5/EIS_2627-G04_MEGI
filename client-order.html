@@ -89,6 +89,12 @@
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total weight</span><strong id="totalWeight">0.00 kg</strong></div></div>
               <div class="col-6"><div class="cms-panel p-3"><span class="cms-meta-label">Total volume</span><strong id="totalVolume">0.000 m³</strong></div></div>
             </div>
+            <div class="cms-panel p-3 mb-4" aria-live="polite">
+              <span class="cms-meta-label">Estimated price</span>
+              <strong id="orderPriceAmount">Complete locations and product measurements to get a quote.</strong>
+              <small id="orderPriceDetails" class="d-block mt-1"></small>
+              <div id="orderPriceError" class="text-danger mt-2" role="alert"></div>
+            </div>
 
             <!-- GPS coordinates defining the pickup location of the delivery. -->
             <h6 class="mb-3">Pickup location</h6>
@@ -184,5 +190,6 @@
 <script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/cms.js"></script>
+<script src="js/pricing.js"></script>
 </body>
 </html>
