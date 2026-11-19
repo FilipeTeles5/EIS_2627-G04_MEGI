@@ -7,6 +7,7 @@ use Movio\Services\MockGatewayException;
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/src/Services/MockGatewayClient.php';
 
+// Create or reuse a hosted checkout for an unassigned order owned by this Client.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
     movioRespond(405, ['error' => 'Method not allowed. Use POST.']);
@@ -20,6 +21,7 @@ if ($orderId === false || $orderId === null || $orderId < 1) {
 }
 
 try {
+    // Lock the order and prevent a second checkout after a confirmed payment.
     $pdo = movioDatabase();
     $pdo->beginTransaction();
 
@@ -89,6 +91,7 @@ try {
         }
     }
 
+    // Record a pending local attempt before calling the external gateway.
     $gateway = new MockGatewayClient();
     $appBaseUrl = getenv('APP_BASE_URL');
     if ($appBaseUrl === false || filter_var($appBaseUrl, FILTER_VALIDATE_URL) === false) {
@@ -114,6 +117,7 @@ try {
     $paymentId = (int) $pdo->lastInsertId();
     $pdo->commit();
 
+    // Initialize checkout outside the database transaction, then save its gateway details.
     $returnUrl = rtrim($appBaseUrl, '/') . '/api/payments/return.php?payment_id=' . $paymentId;
     try {
         $gatewayPayment = $gateway->startPayment(

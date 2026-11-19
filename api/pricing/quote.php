@@ -9,6 +9,7 @@ require_once dirname(__DIR__, 2) . '/src/Services/OsrmRouteDistance.php';
 require_once dirname(__DIR__, 2) . '/src/Services/PriceCalculator.php';
 require_once dirname(__DIR__, 2) . '/src/Services/PricingService.php';
 
+// Return a non-persistent estimate from submitted locations, products, and current rates.
 header('Content-Type: application/json; charset=utf-8');
 
 $respond = static function (int $status, array $body): never {

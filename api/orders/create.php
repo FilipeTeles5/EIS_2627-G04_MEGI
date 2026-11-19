@@ -9,6 +9,7 @@ require_once dirname(__DIR__, 2) . '/src/Services/OsrmRouteDistance.php';
 require_once dirname(__DIR__, 2) . '/src/Services/PriceCalculator.php';
 require_once dirname(__DIR__, 2) . '/src/Services/PricingService.php';
 
+// Recalculate the order price on the server and persist the order and products.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
     movioRespond(405, ['error' => 'Method not allowed. Use POST.']);
@@ -18,6 +19,7 @@ $clientId = movioRequireRole('client');
 $request = movioReadJsonRequest();
 
 try {
+    // Validate and normalize all requested products before calculating or saving the order.
     $originLat = movioReadNumber($request, 'origin_lat', -90.0);
     $originLong = movioReadNumber($request, 'origin_long', -180.0);
     $destinationLat = movioReadNumber($request, 'dest_lat', -90.0);
@@ -62,6 +64,7 @@ try {
 }
 
 try {
+    // Save the priced order, its products, and the initial status history atomically.
     $pdo = movioDatabase();
     $quote = (new PricingService($pdo))->quote(
         $originLat,

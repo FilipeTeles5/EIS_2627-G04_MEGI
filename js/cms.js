@@ -12,6 +12,7 @@ function cmsToast(message) {
     window.cmsToastTimer = setTimeout(() => t.style.display = 'none', 2600);
 }
 
+// Open hosted checkout safely and ask the backend to verify payment after checkout closes.
 function cmsOpenPaymentCheckoutTab() {
     const checkoutTab = window.open('about:blank', '_blank');
     if (checkoutTab) {
@@ -92,6 +93,7 @@ function cmsValidate(form) {
     return form.checkValidity() && controls.every(cmsIsControlValid);
 }
 
+// Match the backend's NIF format and checksum check; this does not verify official assignment.
 function cmsIsValidPortugueseNif(value) {
     if (!/^[1235689][0-9]{8}$/.test(value)) return false;
     const weightedSum = [...value.slice(0, 8)].reduce(
@@ -878,6 +880,7 @@ function cmsShowPaymentReturnNotice() {
 }
 
 async function cmsInitClientOrders() {
+    // Load Client orders and handle payment retries from the order list.
     const tableBody = document.getElementById('clientOrdersTableBody');
     if (!tableBody) return;
     tableBody.addEventListener('click', async event => {
@@ -3248,6 +3251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    // Load and save editable profile fields through the authenticated profile API.
     const accountProfileForm = document.getElementById('accountProfileForm');
     if (accountProfileForm) {
         const status = document.getElementById('accountProfileStatus');

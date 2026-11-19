@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Clear the authenticated session and expire its browser cookie.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
     movioRespond(405, ['error' => 'Method not allowed. Use POST.']);

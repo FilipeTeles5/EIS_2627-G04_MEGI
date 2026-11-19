@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+// Shared JSON, session, database, and input-validation helpers for the API.
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Cache-Control: no-store, private');
@@ -14,6 +15,7 @@ function movioRespond(int $status, array $body): void
 
 function movioReadJsonRequest(): array
 {
+    // Accept only a JSON object so endpoints can validate a predictable request shape.
     $body = file_get_contents('php://input');
     if ($body === false) {
         movioRespond(400, ['error' => 'Could not read the request body.']);
@@ -39,6 +41,7 @@ function movioReadJsonRequest(): array
 
 function movioStartSession(): void
 {
+    // Start the server-side session with cookies unavailable to client-side scripts.
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
     }
@@ -60,6 +63,7 @@ function movioStartSession(): void
 
 function movioSetAuthenticatedSession(int $userId, string $role, string $name, string $email): void
 {
+    // Rotate the session ID and store only the authenticated account's display identity.
     movioStartSession();
     if (!session_regenerate_id(true)) {
         movioRespond(500, ['error' => 'Could not establish the authenticated session.']);
@@ -75,6 +79,7 @@ function movioSetAuthenticatedSession(int $userId, string $role, string $name, s
 
 function movioRequireRole(string $requiredRole): int
 {
+    // Return the authenticated user ID only when the session has the required role.
     movioStartSession();
 
     $userId = filter_var($_SESSION['user_id'] ?? null, FILTER_VALIDATE_INT);
@@ -91,11 +96,13 @@ function movioRequireRole(string $requiredRole): int
 
 function movioDatabase(): PDO
 {
+    // Reuse the project's single PDO configuration for every endpoint.
     return require dirname(__DIR__) . '/config/database.php';
 }
 
 function movioReadNumber(array $source, string $key, float $minimum = 0.0): float
 {
+    // Normalize JSON numeric values and reject non-finite or out-of-range input.
     $value = $source[$key] ?? null;
     if ((!is_int($value) && !is_float($value) && !is_string($value)) || !is_numeric($value)) {
         throw new InvalidArgumentException($key . ' must be a number.');
@@ -111,6 +118,7 @@ function movioReadNumber(array $source, string $key, float $minimum = 0.0): floa
 
 function movioIsValidPortugueseNif(string $nif): bool
 {
+    // Check NIF structure and checksum; this does not confirm AT assignment or identity.
     if (!preg_match('/^[1235689][0-9]{8}$/D', $nif)) {
         return false;
     }

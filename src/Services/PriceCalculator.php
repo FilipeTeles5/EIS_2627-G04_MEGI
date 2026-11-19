@@ -10,6 +10,7 @@ final class PriceCalculator
 {
     private const VOLUMETRIC_FACTOR_KG_PER_M3 = 200.0;
 
+    // Apply the assignment formula and return the component values used in the quote.
     public function calculate(
         float $distanceKm,
         float $actualWeightKg,
@@ -23,6 +24,7 @@ final class PriceCalculator
         $feeBase = $this->configValue($pricingConfig, 'fee_base');
         $rateKm = $this->configValue($pricingConfig, 'rate_km');
         $rateKg = $this->configValue($pricingConfig, 'rate_kg');
+        // Charge by whichever is greater: physical weight or volumetric weight.
         $volumetricWeightKg = $volumeM3 * self::VOLUMETRIC_FACTOR_KG_PER_M3;
         $chargeableWeightKg = max($actualWeightKg, $volumetricWeightKg);
         $distanceCharge = $distanceKm * $rateKm;

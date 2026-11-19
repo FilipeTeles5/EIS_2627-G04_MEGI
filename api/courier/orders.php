@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// List paid orders eligible for Couriers and assign a selected order transactionally.
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
 if (!in_array($method, ['GET', 'POST'], true)) {
     header('Allow: GET, POST');
@@ -17,6 +18,7 @@ function movioCourierVehicle(
     bool $forUpdate = false
 ): array|false
 {
+    // Find an approved vehicle belonging to this Courier, optionally locking it for assignment.
     $sql = 'SELECT vehicle_id, model, license_plate, max_weight_kg, max_vol_m3
             FROM vehicles
             WHERE courier_id = :courier_id
@@ -39,6 +41,7 @@ try {
     $pdo = movioDatabase();
 
     if ($method === 'GET') {
+        // Build the Courier dashboard and list only orders with confirmed payments.
         $courierStatement = $pdo->prepare(
             'SELECT user_id
              FROM users
@@ -184,6 +187,7 @@ try {
         ]);
     }
 
+    // Lock and validate the order, payment, route, and vehicle before assigning the order.
     $request = movioReadJsonRequest();
     $orderId = filter_var($request['order_id'] ?? null, FILTER_VALIDATE_INT);
     if ($orderId === false || $orderId === null || $orderId < 1) {

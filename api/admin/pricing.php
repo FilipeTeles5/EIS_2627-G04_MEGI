@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Read or update the single active pricing row; updates require an Admin session.
 $adminId = movioRequireRole('admin');
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
 if (!in_array($method, ['GET', 'PUT'], true)) {

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Return only the authenticated Client's orders and most recent payment details.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     header('Allow: GET');
     movioRespond(405, ['error' => 'Method not allowed. Use GET.']);

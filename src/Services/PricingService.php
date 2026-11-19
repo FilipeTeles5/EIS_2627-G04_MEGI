@@ -22,6 +22,7 @@ final class PricingService
         $this->calculator = $calculator ?? new PriceCalculator();
     }
 
+    // Combine the active database rates, OSRM road distance, and price formula.
     public function quote(
         float $originLat,
         float $originLong,

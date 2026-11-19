@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Read and update only the signed-in user's editable profile fields.
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
 if (!in_array($method, ['GET', 'PUT'], true)) {
     header('Allow: GET, PUT');

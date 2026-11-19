@@ -13,6 +13,7 @@ final class OsrmRouteDistance
 
     public function __construct(?string $baseUrl = null)
     {
+        // Allow a local/test router while defaulting to the public OSRM endpoint.
         $environmentUrl = getenv('OSRM_BASE_URL');
         $this->baseUrl = rtrim(
             $baseUrl ?? ($environmentUrl !== false && $environmentUrl !== ''
@@ -28,6 +29,7 @@ final class OsrmRouteDistance
         float $destinationLat,
         float $destinationLong
     ): float {
+        // OSRM expects longitude,latitude pairs and returns route distance in metres.
         $this->validateCoordinate($originLat, -90.0, 90.0, 'origin latitude');
         $this->validateCoordinate($destinationLat, -90.0, 90.0, 'destination latitude');
         $this->validateCoordinate($originLong, -180.0, 180.0, 'origin longitude');

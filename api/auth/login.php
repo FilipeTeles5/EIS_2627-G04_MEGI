@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Verify credentials, enforce account approval, and establish the PHP session.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Allow: POST');
     movioRespond(405, ['error' => 'Method not allowed. Use POST.']);

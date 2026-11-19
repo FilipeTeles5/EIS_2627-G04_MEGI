@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// List accounts and apply Admin decisions to pending Staff applications.
 movioRequireRole('admin');
 $method = $_SERVER['REQUEST_METHOD'] ?? '';
 if (!in_array($method, ['GET', 'PUT'], true)) {

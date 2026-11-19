@@ -7,6 +7,7 @@ use Movio\Services\MockGatewayException;
 require_once dirname(__DIR__) . '/bootstrap.php';
 require_once dirname(__DIR__, 2) . '/src/Services/MockGatewayClient.php';
 
+// Verify an owned payment with MockGateway and update its local status before returning.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     header('Allow: GET');
     movioRespond(405, ['error' => 'Method not allowed. Use GET.']);
@@ -40,6 +41,7 @@ $finish = static function (string $paymentStatus) use ($appBaseUrl, $jsonRespons
 };
 
 try {
+    // Restrict verification to this Client's payment and avoid reprocessing final statuses.
     $pdo = movioDatabase();
     $paymentStatement = $pdo->prepare(
         'SELECT p.payment_id, p.amount, p.currency, p.status, p.gateway_reference,
@@ -61,6 +63,7 @@ try {
         $finish($payment['status']);
     }
 
+    // Trust only the gateway's server-side verification, not the browser redirect parameters.
     $gateway = new MockGatewayClient();
     $verification = $gateway->verifyPayment(
         $payment['gateway_reference'],
@@ -68,6 +71,7 @@ try {
         (string) $payment['currency']
     );
     $gatewayStatus = strtolower(trim($verification['txn_status']));
+    // Translate provider status names into the application's payment states.
     $statusMap = [
         'success' => 'confirmed',
         'succeeded' => 'confirmed',

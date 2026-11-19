@@ -4,6 +4,7 @@ CREATE DATABASE IF NOT EXISTS movio
 
 USE movio;
 
+-- Accounts and role-specific approval state.
 CREATE TABLE IF NOT EXISTS users (
     user_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     username VARCHAR(80) NOT NULL,
@@ -21,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
     UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Courier vehicles, vehicle categories, and staff review history.
 CREATE TABLE IF NOT EXISTS vehicle_types (
     type_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     type_name VARCHAR(40) NOT NULL,
@@ -71,6 +73,7 @@ CREATE TABLE IF NOT EXISTS vehicle_audit (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Delivery routes and orders, including their products and proof of delivery.
 CREATE TABLE IF NOT EXISTS routes (
     route_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     courier_id INT UNSIGNED NOT NULL,
@@ -158,6 +161,7 @@ CREATE TABLE IF NOT EXISTS order_status_log (
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Notifications and the single active price configuration.
 CREATE TABLE IF NOT EXISTS notifications (
     notification_id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id INT UNSIGNED NOT NULL,
@@ -189,6 +193,7 @@ CREATE TABLE IF NOT EXISTS pricing_config (
         ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Payment attempts and gateway references; card details are deliberately not stored.
 CREATE TABLE IF NOT EXISTS payments (
     payment_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id BIGINT UNSIGNED NOT NULL,

@@ -2,6 +2,7 @@ USE movio;
 
 START TRANSACTION;
 
+-- Fictional demo accounts for each role and staff-approval state.
 INSERT INTO users
     (user_id, username, password_hash, email, name, phone, nif, role, approved_status, review_comment)
 VALUES
@@ -43,6 +44,7 @@ ON DUPLICATE KEY UPDATE
     approved_status = VALUES(approved_status),
     review_comment = VALUES(review_comment);
 
+-- Vehicle types, demo vehicles, and their review records.
 INSERT INTO vehicle_types (type_id, type_name)
 VALUES
     (1, 'Bike'),
@@ -87,6 +89,7 @@ ON DUPLICATE KEY UPDATE
     decision = VALUES(decision),
     comments = VALUES(comments);
 
+-- Example routes and orders in different delivery states.
 INSERT INTO routes (route_id, courier_id, vehicle_id, status)
 VALUES
     (1, 3, 1, 'active'),
@@ -135,6 +138,7 @@ ON DUPLICATE KEY UPDATE
     created_at = VALUES(created_at),
     completed_at = VALUES(completed_at);
 
+-- Product measurements used by order summaries and vehicle-capacity checks.
 INSERT INTO products
     (product_id, order_id, description, category, weight_kg, volume_m3, created_at)
 VALUES
@@ -157,6 +161,7 @@ ON DUPLICATE KEY UPDATE
     volume_m3 = VALUES(volume_m3),
     created_at = VALUES(created_at);
 
+-- Example proof-of-delivery records and order status history.
 INSERT INTO epods (epod_id, order_id, proof_type, file_path, submitted_at)
 VALUES
     (1, 1041, 'photo', 'demo/order-1041-proof.jpg', '2026-10-03 12:00:00'),
@@ -193,6 +198,7 @@ ON DUPLICATE KEY UPDATE
     status_name = VALUES(status_name),
     changed_at = VALUES(changed_at);
 
+-- Sample notifications, PDF-example pricing rates, and payment outcomes.
 INSERT INTO notifications
     (notification_id, user_id, vehicle_id, message, notification_type, is_read, created_at)
 VALUES

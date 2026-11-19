@@ -14,6 +14,7 @@ final class MockGatewayClient
 
     public function __construct()
     {
+        // Load gateway credentials from the server environment, never from browser input.
         $this->baseUrl = rtrim(getenv('MOCKGATEWAY_BASE_URL') ?: 'https://mockgateway.com/api/base', '/');
         $slug = getenv('MOCKGATEWAY_SLUG');
         $apiKey = getenv('MOCKGATEWAY_API_KEY');
@@ -50,6 +51,7 @@ final class MockGatewayClient
             throw new RuntimeException('The payment return URL is invalid.');
         }
 
+        // Initialize hosted checkout with the order amount and a server-owned return URL.
         $response = $this->request('POST', '/init', [
             'amount' => round($amount, 2, PHP_ROUND_HALF_UP),
             'currency' => $currency,
@@ -80,6 +82,7 @@ final class MockGatewayClient
             throw new RuntimeException('The MockGateway transaction reference is missing.');
         }
 
+        // Verify the gateway transaction server-to-server before accepting its status.
         $response = $this->request('GET', '/verify/' . rawurlencode($reference));
         if (($response['txn_id'] ?? null) !== $reference) {
             throw new MockGatewayException('MockGateway verified a different transaction.');
@@ -96,6 +99,7 @@ final class MockGatewayClient
 
     private function request(string $method, string $path, ?array $body = null): array
     {
+        // Send an authenticated JSON request and reject transport, HTTP, or JSON errors.
         if (!extension_loaded('curl')) {
             throw new MockGatewayException('The PHP cURL extension is required for MockGateway.');
         }
@@ -162,6 +166,7 @@ final class MockGatewayClient
 
     private function validateAmountAndCurrency(array $response, float $expectedAmount, string $currency): void
     {
+        // Require an exact amount match and compare currency whenever the gateway returns it.
         $amount = $response['amount_charged'] ?? null;
         if (!is_numeric($amount) || abs(round((float) $amount, 2) - round($expectedAmount, 2)) > 0.001) {
             throw new MockGatewayException('MockGateway payment amount does not match the order total.');

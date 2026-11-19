@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// Return live route, order, and payment counts for an authenticated Admin.
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     header('Allow: GET');
     movioRespond(405, ['error' => 'Method not allowed. Use GET.']);
