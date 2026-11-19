@@ -29,6 +29,24 @@ function cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl) {
     checkoutTab.location.replace(checkoutUrl.href);
 }
 
+async function cmsWaitForPaymentCheckout(checkoutTab, paymentId) {
+    if (!Number.isInteger(paymentId) || paymentId < 1) {
+        throw new Error('The payment service returned an invalid payment ID.');
+    }
+    while (!checkoutTab.closed) {
+        await new Promise(resolve => window.setTimeout(resolve, 500));
+    }
+    const result = await cmsAuthRequest(
+        'api/payments/return.php?payment_id=' + encodeURIComponent(paymentId) + '&format=json',
+        'GET'
+    );
+    if (Number(result.payment_id) !== paymentId ||
+        !['confirmed', 'failed', 'cancelled', 'pending'].includes(result.status)) {
+        throw new Error('The server returned an invalid payment status.');
+    }
+    return result.status;
+}
+
 function cmsIsControlValid(field) {
     if (!field.willValidate) return true;
     let requiredValueMissing = false;
@@ -811,8 +829,7 @@ async function cmsRefreshClientOrders() {
     cmsRenderClientOrders();
 }
 
-function cmsShowPaymentReturnNotice() {
-    const paymentStatus = new URLSearchParams(window.location.search).get('payment');
+function cmsPaymentStatusMessage(paymentStatus) {
     const messages = {
         confirmed: 'Payment confirmed.',
         failed: 'Payment failed. You can try again from My Orders.',
@@ -820,8 +837,14 @@ function cmsShowPaymentReturnNotice() {
         pending: 'Payment is still pending. Check its status in My Orders.',
         verification_error: 'We could not verify the payment. Check its status in My Orders.'
     };
-    if (paymentStatus && messages[paymentStatus]) {
-        cmsToast(messages[paymentStatus]);
+    return messages[paymentStatus] || null;
+}
+
+function cmsShowPaymentReturnNotice() {
+    const paymentStatus = new URLSearchParams(window.location.search).get('payment');
+    const message = cmsPaymentStatusMessage(paymentStatus);
+    if (message) {
+        cmsToast(message);
     }
 }
 
@@ -839,16 +862,26 @@ async function cmsInitClientOrders() {
                 return;
             }
             payButton.disabled = true;
+            let checkoutOpened = false;
             try {
                 const result = await cmsAuthRequest('api/payments/start.php', 'POST', {
                     order_id: orderId
                 });
                 const checkoutUrl = cmsMockGatewayCheckoutUrl(result.checkout_url);
+                const paymentId = Number(result.payment_id);
+                if (!Number.isInteger(paymentId) || paymentId < 1) {
+                    throw new Error('The payment service returned an invalid payment ID.');
+                }
                 cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl);
+                checkoutOpened = true;
+                const paymentStatus = await cmsWaitForPaymentCheckout(checkoutTab, paymentId);
+                await cmsRefreshClientOrders();
+                cmsToast(cmsPaymentStatusMessage(paymentStatus));
             } catch (error) {
                 if (!checkoutTab.closed) checkoutTab.close();
                 payButton.disabled = false;
-                cmsToast('Could not start payment. ' + (error.message || 'Please try again.'));
+                cmsToast((checkoutOpened ? 'Could not verify the payment. ' : 'Could not start payment. ') +
+                    (error.message || 'Please try again.'));
                 try {
                     await cmsRefreshClientOrders();
                 } catch (refreshError) {
@@ -3272,17 +3305,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.getElementById('orderCreatedModalMessage').textContent =
                     'Your order #' + orderId + ' has been created. Total: ' + formattedPrice + '.';
                 resetOrderForm();
+                let checkoutOpened = false;
                 try {
                     const payment = await cmsAuthRequest('api/payments/start.php', 'POST', {
                         order_id: orderId
                     });
                     const checkoutUrl = cmsMockGatewayCheckoutUrl(payment.checkout_url);
+                    const paymentId = Number(payment.payment_id);
+                    if (!Number.isInteger(paymentId) || paymentId < 1) {
+                        throw new Error('The payment service returned an invalid payment ID.');
+                    }
                     cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl);
+                    checkoutOpened = true;
+                    const paymentStatus = await cmsWaitForPaymentCheckout(checkoutTab, paymentId);
+                    cmsToast(cmsPaymentStatusMessage(paymentStatus));
                 } catch (paymentError) {
                     if (!checkoutTab.closed) checkoutTab.close();
-                    document.getElementById('orderCreatedModalMessage').textContent =
-                        'Your order #' + orderId + ' was created, but checkout could not be opened. You can retry from My Orders.';
-                    cmsToast('Order #' + orderId + ' was created, but checkout could not be opened. ' +
+                    document.getElementById('orderCreatedModalMessage').textContent = checkoutOpened
+                        ? 'Your order #' + orderId + ' was created, but payment status could not be verified. Check My Orders.'
+                        : 'Your order #' + orderId + ' was created, but checkout could not be opened. You can retry from My Orders.';
+                    cmsToast((checkoutOpened
+                        ? 'Could not verify payment for order #' + orderId + '. '
+                        : 'Order #' + orderId + ' was created, but checkout could not be opened. ') +
                         (paymentError.message || 'Please try again from My Orders.'));
                     $('#orderCreatedModal').modal('show');
                 }

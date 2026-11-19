@@ -13,6 +13,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 }
 
 $clientId = movioRequireRole('client');
+$jsonResponse = ($_GET['format'] ?? '') === 'json';
 $paymentId = filter_var($_GET['payment_id'] ?? null, FILTER_VALIDATE_INT);
 if ($paymentId === false || $paymentId === null || $paymentId < 1) {
     movioRespond(422, ['error' => 'payment_id must be a positive integer.']);
@@ -29,7 +30,10 @@ if (!in_array($returnUrlParts['scheme'] ?? null, ['http', 'https'], true)) {
     movioRespond(503, ['error' => 'Payment return is not configured.']);
 }
 
-$redirect = static function (string $paymentStatus) use ($appBaseUrl): void {
+$finish = static function (string $paymentStatus) use ($appBaseUrl, $jsonResponse, $paymentId): void {
+    if ($jsonResponse) {
+        movioRespond(200, ['payment_id' => $paymentId, 'status' => $paymentStatus]);
+    }
     $target = rtrim($appBaseUrl, '/') . '/client-orders.html?payment=' . rawurlencode($paymentStatus);
     header('Location: ' . $target, true, 303);
     exit;
@@ -50,11 +54,11 @@ try {
         movioRespond(404, ['error' => 'Payment not found.']);
     }
     if ($payment['status'] === 'confirmed') {
-        $redirect('confirmed');
+        $finish('confirmed');
     }
     if ($payment['status'] !== 'pending' || !is_string($payment['gateway_reference'])
         || $payment['gateway_reference'] === '') {
-        $redirect($payment['status']);
+        $finish($payment['status']);
     }
 
     $gateway = new MockGatewayClient();
@@ -92,14 +96,20 @@ try {
         'pending_status' => 'pending',
     ]);
 
-    $redirect($localStatus);
+    $finish($localStatus);
 } catch (MockGatewayException $exception) {
     error_log($exception->getMessage());
-    $redirect('verification_error');
+    if ($jsonResponse) {
+        movioRespond(502, ['error' => 'Could not verify the payment.']);
+    }
+    $finish('verification_error');
 } catch (PDOException $exception) {
     error_log($exception->getMessage());
     movioRespond(500, ['error' => 'Could not verify the payment.']);
 } catch (RuntimeException $exception) {
     error_log($exception->getMessage());
-    $redirect('verification_error');
+    if ($jsonResponse) {
+        movioRespond(503, ['error' => 'Payment verification is not configured correctly.']);
+    }
+    $finish('verification_error');
 }
