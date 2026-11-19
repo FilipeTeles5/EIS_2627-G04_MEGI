@@ -53,23 +53,19 @@
 <section class="cms-page-hero">
   <div class="container">
     <h1>Courier Dashboard</h1>
-    <p class="mb-0">View paid orders available for assignment. Route execution and delivery history are still browser previews.</p>
+    <p class="mb-0">View database-backed route summaries and paid orders available for assignment. Route execution and delivery history are still browser previews.</p>
     
   </div>
 </section>
 <!-- Main content section containing the primary information and actions for this page. -->
 <section class="container-fluid py-5">
   <div class="container">
-    <!-- Dashboard summary logic:
-         - A courier can have at most one route in preparation or execution.
-         - The route and order totals reflect the courier's browser-stored demo data.
-         - Vehicle information is intentionally left unchanged in this iteration.
-         - Completed deliveries are counted separately from pending and routed orders. -->
+    <p class="text-muted small mb-2">The route preview and workflow below use separate browser demonstration data.</p>
     <div class="row">
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierActiveRouteCount">1</div><small>Active routes</small></div></div>
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierRouteOrderCount">2</div><small>Orders on route</small></div></div>
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value">3</div><small>Approved vehicles</small></div></div>
-      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierCompletedOrderCount">1</div><small>Completed deliveries</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierActiveRouteCount">—</div><small>Open routes</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierRouteOrderCount">—</div><small>Orders on route</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierApprovedVehicleCount">—</div><small>Approved vehicles</small></div></div>
+      <div class="col-md-3 col-6 mb-3"><div class="cms-panel cms-kpi p-3"><div class="value" id="courierCompletedOrderCount">—</div><small>Completed deliveries</small></div></div>
     </div>
 
     <div class="row mt-3">
@@ -181,6 +177,6 @@
 <script src="lib/easing/easing.min.js"></script>
 <script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
-<script src="js/cms.js"></script>
+<script src="js/cms.js?dashboard-backend=20261119-v2"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ $clientId = movioRequireRole('client');
 try {
     $pdo = movioDatabase();
     $orderStatement = $pdo->prepare(
-        'SELECT o.order_id, o.created_at, o.status, o.route_id, o.attempt, o.total_price,
+        'SELECT o.order_id, o.created_at, o.completed_at, o.status, o.route_id, o.attempt, o.total_price,
                 CONCAT(o.origin_lat, \', \', o.origin_long) AS pickup,
                 CONCAT(o.dest_lat, \', \', o.dest_long) AS destination,
                 courier.name AS courier,
@@ -45,6 +45,7 @@ try {
         $orders[] = [
             'id' => $orderId,
             'created_at' => $row['created_at'],
+            'completedAt' => $row['completed_at'],
             'status' => $row['status'] === 'in_progress' ? 'in-progress' : $row['status'],
             'routeId' => $row['route_id'] === null ? null : (int) $row['route_id'],
             'attempt' => (int) $row['attempt'],

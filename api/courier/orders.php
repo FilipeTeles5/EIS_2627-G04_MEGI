@@ -69,6 +69,36 @@ try {
         $activeRoutes = array_filter($routes, static fn(array $route): bool => $route['status'] === 'active');
         $planningRoutes = array_filter($routes, static fn(array $route): bool => $route['status'] === 'planning');
         $currentRoute = $routes[0] ?? null;
+        $currentRouteOrderCount = 0;
+        if ($currentRoute !== null) {
+            $routeOrderCountStatement = $pdo->prepare(
+                'SELECT COUNT(*) FROM orders WHERE route_id = :route_id'
+            );
+            $routeOrderCountStatement->execute(['route_id' => $currentRoute['route_id']]);
+            $currentRouteOrderCount = (int) $routeOrderCountStatement->fetchColumn();
+        }
+
+        $vehicleCountStatement = $pdo->prepare(
+            'SELECT COUNT(*) FROM vehicles
+             WHERE courier_id = :courier_id AND approval_status = :approval_status'
+        );
+        $vehicleCountStatement->execute([
+            'courier_id' => $courierId,
+            'approval_status' => 'approved',
+        ]);
+        $approvedVehicleCount = (int) $vehicleCountStatement->fetchColumn();
+
+        $completedOrderCountStatement = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM orders AS completed
+             INNER JOIN routes AS assigned_route ON assigned_route.route_id = completed.route_id
+             WHERE assigned_route.courier_id = :courier_id AND completed.status = :status'
+        );
+        $completedOrderCountStatement->execute([
+            'courier_id' => $courierId,
+            'status' => 'completed',
+        ]);
+        $completedOrderCount = (int) $completedOrderCountStatement->fetchColumn();
 
         $vehicle = $currentRoute !== null
             ? movioCourierVehicle($pdo, $courierId, (int) $currentRoute['vehicle_id'])
@@ -132,6 +162,12 @@ try {
 
         movioRespond(200, [
             'orders' => $orders,
+            'dashboard' => [
+                'open_routes' => count($routes),
+                'orders_on_current_route' => $currentRouteOrderCount,
+                'approved_vehicles' => $approvedVehicleCount,
+                'completed_deliveries' => $completedOrderCount,
+            ],
             'current_route' => $currentRoute === null ? null : [
                 'route_id' => (int) $currentRoute['route_id'],
                 'status' => $currentRoute['status'],

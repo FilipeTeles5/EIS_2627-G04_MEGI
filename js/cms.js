@@ -846,7 +846,11 @@ async function cmsRefreshClientOrders({verifyPendingPayments = false} = {}) {
         if (!order || !Number.isInteger(Number(order.id)) || !Array.isArray(order.products)) {
             throw new Error('The server returned an invalid order record.');
         }
-        return {...order, id: String(order.id)};
+        return {
+            ...order,
+            id: String(order.id),
+            completedAt: order.completedAt || order.completed_at || null
+        };
     });
     if (verifyPendingPayments) {
         await cmsVerifyPendingClientPayments(cmsClientOrders);
@@ -1059,6 +1063,15 @@ function cmsBuildClientDashboardOrderCard(order, isRecent) {
         (order.destination || 'Destination not provided');
     card.append(header, locations);
 
+    const payment = document.createElement('small');
+    payment.className = 'd-block mb-1';
+    payment.textContent = 'Payment: ' + cmsPaymentStatusDisplay(order.paymentStatus).label;
+    card.appendChild(payment);
+    const total = document.createElement('small');
+    total.className = 'd-block mb-2';
+    total.textContent = 'Total: ' + cmsFormatCurrency(order.totalPrice, 'EUR');
+    card.appendChild(total);
+
     if (isRecent) {
         const completedDate = order.completedAt || order.completedOn;
         if (completedDate) {
@@ -1103,7 +1116,7 @@ function cmsBuildClientDashboardOrderCard(order, isRecent) {
     return column;
 }
 
-// Render every Client dashboard section from the same browser-local order list.
+// Render every Client dashboard section from the signed-in Client's database orders.
 function cmsRenderClientDashboard(orders) {
     const description = document.getElementById('clientDashboardActiveOrdersDescription');
     const activeContainer = document.getElementById('clientDashboardActiveDeliveries');
@@ -1159,17 +1172,48 @@ function cmsRenderClientDashboard(orders) {
     }
 }
 
-// Keep the dashboard introduction, delivery cards, and statistics synchronized.
+function cmsRenderClientDashboardError(error) {
+    const description = document.getElementById('clientDashboardActiveOrdersDescription');
+    if (description) description.textContent = 'Your order information could not be loaded.';
+
+    [
+        'clientDashboardPendingOrders',
+        'clientDashboardInitiatedOrders',
+        'clientDashboardInProgressOrders',
+        'clientDashboardCompletedOrders'
+    ].forEach(id => {
+        const counter = document.getElementById(id);
+        if (counter) counter.textContent = '—';
+    });
+
+    const message = document.createElement('p');
+    message.className = 'col-12 text-danger mb-0';
+    message.textContent = error.message || 'Please refresh the page and try again.';
+    ['clientDashboardActiveDeliveries', 'clientDashboardRecentDeliveries'].forEach(id => {
+        const container = document.getElementById(id);
+        if (container) container.replaceChildren(message.cloneNode(true));
+    });
+}
+
+// Keep the dashboard current when it opens or returns to the foreground.
 function cmsInitClientDashboard() {
     if (!document.getElementById('clientDashboardActiveDeliveries')) return;
-    const updateDashboard = () => {
-        const orders = cmsLoadDemoOrders();
-        if (orders) cmsRenderClientDashboard(orders);
+    let refreshing = false;
+    const updateDashboard = async () => {
+        if (refreshing) return;
+        refreshing = true;
+        try {
+            await cmsRefreshClientOrders();
+            cmsRenderClientDashboard(cmsClientOrders);
+        } catch (error) {
+            console.error('Could not load Client dashboard orders.', error);
+            cmsRenderClientDashboardError(error);
+        } finally {
+            refreshing = false;
+        }
     };
     updateDashboard();
-    window.addEventListener('storage', event => {
-        if (event.key === cmsDemoOrdersKey) updateDashboard();
-    });
+    window.addEventListener('focus', updateDashboard);
 }
 
 // Read the requested sample order and render its status, route details, and timeline.
@@ -2147,19 +2191,18 @@ async function cmsInitRoleAccess() {
     if (previewPages.includes(page) || page === 'admin.html') {
         const hero = document.querySelector('.cms-page-hero .container');
         if (hero) {
+            const notices = {
+                'admin.html': 'Account, order, route and payment summaries and pricing are loaded from the database.',
+                'client-order.html': 'New orders and order history are stored in the database; courier workflow remains in preview mode.',
+                'client-orders.html': 'Your orders and payment statuses are loaded from the database; courier workflow remains in preview mode.',
+                'client.html': 'Your order and payment summary is loaded from the database.',
+                'courier.html': 'Available paid orders, dashboard counts and assignment are loaded from the database; route progress and history remain browser previews.',
+                'courier-route.html': 'Preview mode: route progress and proof-of-delivery interactions use sample data stored in this browser.'
+            };
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
-            notice.textContent = page === 'admin.html'
-                ? 'Preview mode: delivery activity uses sample data; pricing and account metrics are connected to the database.'
-                : page === 'client-order.html'
-                    ? 'New orders are stored in the database; order history and courier workflow remain in preview mode.'
-                    : page === 'client-orders.html'
-                        ? 'Your orders and payment statuses are loaded from the database; courier workflow remains in preview mode.'
-                        : page === 'courier.html'
-                            ? 'Available paid orders and their assignment are stored in the database; route progress and history remain browser previews.'
-                            : page === 'courier-route.html'
-                                ? 'Preview mode: route progress and proof-of-delivery interactions use sample data stored in this browser.'
-                    : 'Preview mode: this page uses sample data and is not connected to the backend.';
+            notice.textContent = notices[page] ||
+                'Preview mode: this page uses sample data and is not connected to the backend.';
             hero.appendChild(notice);
         }
     }
@@ -2708,9 +2751,25 @@ async function cmsRefreshCourierAvailableOrders() {
 
     try {
         const result = await cmsAuthRequest('api/courier/orders.php', 'GET');
-        if (!Array.isArray(result.orders) || typeof result.can_assign !== 'boolean') {
+        const dashboard = result.dashboard;
+        if (!Array.isArray(result.orders) || typeof result.can_assign !== 'boolean' ||
+            !dashboard || ![
+                dashboard.open_routes,
+                dashboard.orders_on_current_route,
+                dashboard.approved_vehicles,
+                dashboard.completed_deliveries
+            ].every(value => Number.isInteger(value) && value >= 0)) {
             throw new Error('The server returned an invalid Courier order list.');
         }
+
+        document.getElementById('courierActiveRouteCount').textContent =
+            String(dashboard.open_routes);
+        document.getElementById('courierRouteOrderCount').textContent =
+            String(dashboard.orders_on_current_route);
+        document.getElementById('courierApprovedVehicleCount').textContent =
+            String(dashboard.approved_vehicles);
+        document.getElementById('courierCompletedOrderCount').textContent =
+            String(dashboard.completed_deliveries);
 
         if (result.assignment_block_reason) {
             notice.textContent = cmsCourierAssignmentBlockMessage(result.assignment_block_reason);
@@ -2768,6 +2827,14 @@ async function cmsRefreshCourierAvailableOrders() {
         });
     } catch (error) {
         console.error('Could not load paid Courier orders.', error);
+        [
+            'courierActiveRouteCount',
+            'courierRouteOrderCount',
+            'courierApprovedVehicleCount',
+            'courierCompletedOrderCount'
+        ].forEach(id => {
+            document.getElementById(id).textContent = '—';
+        });
         notice.textContent = 'Could not load paid orders.';
         list.replaceChildren();
         const message = document.createElement('p');
@@ -2781,6 +2848,7 @@ function cmsInitCourierAvailableOrders() {
     const list = document.getElementById('courierAvailableOrders');
     if (!list) return;
     cmsRefreshCourierAvailableOrders();
+    window.addEventListener('focus', cmsRefreshCourierAvailableOrders);
     list.addEventListener('click', async event => {
         const productToggle = event.target.closest('[data-courier-product-toggle]');
         if (productToggle) {
