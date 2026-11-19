@@ -12,6 +12,23 @@ function cmsToast(message) {
     window.cmsToastTimer = setTimeout(() => t.style.display = 'none', 2600);
 }
 
+function cmsOpenPaymentCheckoutTab() {
+    const checkoutTab = window.open('about:blank', '_blank');
+    if (checkoutTab) {
+        checkoutTab.opener = null;
+        checkoutTab.document.title = 'Movio payment checkout';
+        checkoutTab.document.body.textContent = 'Opening secure payment checkout...';
+    }
+    return checkoutTab;
+}
+
+function cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl) {
+    if (checkoutTab.closed) {
+        throw new Error('The checkout tab was closed before it could be opened. You can retry from My Orders.');
+    }
+    checkoutTab.location.replace(checkoutUrl.href);
+}
+
 function cmsIsControlValid(field) {
     if (!field.willValidate) return true;
     let requiredValueMissing = false;
@@ -605,9 +622,10 @@ function cmsRenderClientOrdersTable(orders) {
         productsButton.className = 'btn btn-sm btn-outline-dark';
         productsButton.style.width = '11rem';
         productsButton.dataset.toggleClientProducts = order.id;
+        productsButton.dataset.productCount = String((order.products || []).length);
         productsButton.setAttribute('aria-expanded', 'false');
         productsButton.setAttribute('aria-controls', 'client-products-' + order.id);
-        productsButton.textContent = 'View products (' + (order.products || []).length + ')';
+        productsButton.textContent = 'View products (' + productsButton.dataset.productCount + ')';
         actionGroup.appendChild(productsButton);
         const secondaryActions = document.createElement('div');
         secondaryActions.className = 'd-flex justify-content-between align-items-center mt-2 w-100';
@@ -815,14 +833,20 @@ async function cmsInitClientOrders() {
         if (payButton) {
             const orderId = Number(payButton.dataset.payClientOrder);
             if (!Number.isInteger(orderId) || orderId < 1 || payButton.disabled) return;
+            const checkoutTab = cmsOpenPaymentCheckoutTab();
+            if (!checkoutTab) {
+                cmsToast('Allow pop-ups for this site to open the payment checkout in a new tab.');
+                return;
+            }
             payButton.disabled = true;
             try {
                 const result = await cmsAuthRequest('api/payments/start.php', 'POST', {
                     order_id: orderId
                 });
                 const checkoutUrl = cmsMockGatewayCheckoutUrl(result.checkout_url);
-                window.location.assign(checkoutUrl.href);
+                cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl);
             } catch (error) {
+                if (!checkoutTab.closed) checkoutTab.close();
                 payButton.disabled = false;
                 cmsToast('Could not start payment. ' + (error.message || 'Please try again.'));
                 try {
@@ -842,7 +866,7 @@ async function cmsInitClientOrders() {
             const expanded = productsRow.classList.toggle('d-none') === false;
             productsButton.setAttribute('aria-expanded', String(expanded));
             productsButton.textContent = expanded ? 'Hide products' : 'View products (' +
-                productsRow.querySelectorAll('tbody tr').length + ')';
+                productsButton.dataset.productCount + ')';
             return;
         }
         const detailsButton = event.target.closest('[data-select-client-order]');
@@ -3219,6 +3243,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 weight_kg:Number(row.querySelector('.product-weight').value),
                 volume_m3:Number(row.querySelector('.product-volume').value)
             }));
+            const checkoutTab = cmsOpenPaymentCheckoutTab();
+            if (!checkoutTab) {
+                cmsToast('Allow pop-ups for this site to open the payment checkout in a new tab.');
+                return;
+            }
             if (submitButton) submitButton.disabled = true;
             let createdOrderId = null;
             try {
@@ -3248,15 +3277,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                         order_id: orderId
                     });
                     const checkoutUrl = cmsMockGatewayCheckoutUrl(payment.checkout_url);
-                    window.location.assign(checkoutUrl.href);
+                    cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl);
                 } catch (paymentError) {
+                    if (!checkoutTab.closed) checkoutTab.close();
                     document.getElementById('orderCreatedModalMessage').textContent =
-                        'Your order #' + orderId + ' was created, but payment could not be started. You can retry from My Orders.';
-                    cmsToast('Order #' + orderId + ' was created, but payment could not be started. ' +
+                        'Your order #' + orderId + ' was created, but checkout could not be opened. You can retry from My Orders.';
+                    cmsToast('Order #' + orderId + ' was created, but checkout could not be opened. ' +
                         (paymentError.message || 'Please try again from My Orders.'));
                     $('#orderCreatedModal').modal('show');
                 }
             } catch (error) {
+                if (!checkoutTab.closed) checkoutTab.close();
                 const message = createdOrderId
                     ? 'Order #' + createdOrderId + ' was created, but its confirmation could not be completed. '
                     : 'Could not create the order. ';

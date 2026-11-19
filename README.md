@@ -19,7 +19,7 @@ To try the account flow, import the schema and seed, sign in with the demo Admin
 
 The public tracking page accepts the sample order references `1042`, `1031` and `1028`. It displays recorded example details only; it does not query live shipments or a backend. Other references return a not-found message.
 
-The project uses the themed `css/style.css`, application styles in `css/cms.css` and the page interactions in `js/main.js` and `js/cms.js`.
+The project uses the themed `css/style.css`, application styles in `css/cms.css` and the page interactions in `js/main.js` and `js/cms.js`. Client payment checkouts open in a new tab; allow pop-ups for the local Movio site so the checkout's **Close Window** button can close that tab.
 
 ## Backend setup (XAMPP)
 
@@ -85,7 +85,9 @@ Verify response:
 }
 ```
 
-Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment used by Apache. The default API base is `https://mockgateway.com/api/base`; set `MOCKGATEWAY_BASE_URL` only if MockGateway gives you a different base URL. For XAMPP, keep these `SetEnv` values in local Apache configuration outside the repository. Never commit the API key or send it in chat. Test the hosted checkout with the success, failed and canceled outcomes; the return endpoint verifies the transaction with MockGateway before updating the database. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
+Set `MOCKGATEWAY_SLUG`, `MOCKGATEWAY_API_KEY` and `APP_BASE_URL` in the PHP environment used by Apache. For the XAMPP junction setup, `APP_BASE_URL` should be `http://127.0.0.1/movio`. The default API base is `https://mockgateway.com/api/base`; set `MOCKGATEWAY_BASE_URL` only if MockGateway gives you a different base URL. For XAMPP, keep these `SetEnv` values in local Apache configuration outside the repository. Never commit the API key or send it in chat.
+
+In the gateway builder, use `http://127.0.0.1/movio/client-orders.html` as the required default redirect fallback. In **Field Mapping**, map `amount` as the amount field and `success_redirect` as the redirect URL field; the per-payment URL sent by Movio then points to `api/payments/return.php?payment_id=...`, where the transaction is verified before the database is updated. Configure the mapping during gateway creation; the existing gateway's **Settings** page only exposes its default redirect and webhook settings. Test the hosted checkout with the success, failed and canceled outcomes. Payment start/return endpoints are `POST api/payments/start.php` and `GET api/payments/return.php`.
 
 MockGateway gateways and their transactions belong to the account that created them; GitHub access does not grant MockGateway access. Shared workspaces are not currently available, and sharing an account login is the platform's only sharing option, which it discourages. For group work, each teammate and the professor should create their own test gateway using the same schema and response templates above, then set their own local slug and API key. The code and gateway contract are shared in this repository; credentials are not. See the [MockGateway FAQ](https://mockgateway.com/faq).
 
