@@ -108,3 +108,21 @@ function movioReadNumber(array $source, string $key, float $minimum = 0.0): floa
 
     return $number;
 }
+
+function movioIsValidPortugueseNif(string $nif): bool
+{
+    if (!preg_match('/^[1235689][0-9]{8}$/D', $nif)) {
+        return false;
+    }
+
+    $weightedSum = 0;
+    for ($index = 0; $index < 8; $index++) {
+        $weightedSum += (int) $nif[$index] * (9 - $index);
+    }
+    $checkDigit = 11 - ($weightedSum % 11);
+    if ($checkDigit >= 10) {
+        $checkDigit = 0;
+    }
+
+    return (int) $nif[8] === $checkDigit;
+}

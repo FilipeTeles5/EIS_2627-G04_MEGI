@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>My Profile | Movio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="View and update your Movio demo profile.">
+    <meta name="description" content="View and update your Movio profile.">
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -46,45 +46,54 @@
   </div>
 </section>
 
-<!-- Editable demo profile details and read-only account identity. -->
+<!-- Editable personal details and read-only account identity. -->
 <main class="container-fluid py-5">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8 mb-4">
         <section class="cms-panel p-4 p-md-5">
           <div class="cms-panel-title">
-            <div><h2 class="h4">Personal details</h2><small>Changes are saved in this browser for the demo.</small></div>
+            <div><h2 class="h4">Personal details</h2><small>Changes are saved to your account.</small></div>
           </div>
           <form id="accountProfileForm" class="needs-validation" novalidate>
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="profileName">Name</label>
-                <input id="profileName" name="name" class="form-control" required>
+                <input id="profileName" name="name" class="form-control" maxlength="120" required>
                 <div class="invalid-feedback">Enter your name.</div>
               </div>
               <div class="form-group col-md-6">
                 <label for="profileUsername">Username</label>
-                <input id="profileUsername" name="username" class="form-control" required>
-                <div class="invalid-feedback">Enter your username.</div>
+                <input id="profileUsername" name="username" class="form-control" minlength="3" maxlength="80" title="Use 3 to 80 letters, numbers, dots, underscores or hyphens." required>
+                <div class="invalid-feedback">Use 3 to 80 letters, numbers, dots, underscores or hyphens.</div>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group col-md-6">
                 <label for="profileEmail">Sign-in email</label>
                 <input id="profileEmail" name="email" type="email" class="form-control" readonly>
-                <small class="form-text text-muted">The sign-in email cannot be changed in this demo.</small>
+                <small class="form-text text-muted">The sign-in email cannot be changed here.</small>
               </div>
               <div class="form-group col-md-6">
                 <label for="profilePhone">Phone</label>
-                <input id="profilePhone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{9,15}" title="Enter 9 to 15 digits only." class="form-control">
-                <div class="invalid-feedback">Enter a phone number using 9 to 15 digits only.</div>
+                <input id="profilePhone" name="phone" type="tel" inputmode="tel" maxlength="30" class="form-control">
+                <small class="form-text text-muted">Use 9 to 15 digits for a new number; you may also clear it.</small>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="profileNif">NIF</label>
+                <input id="profileNif" name="nif" type="text" inputmode="numeric" maxlength="9" pattern="[0-9]{9}" title="Enter a valid 9-digit Portuguese NIF." class="form-control">
+                <small class="form-text text-muted">Optional. If provided, it must be a valid Portuguese NIF.</small>
+                <div class="invalid-feedback">Enter a valid 9-digit Portuguese NIF or leave this field blank.</div>
               </div>
             </div>
             <div class="form-group">
               <label>Account role</label>
               <p id="accountProfileRole" class="cms-profile-role mb-0"></p>
             </div>
-            <button class="btn btn-primary px-4" type="submit">Save profile</button>
+            <button class="btn btn-primary px-4" type="submit" disabled>Save profile</button>
+            <p id="accountProfileStatus" class="mb-0 mt-3" role="status" aria-live="polite"></p>
           </form>
         </section>
       </div>
@@ -125,6 +134,6 @@
 <script src="lib/easing/easing.min.js"></script>
 <script src="lib/waypoints/waypoints.min.js"></script>
 <script src="js/main.js"></script>
-<script src="js/cms.js"></script>
+<script src="js/cms.js?profile-backend=20261119-v3"></script>
 </body>
 </html>

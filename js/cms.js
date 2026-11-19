@@ -2197,7 +2197,8 @@ async function cmsInitRoleAccess() {
                 'client-orders.html': 'Your orders and payment statuses are loaded from the database; courier workflow remains in preview mode.',
                 'client.html': 'Your order and payment summary is loaded from the database.',
                 'courier.html': 'Available paid orders, dashboard counts and assignment are loaded from the database; route progress and history remain browser previews.',
-                'courier-route.html': 'Preview mode: route progress and proof-of-delivery interactions use sample data stored in this browser.'
+                'courier-route.html': 'Preview mode: route progress and proof-of-delivery interactions use sample data stored in this browser.',
+                'profile.html': 'Personal details are loaded and saved to the database. Sign-in email and account role cannot be changed here.'
             };
             const notice = document.createElement('p');
             notice.className = 'cms-demo-notice';
@@ -3249,34 +3250,110 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const accountProfileForm = document.getElementById('accountProfileForm');
     if (accountProfileForm) {
+        const status = document.getElementById('accountProfileStatus');
+        const submitButton = accountProfileForm.querySelector('button[type="submit"]');
         const role = cmsGetRole();
         const email = sessionStorage.getItem(cmsEmailKey) || '';
-        const profile = cmsGetProfile(role, email);
-        accountProfileForm.elements.name.value = profile.name;
-        accountProfileForm.elements.username.value = profile.username;
-        accountProfileForm.elements.email.value = profile.email;
-        accountProfileForm.elements.phone.value = profile.phone;
-        document.getElementById('accountProfileRole').textContent = cmsRoles[role].label;
-        accountProfileForm.addEventListener('submit', event => {
+        const nifInput = accountProfileForm.elements.nif;
+        const usernameInput = accountProfileForm.elements.username;
+        const validateUsername = () => {
+            const value = usernameInput.value.trim();
+            usernameInput.setCustomValidity(
+                value && !/^[a-z0-9._-]{3,80}$/i.test(value)
+                    ? 'Use 3 to 80 letters, numbers, dots, underscores or hyphens.'
+                    : ''
+            );
+        };
+        const validateNif = () => {
+            const value = nifInput.value.trim();
+            nifInput.setCustomValidity(
+                value && !cmsIsValidPortugueseNif(value)
+                    ? 'Enter a valid 9-digit Portuguese NIF.'
+                    : ''
+            );
+        };
+        usernameInput.addEventListener('input', validateUsername);
+        nifInput.addEventListener('input', validateNif);
+
+        try {
+            const response = await cmsAuthRequest('api/auth/profile.php', 'GET');
+            const profile = response.user;
+            if (
+                !profile || profile.role !== role || profile.email !== email ||
+                typeof profile.name !== 'string' || typeof profile.username !== 'string'
+            ) {
+                throw new Error('The server returned an invalid profile.');
+            }
+            accountProfileForm.elements.name.value = profile.name;
+            accountProfileForm.elements.username.value = profile.username;
+            accountProfileForm.elements.email.value = profile.email;
+            accountProfileForm.elements.phone.value = profile.phone || '';
+            accountProfileForm.elements.nif.value = profile.nif || '';
+            document.getElementById('accountProfileRole').textContent = cmsRoles[profile.role].label;
+            validateUsername();
+            validateNif();
+            submitButton.disabled = false;
+        } catch (error) {
+            console.error('Could not load the account profile.', error);
+            status.textContent = error.message || 'Could not load your profile. Refresh the page to try again.';
+            status.classList.add('text-danger');
+            cmsToast(error.message || 'Could not load your profile.');
+        }
+
+        accountProfileForm.addEventListener('submit', async event => {
             event.preventDefault();
+            validateUsername();
+            validateNif();
             if (!cmsValidate(accountProfileForm)) return;
             const updatedProfile = {
-                ...profile,
                 name: accountProfileForm.elements.name.value.trim(),
                 username: accountProfileForm.elements.username.value.trim(),
-                phone: accountProfileForm.elements.phone.value.trim()
+                phone: accountProfileForm.elements.phone.value.trim(),
+                nif: accountProfileForm.elements.nif.value.trim()
             };
             if (!updatedProfile.name || !updatedProfile.username) {
                 cmsToast('Name and username are required.');
                 return;
             }
-            if (!cmsSaveProfile(updatedProfile)) return;
-            profile.name = updatedProfile.name;
-            profile.username = updatedProfile.username;
-            profile.phone = updatedProfile.phone;
-            sessionStorage.setItem(cmsNameKey, updatedProfile.name);
-            cmsUpdateAccountDisplayName(updatedProfile.name, role);
-            cmsToast('Profile updated in this browser demo.');
+            if (submitButton) submitButton.disabled = true;
+            status.textContent = 'Saving profile...';
+            status.classList.remove('text-danger', 'text-success');
+            try {
+                const response = await cmsAuthRequest('api/auth/profile.php', 'PUT', updatedProfile);
+                const savedProfile = response.user;
+                if (
+                    !savedProfile || savedProfile.role !== role ||
+                    savedProfile.email !== email ||
+                    typeof savedProfile.name !== 'string' ||
+                    typeof savedProfile.username !== 'string'
+                ) {
+                    throw new Error('The server returned an invalid updated profile.');
+                }
+                accountProfileForm.elements.name.value = savedProfile.name;
+                accountProfileForm.elements.username.value = savedProfile.username;
+                accountProfileForm.elements.phone.value = savedProfile.phone || '';
+                accountProfileForm.elements.nif.value = savedProfile.nif || '';
+                const cachedProfile = {
+                    name: savedProfile.name,
+                    username: savedProfile.username,
+                    email: savedProfile.email,
+                    phone: savedProfile.phone || '',
+                    role: savedProfile.role
+                };
+                cmsSaveProfile(cachedProfile, email);
+                sessionStorage.setItem(cmsNameKey, savedProfile.name);
+                cmsUpdateAccountDisplayName(savedProfile.name, role);
+                status.textContent = 'Profile updated in the database.';
+                status.classList.add('text-success');
+                cmsToast('Profile updated.');
+            } catch (error) {
+                console.error('Could not update the account profile.', error);
+                status.textContent = error.message || 'Could not save your profile. Please try again.';
+                status.classList.add('text-danger');
+                cmsToast(error.message || 'Could not save your profile.');
+            } finally {
+                if (submitButton) submitButton.disabled = false;
+            }
         });
     }
 
