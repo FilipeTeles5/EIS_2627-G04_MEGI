@@ -29,12 +29,9 @@ function cmsNavigatePaymentCheckout(checkoutTab, checkoutUrl) {
     checkoutTab.location.replace(checkoutUrl.href);
 }
 
-async function cmsWaitForPaymentCheckout(checkoutTab, paymentId) {
+async function cmsVerifyPaymentStatus(paymentId) {
     if (!Number.isInteger(paymentId) || paymentId < 1) {
         throw new Error('The payment service returned an invalid payment ID.');
-    }
-    while (!checkoutTab.closed) {
-        await new Promise(resolve => window.setTimeout(resolve, 500));
     }
     const result = await cmsAuthRequest(
         'api/payments/return.php?payment_id=' + encodeURIComponent(paymentId) + '&format=json',
@@ -45,6 +42,13 @@ async function cmsWaitForPaymentCheckout(checkoutTab, paymentId) {
         throw new Error('The server returned an invalid payment status.');
     }
     return result.status;
+}
+
+async function cmsWaitForPaymentCheckout(checkoutTab, paymentId) {
+    while (!checkoutTab.closed) {
+        await new Promise(resolve => window.setTimeout(resolve, 500));
+    }
+    return cmsVerifyPaymentStatus(paymentId);
 }
 
 function cmsIsControlValid(field) {
@@ -815,7 +819,25 @@ function cmsRenderClientOrders() {
     cmsRenderClientOrderDetails(selectedOrder, sortedOrders);
 }
 
-async function cmsRefreshClientOrders() {
+async function cmsVerifyPendingClientPayments(orders) {
+    const pendingOrders = orders.filter(order =>
+        order.paymentStatus === 'pending' &&
+        Number.isInteger(order.paymentId) &&
+        order.paymentId > 0
+    );
+    if (!pendingOrders.length) return;
+
+    const results = await Promise.allSettled(pendingOrders.map(async order => {
+        order.paymentStatus = await cmsVerifyPaymentStatus(order.paymentId);
+    }));
+    const failures = results.filter(result => result.status === 'rejected');
+    if (failures.length) {
+        failures.forEach(result => console.error('Could not verify a pending payment.', result.reason));
+        cmsToast('Could not verify one or more pending payments. You can retry from My Orders.');
+    }
+}
+
+async function cmsRefreshClientOrders({verifyPendingPayments = false} = {}) {
     const result = await cmsAuthRequest('api/orders/mine.php', 'GET');
     if (!Array.isArray(result.orders)) {
         throw new Error('The server returned an invalid order list.');
@@ -826,6 +848,9 @@ async function cmsRefreshClientOrders() {
         }
         return {...order, id: String(order.id)};
     });
+    if (verifyPendingPayments) {
+        await cmsVerifyPendingClientPayments(cmsClientOrders);
+    }
     cmsRenderClientOrders();
 }
 
@@ -998,7 +1023,9 @@ async function cmsInitClientOrders() {
         document.getElementById('clientOrderDetails')?.scrollIntoView({behavior:'smooth', block:'start'});
     });
     try {
-        await cmsRefreshClientOrders();
+        await cmsRefreshClientOrders({
+            verifyPendingPayments: !new URLSearchParams(window.location.search).has('payment')
+        });
     } catch (error) {
         const row = document.createElement('tr');
         const cell = document.createElement('td');
